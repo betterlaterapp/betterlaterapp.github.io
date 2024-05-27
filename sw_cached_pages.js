@@ -1,4 +1,4 @@
-var version = "v2.94::pages";
+var version = "v3.14::pages";
 
 self.addEventListener("activate", (event) => {
   const cacheWhitelist = [version];
@@ -29,7 +29,9 @@ self.addEventListener("fetch", function (event) {
       function fetchedFromNetwork(response) {
         var cacheCopy = response.clone();
         caches.open(version).then(function add(cache) {
-          cache.put(event.request, cacheCopy);
+          if(!event.request.url.startsWith('http')){
+            cache.put(event.request, cacheCopy);
+          }
         });
         return response;
       }

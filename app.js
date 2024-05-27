@@ -565,9 +565,10 @@ $(document).ready(function () {
                 }
                 
                 if(useCountYear.length > 1) {
+                    // console.log("useCountYear: ", useCountYear)
                     // console.log("avg time between doing (year) is ", useCountYear[useCountYear.length-1].timestamp - useCountYear[0].timestamp)
                     if (useCountYear.length == useCount.length) {
-                        totalTimeBetween.year = useCountYear[useCountYear.length-1].timestamp - useCountMonth[0].timestamp;
+                        totalTimeBetween.year = useCountYear[useCountYear.length-1].timestamp - useCountYear[0].timestamp;
                         avgTimeBetween.year = Math.round(totalTimeBetween.year / (useCountYear.length - 1));
 
                     } else {
@@ -701,10 +702,9 @@ $(document).ready(function () {
 
                 totalTimeBetween.total = costCount[costCount.length - 1].timestamp - costCount[0].timestamp;
                 avgTimeBetween.total = Math.round(totalTimeBetween.total / (costCount.length - 1) );
-                
 
                 if(costCountWeek.length > 1) {
-                    //console.log("avg time between COST (week) is  ", timeNow - costCountWeek[0].timestamp)
+                    // console.log("avg time between COST (week) is  ", costCountWeek[costCountWeek.length - 1].timestamp - costCountWeek[0].timestamp)
                     if (costCountMonth.length == costCountWeek.length) {
                         totalTimeBetween.week = costCountWeek[costCountWeek.length - 1].timestamp - costCountWeek[0].timestamp;
                         avgTimeBetween.week = Math.round(totalTimeBetween.week / (costCountWeek.length - 1));
@@ -969,7 +969,7 @@ $(document).ready(function () {
                 && json.baseline.specificSubject == false 
                 && json.option.activeTab == "settings-content") {
                 var introMessage = "<b>Welcome back!</b> Start tracking your habit now by clicking any of the buttons on the right.";
-                var responseTools = '<button class="btn btn-md btn-outline-info clear-notification" onClick="$(\'#statistics-tab-toggler\').click();">' +
+                var responseTools = '<button class="btn btn-md btn-outline-info clear-notification" onClick="$(\'.statistics-tab-toggler\').click();">' +
                     "Statistics Panel</button>";
                 createNotification(introMessage, responseTools);
 
@@ -1144,15 +1144,18 @@ $(document).ready(function () {
                 "reportEnd": -1,
                 "used":   {
                     "weekValues": [0, 0, 0, 0, 0, 0, 0],
-                    "total": 0
+                    "total": 0,
+                    "lastWeek": 0
                 },
                 "craved": {
                     "weekValues": [0, 0, 0, 0, 0, 0, 0],
-                    "total": 0
+                    "total": 0,
+                    "lastWeek": 0
                 },
                 "bought": {
                     "weekValues": [0, 0, 0, 0, 0, 0, 0],
-                    "total": 0
+                    "total": 0,
+                    "lastWeek": 0
                 }
             }
 
@@ -1163,12 +1166,30 @@ $(document).ready(function () {
 
             //start one week prior to end stamp
             var reportStartStamp = midnightLastDay - (60 * 60 * 24 * 7);
+            var lastWeekStartStamp = reportStartStamp - (60 * 60 * 24 * 7);
 
             //update report valuesObject
             valuesObject.reportStart = reportStartStamp;
             valuesObject.reportEnd = midnightLastDay;
             //to make the "previous report" arrow button workable
             json.report.activeEndStamp = midnightLastDay;
+
+
+            var boughtThisWeek = jsonObject.action.filter(function (e) {
+                return (e.clickType == "bought") 
+                    && e.timestamp >= reportStartStamp
+                    && e.timestamp <= midnightLastDay
+            });
+            var didLastWeek = jsonObject.action.filter(function (e) {
+                return (e.clickType == "used" || e.clickType == "craved") 
+                    && e.timestamp >= lastWeekStartStamp
+                    && e.timestamp <= reportStartStamp
+            });
+            var boughtLastWeek = jsonObject.action.filter(function (e) {
+                return (e.clickType == "bought") 
+                    && e.timestamp >= lastWeekStartStamp
+                    && e.timestamp <= reportStartStamp
+            });
 
             for (var dayIndex = 0; dayIndex < 7; dayIndex++) {
                 var startOfDayTimestamp = reportStartStamp + ((60 * 60 * 24) * dayIndex);
@@ -1187,7 +1208,24 @@ $(document).ready(function () {
                     valuesObject[action.clickType].weekValues[dayIndex]++;
                     valuesObject[action.clickType].total++;
                 }
+            }
             
+            if (boughtThisWeek.length > 0) {
+                for(action of boughtThisWeek) {
+                    valuesObject[action.clickType].total += parseFloat(action.spent);
+                }
+            }
+
+            if (didLastWeek.length > 0) {
+                for(action of didLastWeek) {
+                    valuesObject[action.clickType].lastWeek++;
+                }
+            }
+
+            if (boughtLastWeek.length > 0) {
+                for(action of boughtLastWeek) {
+                    valuesObject[action.clickType].lastWeek += parseFloat(action.spent);
+                }
             }
 
             return valuesObject;
@@ -1202,7 +1240,6 @@ $(document).ready(function () {
             var jsonObject = retrieveStorageObject();
             var timeNow = Math.round(new Date() / 1000);
 
-            
             json.report.maxHeight = calculateMaxReportHeight(jsonObject);
 
             //REPORTS!!!
@@ -1238,6 +1275,7 @@ $(document).ready(function () {
 
         //report template
         function createReport(reportValues) {
+
             //remove d-none from report template
             if ($($(".weekly-report")[0]).hasClass("d-none")) {
                 $($(".weekly-report")[0]).removeClass("d-none");
@@ -1249,11 +1287,12 @@ $(document).ready(function () {
                 usesWeek = reportValues.used.weekValues,
                 cravesWeek = reportValues.craved.weekValues,
                 spentWeek = reportValues.bought.weekValues,
-                usesLastWeek = reportValues.used.total,
-                costLastWeek = reportValues.bought.total;
-
-            var totalUsesThisWeek = usesWeek.reduce(function (a, b) { return a + b; });
-            var totalCostThisWeek = spentWeek.reduce(function (a, b) { return a + b; });
+                usesLastWeek = reportValues.used.lastWeek,
+                costLastWeek = reportValues.bought.lastWeek;
+                totalUsesThisWeek = reportValues.used.total;
+                totalCostThisWeek = reportValues.bought.total;
+            // var totalUsesThisWeek = usesWeek.reduce(function (a, b) { return a + b; });
+            // var totalCostThisWeek = spentWeek.reduce(function (a, b) { return a + b; });
 
             //set start date
             $("#reportStartDate").html(timestampToShortHandDate(reportStart, true));
@@ -1302,7 +1341,8 @@ $(document).ready(function () {
 
             //set uses vs last week
             if (json.option.reportItemsToDisplay.useChangeVsLastWeek) {
-                var percentChanged = percentChangedBetween(totalUsesThisWeek, usesLastWeek);
+
+                var percentChanged = percentChangedBetween(usesLastWeek, totalUsesThisWeek);
                 var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
 
                 $("#useChangeVsLastWeek").html(finishedStat);
@@ -1313,7 +1353,7 @@ $(document).ready(function () {
 
             //set uses vs baseline
             if (json.option.reportItemsToDisplay.useChangeVsBaseline) {
-                var percentChanged = percentChangedBetween(totalUsesThisWeek, json.baseline.amountDonePerWeek);
+                var percentChanged = percentChangedBetween(json.baseline.amountDonePerWeek, totalUsesThisWeek);
                 var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
 
                 $("#useChangeVsBaseline").html(finishedStat);
@@ -1325,7 +1365,7 @@ $(document).ready(function () {
 
             //set spent vs last week
             if (json.option.reportItemsToDisplay.costChangeVsLastWeek) {
-                var percentChanged = percentChangedBetween(totalCostThisWeek, costLastWeek);
+                var percentChanged = percentChangedBetween(costLastWeek, totalCostThisWeek);
                 var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
 
                 $("#costChangeVsLastWeek").html(finishedStat);
@@ -1336,7 +1376,7 @@ $(document).ready(function () {
 
             //set spent vs baseline
             if (json.option.reportItemsToDisplay.costChangeVsBaseline) {
-                var percentChanged = percentChangedBetween(totalCostThisWeek, json.baseline.amountSpentPerWeek);
+                var percentChanged = percentChangedBetween(json.baseline.amountSpentPerWeek, totalCostThisWeek);
                 var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
 
                 $("#costChangeVsBaseline").html(finishedStat);
@@ -1344,7 +1384,6 @@ $(document).ready(function () {
             } else {
                 $("#costChangeVsBaseline").parent().parent().hide();
             }
-
 
             //set goal done / week
             if (json.option.reportItemsToDisplay.useGoalVsThisWeek) {
@@ -1379,10 +1418,10 @@ $(document).ready(function () {
             if (json.option.reportItemsToDisplay.costGoalVsThisWeek) {
                 $("#actualSpentThisWeek").html(totalCostThisWeek + "$");
                 //higher or lower than goal?
-                if (totalCostThisWeek < json.baseline.goalSpentPerWeek) {
+                if (totalCostThisWeek <= json.baseline.goalSpentPerWeek) {
                     $("#actualSpentThisWeek").addClass("down");
                     $("#actualSpentThisWeek").removeClass("up");
-                } else if (totalCostThisWeek >= json.baseline.goalSpentPerWeek) {
+                } else if (totalCostThisWeek > json.baseline.goalSpentPerWeek) {
                     $("#actualSpentThisWeek").addClass("up");
                     $("#actualSpentThisWeek").removeClass("down");
                 }
@@ -1404,9 +1443,10 @@ $(document).ready(function () {
             }
             if (first === 0 && second === 0) {
                 //hand NaN case
+                
                 percentChanged = 0;
             }
-            if (first === 0) {
+            if (first === 0 && second !== 0) {
                 //handle -infinity cases
                 percentChanged = -100;
             }
@@ -1416,22 +1456,23 @@ $(document).ready(function () {
 
         function formatPercentChangedStat(statTarget, percentChanged) {
             //assign correct colors and caret if percent change is neg/pos
-            if (percentChanged >= 0) {
+            
+            statTarget.parent().removeClass("down").removeClass("up");
+
+            if (percentChanged < 0) {
                 //color
-                statTarget.parent().removeClass("down");
                 statTarget.parent().addClass("up");
                 //icon
                 statTarget.parent().find("i.fas").remove();
                 statTarget.parent().prepend('<i class="fas fa-caret-up"></i>');
+                //remove minus sign
+                percentChanged *= -1;
             } else {
                 //color
-                statTarget.parent().removeClass("up");
                 statTarget.parent().addClass("down");
                 //icon
                 statTarget.parent().find("i.fas").remove();
                 statTarget.parent().prepend('<i class="fas fa-caret-down"></i>');
-                //remove minus sign
-                percentChanged *= -1;
 
             }
             //format string
@@ -1442,6 +1483,7 @@ $(document).ready(function () {
             } else {
                 percentChanged = percentChanged + "%";
             }
+
             return percentChanged;
         }
 
@@ -1523,13 +1565,11 @@ $(document).ready(function () {
                 //required to update loacal storage
                 var jsonObject = retrieveStorageObject();
 
-                //track if any submission has been made
-                jsonObject.baseline.userSubmitted = true;
-
                 if ($(".decreaseHabit").is(":checked")) {
                     //console.log("desires decrease")
                     jsonObject.baseline.decreaseHabit = true;
-                    
+                    jsonObject.option.liveStatsToDisplay.resistedInARow = true;
+
                     $('body').addClass("desires-decrease")
                     $('body').removeClass("desires-increase")
 
@@ -1540,6 +1580,7 @@ $(document).ready(function () {
                 } else if ($(".increaseHabit").is(":checked")) {
                     //console.log("desires increase")
                     jsonObject.baseline.decreaseHabit = false;
+                    jsonObject.option.liveStatsToDisplay.resistedInARow = false;
                     
                     $('body').addClass("desires-increase")
                     $('body').removeClass("desires-decrease")
@@ -1682,11 +1723,14 @@ $(document).ready(function () {
                     $("#" + key + "Displayed").prop('checked', jsonObject.option.reportItemsToDisplay[key]);
                 }
 
-                $("#statistics-tab-toggler").click();
+                $(".statistics-tab-toggler").click();
                 $(".baseline-questionnaire .intro.question").addClass("d-none");
                 $(".baseline-questionnaire").removeClass("show");
                 $(".displayed-statistics").addClass("show");
                 $(".displayed-statistics-heading").show();
+                
+                //track if any submission has been made
+                jsonObject.baseline.userSubmitted = true;
 
                 var message = "Thank you for answering those questions! Let's get going";
                 createNotification(message);
@@ -1792,9 +1836,9 @@ $(document).ready(function () {
         function returnToActiveTab() {
             if (json.option.activeTab) {
                 var tabName = json.option.activeTab.split("-")[0];
-                $("#" + tabName + "-tab-toggler").click();
+                $("." + tabName + "-tab-toggler").click();
             } else {
-                $("#" + "statistics" + "-tab-toggler").click();
+                $("." + "statistics" + "-tab-toggler").click();
             }
         }
 
@@ -2224,7 +2268,7 @@ $(document).ready(function () {
             json.statistics.goal.lastClickStamp = timestampSeconds;
 
             //return to relevant screen
-            $("#statistics-tab-toggler").click();
+            $(".statistics-tab-toggler").click();
 
             recalculateAverageTimeBetween(goalType, "total")
             recalculateAverageTimeBetween(goalType, "week")
@@ -2322,7 +2366,7 @@ $(document).ready(function () {
                 //target = "#use-log";
             } else if(clickType == "mood") {
                 var scrubbedComment = comment.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-                titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="images/escrave-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>.";
+                titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
             }
 
             var template = '<div class="item ' + clickType + '-record">' +
@@ -2480,7 +2524,7 @@ $(document).ready(function () {
             //convert total seconds to ddhhmmss
             var htmlDestination = "." + actionType + ".betweenClicks." + timeIncrement;
 
-            console.log("json.statistics[actionType].betweenClicks: ", json.statistics[actionType].betweenClicks)
+            // console.log("json.statistics[actionType].betweenClicks: ", json.statistics[actionType].betweenClicks)
 
             var finalStringStats = {
                 total: json.statistics[actionType].betweenClicks["total"],
@@ -3116,7 +3160,7 @@ $(document).ready(function () {
 
         /*Actions on switch tab */
 
-        $(document).delegate("#statistics-tab-toggler", 'click', function (e) {
+        $(document).delegate(".statistics-tab-toggler", 'click', function (e) {
             saveActiveTab();
 
             setTimeout(function () {
@@ -3129,11 +3173,11 @@ $(document).ready(function () {
 
             }, 0);
 
-            $("#baseline-tab-toggler").removeClass("active");
-            $("#settings-tab-toggler").removeClass("active");
-            $("#reports-tab-toggler").removeClass("active");
+            $(".baseline-tab-toggler").removeClass("active");
+            $(".settings-tab-toggler").removeClass("active");
+            $(".reports-tab-toggler").removeClass("active");
 
-            
+            $(".statistics-tab-toggler").addClass("active");
 
             //close dropdown nav
             if ($("#options-collapse-menu").hasClass("show")) {
@@ -3144,12 +3188,12 @@ $(document).ready(function () {
             initiateReport();
         });
 
-        $(document).delegate("#settings-tab-toggler", 'click', function (e) {
+        $(document).delegate(".settings-tab-toggler", 'click', function (e) {
 
             saveActiveTab();
-            $("#baseline-tab-toggler").removeClass("active");
-            $("#reports-tab-toggler").removeClass("active");
-            $("#statistics-tab-toggler").removeClass("active");
+            $(".baseline-tab-toggler").removeClass("active");
+            $(".reports-tab-toggler").removeClass("active");
+            $(".statistics-tab-toggler").removeClass("active");
 
             $(this).addClass('active')
 
@@ -3224,7 +3268,7 @@ $(document).ready(function () {
             toggleActiveStatGroups();
             hideInactiveStatistics();
 
-            $("#settings-tab-toggler").click();
+            $(".settings-tab-toggler").click();
             $(".displayed-statistics-heading").hide();
 
             //ABSOLUTE NEW USER
@@ -3246,7 +3290,7 @@ $(document).ready(function () {
                 if (timestampSeconds - json.statistics.use.lastClickStampCrave > 1) {
 
                     //return user to stats page
-                    $("#statistics-tab-toggler").click();
+                    $(".statistics-tab-toggler").click();
 
                     //update relevant statistics
                     json.statistics.use.craveCounter++;
@@ -3611,7 +3655,7 @@ $(document).ready(function () {
                 requestedTimestamp = timestampSeconds - requestedTimeDiffSeconds;
 
                 //return to relevant screen
-                $("#statistics-tab-toggler").click();
+                $(".statistics-tab-toggler").click();
 
                 //fake firstStampUses in json obj
                 if (json.statistics.use.clickCounter == 0) {
@@ -4059,7 +4103,7 @@ $(document).ready(function () {
             } else {
 
                 //return to relevant screen
-                $("#statistics-tab-toggler").click();
+                $(".statistics-tab-toggler").click();
 
                 var timestampSeconds = Math.round(new Date() / 1000);
                 updateActionTable(timestampSeconds, "bought", amountSpent);
@@ -4267,7 +4311,7 @@ $(document).ready(function () {
                     json.statistics.goal.lastClickStamp = timestampSeconds;
 
                     //return to relevant screen
-                    $("#statistics-tab-toggler").click();
+                    $(".statistics-tab-toggler").click();
 
                     //set local json goal type which is active
                     var jsonHandle = "activeGoal" + goalType.charAt(0).toUpperCase() + goalType.slice(1);

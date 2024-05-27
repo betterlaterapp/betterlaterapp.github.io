@@ -2,10 +2,7 @@ body, body * {
 	font-weight: 400;
 	font-family: helvetica, Tahoma, Geneva, Verdana, sans-serif;
 }
-body {
-	background: url('assets/images/lake-reflect-background.jpg');
-    background-position: 0px 60px;
-}
+
 .footer {
     width: 100%;
 }
@@ -72,8 +69,22 @@ h4 {
 }
 */
 
-
 .app-background {
+	background: url('assets/images/lake-reflect-background.jpg');
+    background-position: 0px 60px;
+    animation: animatedBackground 40s ease-in-out infinite alternate;
+}
+
+@keyframes animatedBackground {
+    from {
+        background-position: 0px 60px;
+    }
+    to {
+        background-position: 300px 60px;
+    }
+  }
+
+.app-overlay {
 	background: rgba(0,0,0,0.1);
 	padding-left: 7px;
 	padding-right: 7px;
@@ -122,6 +133,9 @@ h4 {
 	margin-top: 8px;
     width: 70px;
     height: 50px;
+    display: flex;
+    justify-content: center;
+    
 }
 .navbar-toggler {
     display: inherit;
@@ -451,12 +465,16 @@ h4 {
             
             clear: right;
         }
-        .weekly-report .statistic .percent-changed.down {
+        .desires-decrease .weekly-report .statistic .percent-changed.down,
+        .desires-increase .weekly-report .statistic .percent-changed.up {
             color: #28a745;
         }
-        .weekly-report .statistic .percent-changed.up {
+        .desires-decrease .weekly-report .statistic .percent-changed.up,
+        .desires-increase .weekly-report .statistic .percent-changed.down {
             color: #dc3545;
         }
+
+
         
         .weekly-report .goal-report {
             margin-top: 20px;
@@ -468,10 +486,12 @@ h4 {
         .weekly-report .goal-report .amount-changed {
             font-weight: 600;
         } 
-        .weekly-report .goal-report .amount-changed.down {
+        .desires-decrease .weekly-report .goal-report .amount-changed.down,
+        .desires-increase .weekly-report .goal-report .amount-changed.up {
             color: #28a745;
         }
-        .weekly-report .goal-report .amount-changed.up {
+        .desires-decrease .weekly-report .goal-report .amount-changed.up,
+        .desires-increase .weekly-report .goal-report .amount-changed.down {
             color: #dc3545;
         }
 
@@ -524,7 +544,7 @@ h4 {
     font-size: .8rem;
     z-index: 10;
 }
-.stat-group .stat-recepticle span {
+.stat-group .stat-recepticle span:not(.desires-decrease):not(.desires-increase) {
     text-align: center;
     z-index: 10;
 }
@@ -545,7 +565,7 @@ h4 {
 
 }
 
-.stat-recepticle span {
+.stat-recepticle span:not(.desires-decrease):not(.desires-increase) {
     display: inline-block;
     font-weight: 600;
     font-size: 1.2rem;
@@ -557,7 +577,7 @@ h4 {
 .stat-recepticle p,
 .timer-recepticle p {
     font-size: 1.2rem;
-    color: #828282;
+    color: #b1b1b1;
     margin: 0;
 }
 

@@ -30,20 +30,20 @@
     <link href="app.css" rel="stylesheet" />
 </head>
 
-<body>
+<body class="app-background">
     <div id="greyed-out-div"></div>
-    <div class="container app-background">
+    <div class="container app-overlay">
         <div id="header">
 
             <div class="hamburger">
                 <div class="navbar-header">
-                    <button id="settings-tab-toggler" href="#settings-content" data-toggle="tab"
-                        class="navbar-toggler navbar-toggler-right" type="button">
+                    <button class="settings-tab-toggler navbar-toggler navbar-toggler-right" href="#settings-content"
+                        data-toggle="tab" type="button">
                         <i class="fas fa-cog fa-2x"></i>
                     </button>
 
-                    <button id="statistics-tab-toggler" href="#statistics-content" data-toggle="tab"
-                        class="navbar-toggler navbar-toggler-right" type="button">
+                    <button class="statistics-tab-toggler navbar-toggler navbar-toggler-right"
+                        href="#statistics-content" data-toggle="tab" type="button">
                         <i class="fas fa-home fa-2x"></i>
                     </button>
 
@@ -54,9 +54,9 @@
                         class="fas fa-undo-alt"></i>&nbsp;Undo</button>
             </div>
             <div class="logo-and-tagline">
-                <!-- <a id="statistics-tab-toggler" href="#statistics-content" data-toggle="tab"> -->
-                <img class="img-fluid" src="assets/images/escrave-logo-extended-inverse.png" />
-                <!-- </a> -->
+                <a class="statistics-tab-toggler" href="#statistics-content" data-toggle="tab">
+                    <img class="img-fluid" src="assets/images/escrave-logo-extended-inverse.png" />
+                </a>
             </div>
         </div>
         <div id="notifications-container">
@@ -413,7 +413,15 @@
                                 </div>
 
                                 <div class="stat-recepticle">
-                                    <p>Resists / done</p>
+                                    <p>
+                                        <span class="desires-decrease">
+                                            Resists / done ratio
+                                        </span>
+                                        <span class="desires-increase d-none">
+                                            Didn't / did ratio
+                                        </span>
+
+                                    </p>
                                     <div class="stat-group didntPerDid use">
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
@@ -437,14 +445,29 @@
 
                                 <div class="stat-recepticle highlighted">
 
-                                    <p>Resists in a row</p>
+                                    <p>
+                                        <span class="desires-decrease">
+                                            Resists in a row
+                                        </span>
+                                        <span class="desires-increase d-none">
+                                            Procrastinated in a row
+                                        </span>
+
+                                    </p>
                                     <div class="stat-group resistStreak use">
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
                                             <span id="cravingsResistedInARow" class="statistic">
                                                 test
                                             </span>
-                                            <p>Current Streak</p>
+                                            <p>
+                                                <span class="desires-decrease">
+                                                    Current Streak
+                                                </span>
+                                                <span class="desires-increase d-none">
+                                                    Current
+                                                </span>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -454,7 +477,14 @@
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
                                             <span class="statistic use total resistStreak"> test </span>
-                                            <p>Best Streak</p>
+                                            <p>
+                                                <span class="desires-decrease">
+                                                    Best Streak
+                                                </span>
+                                                <span class="desires-increase d-none">
+                                                    Most times
+                                                </span>
+                                            </p>
                                         </div>
 
                                         <div class="stat-recepticle">
@@ -722,14 +752,16 @@
 
                                 <div class="smileys">
                                     <div class="smiley mood-0">
-                                        <img class="img-fluid" src="assets/images/mood-smiley-0.png" alt="feeling very bad">
+                                        <img class="img-fluid" src="assets/images/mood-smiley-0.png"
+                                            alt="feeling very bad">
                                     </div>
                                     <div class="smiley mood-1">
                                         <img class="img-fluid" src="assets/images/mood-smiley-1.png" alt="feeling bad">
 
                                     </div>
                                     <div class="smiley mood-2 selected">
-                                        <img class="img-fluid" src="assets/images/mood-smiley-2.png" alt="feeling neutral">
+                                        <img class="img-fluid" src="assets/images/mood-smiley-2.png"
+                                            alt="feeling neutral">
 
                                     </div>
                                     <div class="smiley mood-3">
@@ -1318,7 +1350,12 @@
                         <div id="use-total" class="clickCounter">0</div>
                         <a id="use-button" href="#">
                             <div class="icon">
-                                <i class="fas fa-cookie-bite fa-3x"></i>
+                                <span class="desires-decrease">
+                                    <i class="fas fa-cookie-bite fa-3x"></i>
+                                </span>
+                                <span class="desires-increase d-none">
+                                    <i class="fas fa-chart-line fa-3x"></i>
+                                </span>
                             </div>
                             <p class="button-text">
                                 Did it
@@ -1333,7 +1370,12 @@
                                 <i class="fas fa-ban fa-3x"></i>
                             </div>
                             <p class="button-text">
-                                Resist
+                                <span class="desires-decrease">
+                                    Resist
+                                </span>
+                                <span class="desires-increase d-none">
+                                    Didn't
+                                </span>
                             </p>
 
                         </a>
@@ -1346,7 +1388,12 @@
                                 <i class="fas fa-dollar-sign fa-3x"></i>
                             </div>
                             <p class="button-text">
-                                Spent
+                                <span class="desires-decrease">
+                                    Spent
+                                </span>
+                                <span class="desires-increase d-none">
+                                    Invested
+                                </span>
                             </p>
                         </a>
                     </div>

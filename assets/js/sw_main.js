@@ -1,6 +1,6 @@
 //make sure service worker exists
 if('serviceWorker' in navigator){
-    console.log('got a service worker supporting browser here');
+    // console.log('got a service worker supporting browser here');
     window.addEventListener('load', function(){
         navigator.serviceWorker
             .register('sw_cached_pages.js')
