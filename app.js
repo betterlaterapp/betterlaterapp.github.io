@@ -19,7 +19,7 @@
  * Baseline (questionnaire), (Weekly) Reports, (Live) Statistics, and Settings.
  * 
  * Baseline allows users to input their relationship to a habit (that they chose to track),
- * at the moment (or within the first week) that they start using Escrave.
+ * at the moment (or within the first week) that they start using Better Later.
  * 
  * Reports generate a day to day breakdown of action button clicks,
  * Comparing your usage with what you entered into your baseline questionnaire. 
@@ -38,9 +38,9 @@
  * Finally, there is a settings page where users can access some basic controls for the app:
  * a button that removes the last click action in storage (UNDO), 
  * a button to completely wipe storage (START OVER), 
- * a button to read more about the app - which takes the user to the main marketing site (about Escrave),
+ * a button to read more about the app - which takes the user to the main marketing site (about Better Later),
  * and a button to give feedback about the app (give feedback).
- * Aditionally, the settings page lists every type of statistic possible to be displayed by Escrave, 
+ * Aditionally, the settings page lists every type of statistic possible to be displayed by Better Later, 
  * with a checkbox next to them to decide whether or not to display it.
  * 
  * 
@@ -1532,7 +1532,7 @@ $(document).ready(function () {
                 $($(".baseline-questionnaire .question-set:hidden")[0]).removeClass("d-none");
 
                 var message = "Feel free to poke around, you can reset the entire app (in settings) if you decide to track something specific.";
-                var responseTools = "<a class='btn btn-md btn-outline-info' href='https://escrave.com#habits'>Some Suggestions</a>";
+                var responseTools = "<a class='btn btn-md btn-outline-info' href='https://betterlater.github.io/about#habits'>Some Suggestions</a>";
                 createNotification(message, responseTools);
             });
 
@@ -3272,7 +3272,7 @@ $(document).ready(function () {
             $(".displayed-statistics-heading").hide();
 
             //ABSOLUTE NEW USER
-            var introMessage = "<b>Welcome to Escrave</b> - the anonymous habit tracking app that shows you statistics about your habit as you go!";
+            var introMessage = "<b>Welcome to Better Later</b> - the anonymous habit tracking app that shows you statistics about your habit as you go!";
             createNotification(introMessage);
         }
 

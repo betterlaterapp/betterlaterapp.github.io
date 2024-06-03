@@ -1,14 +1,14 @@
 {
-    "short_name": "Escrave",
-    "name": "Escrave - Anonymous Habit tracker",
+    "short_name": "Better Later",
+    "name": "Better Later - Anonymous Habit tracker",
     "icons": [
       {
-        "src": "assets/images/escrave-logo.png",
+        "src": "assets/images/bl-logo-small.png",
         "type": "image/png", 
         "sizes": "183x183"
       },
       {
-        "src": "assets/images/escrave-logo-large.png",
+        "src": "assets/images/bl-logo-large.png",
         "type": "image/png",
         "sizes": "512x512"
       }

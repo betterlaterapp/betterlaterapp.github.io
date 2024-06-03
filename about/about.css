@@ -15,7 +15,7 @@ body {
   padding-top: 57px;
 }
 h2 {
-  font-size: 2.8rem;
+  font-size: 3.2rem;
   color: #6b334e;
 }
 h3 {
@@ -112,7 +112,7 @@ section {
 
 /* this is the old system of above the fold header */
 .section-header {
-  background-image: url("../images/mayan-courtyard-heading-bg.jpg");
+  background-image: url("../assets/images/mayan-courtyard-heading-bg.jpg");
   background-position: center;
   background-size: cover;
   padding-top: 20px;
@@ -135,6 +135,7 @@ section {
 }
 
 .section-header h2 {
+  font-family: "Neucha", cursive;
   font-weight: 900;
   display: inline-block;
   padding: 15px;
