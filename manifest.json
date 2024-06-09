@@ -3,12 +3,12 @@
     "name": "Better Later - Anonymous Habit tracker",
     "icons": [
       {
-        "src": "assets/images/bl-logo-small.png",
+        "src": "assets/images/bl-logo-small.jpg",
         "type": "image/png", 
         "sizes": "183x183"
       },
       {
-        "src": "assets/images/bl-logo-large.png",
+        "src": "assets/images/bl-logo-large.jpg",
         "type": "image/png",
         "sizes": "512x512"
       }
