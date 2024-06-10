@@ -3177,6 +3177,11 @@ $(document).ready(function () {
             $(".settings-tab-toggler").removeClass("active");
             $(".reports-tab-toggler").removeClass("active");
 
+            if( $('#settings-content').hasClass("active") ) {
+                $('#settings-content').removeClass("active")
+                $('#settings-content').attr("aria-expanded", false)
+            }
+
             $(".statistics-tab-toggler").addClass("active");
 
             //close dropdown nav
