@@ -278,8 +278,10 @@ $(document).ready(function () {
             //populate fields on form with existing values
             if(json.baseline.userSubmitted && json.baseline.decreaseHabit) {
                 $("input.decreaseHabit").prop('checked', true)
+                $("input.increaseHabit").prop('checked', false)
 
             } else if(json.baseline.userSubmitted && !json.baseline.decreaseHabit) {
+                $("input.decreaseHabit").prop('checked', false)
                 $("input.increaseHabit").prop('checked', true)
             }
             
@@ -1707,6 +1709,10 @@ $(document).ready(function () {
                 //sync local running copy
                 json.baseline = jsonObject.baseline;
                 json.option = jsonObject.option;
+
+                //track if any submission has been made
+                jsonObject.baseline.userSubmitted = true;
+
                 setStorageObject(jsonObject);
                 
                 //SETTINGS PAGE INITIAL DISPLAY
@@ -1728,9 +1734,10 @@ $(document).ready(function () {
                 $(".baseline-questionnaire").removeClass("show");
                 $(".displayed-statistics").addClass("show");
                 $(".displayed-statistics-heading").show();
-                
-                //track if any submission has been made
-                jsonObject.baseline.userSubmitted = true;
+
+                $('html, body').animate({
+                    scrollTop: $("#header").offset().top
+                }, 700);
 
                 var message = "Thank you for answering those questions! Let's get going";
                 createNotification(message);
@@ -3351,8 +3358,10 @@ $(document).ready(function () {
                     json.statistics.use.cravingsInARow++;
                     $("#cravingsResistedInARow").html(json.statistics.use.cravingsInARow);
 
-                    shootConfetti();
-
+                    if (json.baseline.decreaseHabit == true) {
+                        shootConfetti();
+                    }
+                    
                     showActiveStatistics();
 
                     //keep lastClickStamp up to date while using app
@@ -3388,6 +3397,13 @@ $(document).ready(function () {
                 
                 $(".use.log-more-info .time-picker-hour").val(currHours);
                 $(".use.log-more-info .time-picker-minute").val(currMinutes);
+
+                if (json.baseline.decreaseHabit == false) {
+                    shootConfetti();
+                }
+
+                showActiveStatistics();
+                
 
 
             } else if (this.id == "bought-button") {
