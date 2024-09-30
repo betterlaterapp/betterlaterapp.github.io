@@ -1534,7 +1534,7 @@ $(document).ready(function () {
                 $($(".baseline-questionnaire .question-set:hidden")[0]).removeClass("d-none");
 
                 var message = "Feel free to poke around, you can reset the entire app (in settings) if you decide to track something specific.";
-                var responseTools = "<a class='btn btn-md btn-outline-info' href='https://betterlater.github.io/about#habits'>Some Suggestions</a>";
+                var responseTools = "<a class='btn btn-md btn-outline-info' href='https://betterlaterapp.github.io/about/index.html#habits'>Some Suggestions</a>";
                 createNotification(message, responseTools);
             });
 
