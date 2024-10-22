@@ -3398,13 +3398,8 @@ $(document).ready(function () {
                 $(".use.log-more-info .time-picker-hour").val(currHours);
                 $(".use.log-more-info .time-picker-minute").val(currMinutes);
 
-                if (json.baseline.decreaseHabit == false) {
-                    shootConfetti();
-                }
-
                 showActiveStatistics();
-                
-
+            
 
             } else if (this.id == "bought-button") {
                 openClickDialog(".cost");
@@ -3679,7 +3674,9 @@ $(document).ready(function () {
 
         //USE DIALOG CLICK
         $(".use.log-more-info button.submit").click(function () {
-            
+            if (json.baseline.decreaseHabit == false) {
+                shootConfetti();
+            }
             var date = new Date();
             var timestampSeconds = Math.round(date / 1000);
 
