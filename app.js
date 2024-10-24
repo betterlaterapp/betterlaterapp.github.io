@@ -214,7 +214,31 @@ $(document).ready(function () {
                 "activeEndStamp": 0,
                 "maxEndStamp": 0,
                 "maxHeight": 1
-            }
+            },
+            "affirmations": [
+                'You are Enough',
+                'You are Loved',
+                'Be proud of yourself',
+                'You are worthy',
+                'Believe in yourself',
+                'You are grateful',
+                'You are resilient',
+                'You are strong',
+                'You get better every single day',
+                'Your best is enough',
+                'You are an amazing person',
+                'You are confident',
+                'You are loved and worthy',
+                'You are open to opportunities',
+                'Forgive your mistakes',
+                'Know your worth',
+                'Radiate confidence',
+                'Trust your decisions',
+                'Succeed today',
+                'You are allowed to take up space',
+                'Nothing can stand in your way',
+                'Get healthier every day'
+            ]
         };
 
         //open local storage, make it into an object
@@ -1252,7 +1276,6 @@ $(document).ready(function () {
 
             //is there at least a week of data? 
             var firstStamp = jsonObject.action[0].timestamp;
-            if ((timeNow - firstStamp) >= (60 * 60 * 24 * 7)) {
 
                 //calculate values for report
                 var reportEndStamp = timeNow;
@@ -1272,7 +1295,7 @@ $(document).ready(function () {
                 //hide report description
                 $(".weekly-report-description").hide();
 
-            }
+            
         }
 
         //report template
@@ -1346,19 +1369,28 @@ $(document).ready(function () {
 
                 var percentChanged = percentChangedBetween(usesLastWeek, totalUsesThisWeek);
                 var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
-
+                    
                 $("#useChangeVsLastWeek").html(finishedStat);
 
             } else {
                 $("#useChangeVsLastWeek").parent().parent().hide();
             }
 
+            var weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                weekAgo = weekAgo.getTime();
+            var beenAWeek = weekAgo / 1000 > parseInt(json.statistics.use.firstClickStamp);
+            console.log(" weekAgo > json.statistics.use.firstClickStamp;",  weekAgo, json.statistics.use.firstClickStamp)
             //set uses vs baseline
-            if (json.option.reportItemsToDisplay.useChangeVsBaseline) {
+            if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek) {
                 var percentChanged = percentChangedBetween(json.baseline.amountDonePerWeek, totalUsesThisWeek);
                 var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
 
-                $("#useChangeVsBaseline").html(finishedStat);
+                if(isFinite(percentChanged)) {
+                    $("#useChangeVsBaseline").html(finishedStat);
+                } else {
+                    $("#useChangeVsBaseline").html("N/A");
+                }
 
             } else {
                 $("#useChangeVsBaseline").parent().parent().hide();
@@ -2046,6 +2078,7 @@ $(document).ready(function () {
         swipeNotification();
 
         function createNotification(message, responseTools) {
+
             var template = '<div class="notification">' +
                 '<div class="notification-message">' +
                 '<p class="notification-text">' + message + '</p>' +
@@ -2115,8 +2148,8 @@ $(document).ready(function () {
                 //this is to just shoot the goal straight through the pipeline
                 clearNotification.call(event, this);
                 placeGoalIntoLog(startStamp, endStamp, goalType, false);
-
-                var message = "congrats on completing your goal! Check your habit log on your statistics page for details.";
+                var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
+                var message = "congrats on completing your goal! " + affirmation;
                 createNotification(message);
                 changeGoalStatus(3, goalType);
 
@@ -2147,8 +2180,8 @@ $(document).ready(function () {
                     maxFormatted = (maxFormatted * -1);
                 }
             
-                var message = "Even though you didn't make it until the end, you still get credit for how long you waited. " +
-                    "Around when do you think you broke your goal?";
+                var message = "Bummmer. " +
+                    "When do you think you broke your goal?";
 
                 var responseTools = '<!-- custom Time picker-->' +
                     '<div id="goalEndTimePicker" class="time-picker-container">' +
@@ -2248,9 +2281,10 @@ $(document).ready(function () {
                 var goalType = "both";
                 json.statistics.goal.activeGoalBoth = 0;
             }
-            var message = 'Your goal just ended early, ' +
-                'it has been added to your habit log. ' +
-                'Be proud, any progress is good progress!';
+            console.log("endActiveGoal")
+            var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
+
+            var message = 'Any progress is good progress! ' + affirmation;
 
             changeGoalStatus(2, goalType, timestampSeconds);
             createNotification(message);
@@ -3774,20 +3808,17 @@ $(document).ready(function () {
 
                 //there is an active bought related goal
                 if (json.statistics.goal.activeGoalUse !== 0 || json.statistics.goal.activeGoalBoth !== 0) {
+                    
+                    
+                    var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                     if (json.statistics.goal.activeGoalUse !== 0) {
                         var goalType = "use";
-                        var message = 'Your goal just ended early, ' +
-                            'and was added to your habit log. ' +
-                            'Be proud no matter what, all progress is good progress!';
-
+                        
                         json.statistics.goal.activeGoalUse = 0;
 
                     } else if (json.statistics.goal.activeGoalBoth !== 0) {
                         var goalType = "both";
-                        var message = 'Your goal just ended early, ' +
-                            'and was added to your habit log. ' +
-                            'Be proud no matter what, all progress is good progress!';
-
+                        
                         json.statistics.goal.activeGoalBoth = 0;
 
                     }
@@ -4090,8 +4121,9 @@ $(document).ready(function () {
                         $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
                         showActiveStatistics();
 
+                        var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                         //notify user that goal ended
-                        var message = "your goal just ended, congrats! Check your habit log on your statistics page for details.";
+                        var message = "Congrats! You made it :) . " + affirmation;
                         createNotification(message);
 
                         //disappear zero seconds left timer
@@ -4195,22 +4227,15 @@ $(document).ready(function () {
                 toggleActiveStatGroups();
                 hideInactiveStatistics();
                 adjustFibonacciTimerToBoxes("bought-timer");
-
+                var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                 //there is an active bought related goal
                 if (json.statistics.goal.activeGoalBought !== 0 || json.statistics.goal.activeGoalBoth !== 0) {
                     if (json.statistics.goal.activeGoalBought !== 0) {
                         var goalType = "bought";
-                        var message = 'Your goal just ended early, ' +
-                            'it has been added to your habit log. ' +
-                            'Be proud, any progress is good progress!';
-
                         json.statistics.goal.activeGoalBought = 0;
 
                     } else if (json.statistics.goal.activeGoalBoth !== 0) {
                         var goalType = "both";
-                        var message = 'Your goal just ended early, ' +
-                            'it has been added to your habit log. ' +
-                            'Be proud, any progress is good progress!';
 
                         json.statistics.goal.activeGoalBoth = 0;
 
