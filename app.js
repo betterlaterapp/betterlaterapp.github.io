@@ -16,14 +16,10 @@
  * 
  * MAIN APP PAGES
  * There are 4 main pages (tab-content) in the app: 
- * Baseline (questionnaire), (Weekly) Reports, (Live) Statistics, and Settings.
+ * Baseline (questionnaire), (Live) Statistics, and Settings.
  * 
  * Baseline allows users to input their relationship to a habit (that they chose to track),
  * at the moment (or within the first week) that they start using Better Later.
- * 
- * Reports generate a day to day breakdown of action button clicks,
- * Comparing your usage with what you entered into your baseline questionnaire. 
- * Reports are broken up into week long segments
  *  
  * Clicking any of the action buttons takes users to the Statistics page.
  * Many of the functions in this file are dedicated to update this data onLoad, onClick, in local memory, in storage.
@@ -227,7 +223,6 @@ $(document).ready(function () {
                 'You get better every single day',
                 'Your best is enough',
                 'You are an amazing person',
-                'You are confident',
                 'You are loved and worthy',
                 'You are open to opportunities',
                 'Forgive your mistakes',
@@ -241,24 +236,10 @@ $(document).ready(function () {
             ]
         };
 
-        //open local storage, make it into an object
-        function retrieveStorageObject(key) {
-            //convert localStorage to json
-            if (key) {
-                var currJsonString = localStorage[key];
-                var jsonObject = JSON.parse(currJsonString);
-            } else {
-                var currJsonString = localStorage.esCrave;
-                var jsonObject = JSON.parse(currJsonString);
-            }
-            return jsonObject;
-        }
-
-        //stringify object, write it to localstorage
-        function setStorageObject(object) {
-            var jsonString = JSON.stringify(object);
-            localStorage.esCrave = jsonString;
-        }
+        // Storage functions are now in js/storage.js module
+        // Create local aliases for backward compatibility
+        var retrieveStorageObject = StorageModule.retrieveStorageObject;
+        var setStorageObject = StorageModule.setStorageObject;
 
         //get configuration from storage
         function setOptionsFromStorage() {
@@ -1894,91 +1875,14 @@ $(document).ready(function () {
 
         }
 
-        //convert last timestamp to a running timer
+        // Timer helper functions now in js/timers.js module
         function restartTimerAtValues(timerArea, sinceLastAction) {
-            var timeNow = new Date() / 1000;
-
-            //update json with previous timer values
-            var newTimerTotalSeconds = Math.floor(timeNow - sinceLastAction);
-
-            var newTimerSeconds = -1,
-                newTimerMinutes = -1,
-                newTimerHours = -1,
-                newTimerDays = -1;
-
-            //calc mins and secs
-            if (newTimerTotalSeconds > 60) {
-                newTimerSeconds = newTimerTotalSeconds % 60;
-                newTimerMinutes = Math.floor(newTimerTotalSeconds / 60);
-                if (newTimerMinutes < 10) {
-                    newTimerMinutes = "0" + newTimerMinutes;
-                }
-            } else {
-                newTimerSeconds = newTimerTotalSeconds;
-                newTimerMinutes = 0;
-            }
-
-            //calc hours
-            if (newTimerTotalSeconds > (60 * 60)) {
-                newTimerMinutes = newTimerMinutes % 60;
-                newTimerHours = Math.floor(newTimerTotalSeconds / (60 * 60));
-                if (newTimerMinutes < 10) {
-                    newTimerMinutes = "0" + newTimerMinutes;
-                }
-                if (newTimerHours < 10) {
-                    newTimerHours = "0" + newTimerHours;
-                }
-
-            } else {
-                newTimerHours = 0;
-            }
-
-            //calc days
-            if (newTimerTotalSeconds > (60 * 60 * 24)) {
-                newTimerHours = newTimerHours % 24;
-                newTimerDays = Math.floor(newTimerTotalSeconds / (60 * 60 * 24));
-                if (newTimerHours < 10) {
-                    newTimerHours = "0" + newTimerHours;
-                }
-
-            } else {
-                newTimerDays = 0;
-            }
-
-            //update appropriate JSON values
-            json.statistics[timerArea].sinceTimerStart.totalSeconds = newTimerTotalSeconds;
-            json.statistics[timerArea].sinceTimerStart.seconds = newTimerSeconds;
-            json.statistics[timerArea].sinceTimerStart.minutes = newTimerMinutes;
-            json.statistics[timerArea].sinceTimerStart.hours = newTimerHours;
-            json.statistics[timerArea].sinceTimerStart.days = newTimerDays;
-
+            TimersModule.restartTimerAtValues(timerArea, sinceLastAction, json);
         }
 
-        //hide timers on initiation if needed
+        // Hide timers on load - now using TimersModule
         function hideTimersOnLoad() {
-            if (json.statistics.use.sinceTimerStart.totalSeconds == 0) {
-                $("#use-content .fibonacci-timer:first-child").toggle();
-
-            } else {
-                //start timer from json values
-                initiateSmokeTimer();
-            }
-
-            if (json.statistics.cost.sinceTimerStart.totalSeconds == 0) {
-                $("#cost-content .fibonacci-timer:first-child").toggle();
-
-            } else {
-                //start timer from json values
-                initiateBoughtTimer();
-            }
-
-            if (json.statistics.goal.untilTimerEnd.totalSeconds == 0) {
-                $("#goal-content .fibonacci-timer").toggle();
-
-            } else {
-                //start timer from json values
-                initiateGoalTimer();
-            }
+            TimersModule.hideTimersOnLoad(json, initiateSmokeTimer, initiateBoughtTimer, initiateGoalTimer);
         }
 
         $("#mood-tracker-area .smiley").on("mouseup", function () {
@@ -2485,58 +2389,21 @@ $(document).ready(function () {
 
         /* Goal completion management */
         function changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo) {
+            // Use storage module and handle UI updates here
+            var result = StorageModule.changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo);
 
-            //goal status
-            //1 == active goal
-            //2 == partially completed goal
-            //3 == completed goal
-
-            //console.log("inside changeGoalStatus, newGoalStatus = " + newGoalStatus);
-            //convert localStorage to json
-            var jsonObject = retrieveStorageObject();
-
-            var goals = jsonObject.action.filter(function (e) {
-                return e.clickType == 'goal' && e.goalType == goalType
-            });
-            var mostRecentGoal = goals[goals.length - 1];
-            mostRecentGoal.status = newGoalStatus;
-
-            //actual end was passed to function	
-            if (actualEnd) {
-                mostRecentGoal.goalStopped = actualEnd;
-            } else {
-                //else set the actual end to end of goal endDate
-                mostRecentGoal.goalStopped = mostRecentGoal.goalStamp;
+            // Handle UI updates based on storage result
+            if (result.wasExtended) {
+                loadGoalTimerValues(result.totalSecondsUntilGoalEnd);
+                initiateGoalTimer();
+                showActiveStatistics();
+                adjustFibonacciTimerToBoxes("goal-timer");
+            } else if (result.goalWasShorter) {
+                //requested was shorter than original goal!!
+                var message = "Your current goal was longer than the one you just requested. " +
+                    "Don't worry if you can't make it all the way, just try a more manageable goal next time!";
+                createNotification(message);
             }
-
-            //user wants to extend current goal
-            if (goalExtendedTo) {
-                if (mostRecentGoal.goalStamp < goalExtendedTo) {
-                    //goal was extended, not shortened
-                    mostRecentGoal.goalStamp = goalExtendedTo;
-
-                    setStorageObject(jsonObject);
-
-                    var date = new Date();
-                    var timestampSeconds = Math.round(date / 1000);
-                    var totalSecondsUntilGoalEnd = Math.round(goalExtendedTo - timestampSeconds);
-
-                    loadGoalTimerValues(totalSecondsUntilGoalEnd);
-                    initiateGoalTimer();
-                    showActiveStatistics();
-                    adjustFibonacciTimerToBoxes("goal-timer");
-
-                } else {
-                    //requested was shorter than original goal!!
-                    var message = "Your current goal was longer than the one you just requested. " +
-                        "Don't worry if you can't make it all the way, just try a more manageable goal next time!";
-                    createNotification(message);
-                }
-
-            } else {
-                setStorageObject(jsonObject);
-            }
-
         }
 
         /* CONVERT JSON TO LIVE STATS */
@@ -3057,16 +2924,12 @@ $(document).ready(function () {
         /*SETTINGS MENU FUNCTIONS*/
         //undo last click
         function undoLastAction() {
-            var jsonObject = retrieveStorageObject();
-            var undoneActionClickType = jsonObject["action"][jsonObject["action"].length - 1].clickType;
-
-            //remove most recent (last) record
-            jsonObject["action"].pop();
-            setStorageObject(jsonObject);
-
+            var undoneActionClickType = StorageModule.undoLastAction();
+            
             //UNBREAK GOAL
             //if action could have broken a goal
             if (undoneActionClickType == "used" || undoneActionClickType == "bought") {
+                var jsonObject = retrieveStorageObject();
                 //cycle back through records until you find most recent goal
                 for (var i = jsonObject["action"].length - 1; i >= 0; i--) {
                     var currRecord = jsonObject["action"][i];
@@ -3089,7 +2952,7 @@ $(document).ready(function () {
         }
         //reset all stats
         function clearActions() {
-            window.localStorage.clear();
+            StorageModule.clearStorage();
             window.location.reload();
         }
 
@@ -3110,86 +2973,12 @@ $(document).ready(function () {
         });
 
         /* CREATE NEW RECORD OF ACTION */
-        //timestamp, clicktype, spent, goalStamp, goalType
-        function updateActionTable(ts, ct, spt, gs, gt, cm, sm) {
-            var jsonObject = retrieveStorageObject();
+        // Now using StorageModule.updateActionTable from js/storage.js
+        var updateActionTable = StorageModule.updateActionTable;
 
-            //console.log("update action table")
-
-            var newRecord;
-            var now = Math.round(new Date() / 1000);
-
-            if (ct == "used" || ct == "craved") {
-                newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now };
-
-            } else if (ct == "bought") {
-                newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, spent: spt.toString() };
-
-            } else if (ct == "goal") {
-                var st = 1;
-                var goalStopped = -1;
-                newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, goalStamp: gs.toString(), goalType: gt, status: st, goalStopped: goalStopped };
-            
-            } else if (ct == "mood") {
-                newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, comment: cm, smiley: sm };
-
-            }
-
-            jsonObject["action"].push(newRecord);
-            setStorageObject(jsonObject);
-
-        }
-
-        //readjust timer box to correct size
+        // Adjust timer box sizing - now using TimersModule
         function adjustFibonacciTimerToBoxes(timerId) {
-
-            //came from putting all statistics onto one page
-            var relevantPaneIsActive = true;
-
-            if (!userWasInactive && relevantPaneIsActive) {
-                var visibleBoxes = $("#" + timerId + " .boxes div:visible"),
-                    timerElement = document.getElementById(timerId);
-
-                if (visibleBoxes.length == 1) {
-                    timerElement.style.width = "3rem";
-                    timerElement.style.height = "3rem";
-
-                    //adjustment to align horizontal at 4 boxes shown                    
-                    timerElement.classList.remove("fully-visible");
-
-                } else if (visibleBoxes.length == 2) {
-                    timerElement.style.width = "5.9rem";
-                    timerElement.style.height = "3rem";
-
-                    //adjustment to align horizontal at 4 boxes shown                    
-                    timerElement.classList.remove("fully-visible");
-
-                } else if (visibleBoxes.length == 3) {
-                    timerElement.style.width = "9rem";
-                    timerElement.style.height = "6rem";
-
-                    //adjustment to align horizontal at 4 boxes shown                    
-                    timerElement.classList.remove("fully-visible");
-
-                } else if (visibleBoxes.length == 4) {
-                    timerElement.style.width = "15.4rem";
-                    timerElement.style.height = "9.4rem";
-
-                    //adjustment to align horizontal at 4 boxes shown                    
-                    timerElement.classList.add("fully-visible");
-                }
-
-                //hack to resolve visible boxes = 0 bug
-                if (visibleBoxes.length == 0) {
-                    //adjust .fibonacci-timer to timer height
-                    timerElement.style.width = "3.3rem";
-                    timerElement.style.height = "3.3rem";
-                }
-
-                //timerElement.style.display = "block";
-                timerElement.style.margin = "0 auto";
-
-            }
+            TimersModule.adjustFibonacciTimerToBoxes(timerId, userWasInactive);
         }
 
         //open more info div
@@ -3228,10 +3017,11 @@ $(document).ready(function () {
             $(clickDialogTarget + ".log-more-info").slideToggle("fast");
         }
 
-        //SMOKE BUTTONS - START TIMER
-        var smokeTimer;
-        var boughtTimer;
-        var goalTimer;
+        // Timer variables are now in js/timers.js module
+        // Access via TimersModule
+        var smokeTimer = TimersModule.smokeTimer;
+        var boughtTimer = TimersModule.boughtTimer;
+        var goalTimer = TimersModule.goalTimer;
 
         /*Actions on switch tab */
 
@@ -3286,7 +3076,7 @@ $(document).ready(function () {
 
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
-        if (localStorage.esCrave) {
+        if (StorageModule.hasStorageData()) {
             setOptionsFromStorage();
             setStatsFromRecords();
 
@@ -4272,40 +4062,9 @@ $(document).ready(function () {
             closeClickDialog(".cost");
         });
 
-        //calculate goal timer values
+        // Calculate goal timer values - now using TimersModule
         function loadGoalTimerValues(totalSecondsUntilGoalEnd) {
-
-            json.statistics.goal.untilTimerEnd.days = 0;
-            json.statistics.goal.untilTimerEnd.hours = 0;
-            json.statistics.goal.untilTimerEnd.minutes = 0;
-            json.statistics.goal.untilTimerEnd.seconds = 0;
-            json.statistics.goal.untilTimerEnd.totalSeconds = totalSecondsUntilGoalEnd;
-
-            //calc mins and secs
-            if (totalSecondsUntilGoalEnd > 60) {
-                json.statistics.goal.untilTimerEnd.seconds = totalSecondsUntilGoalEnd % 60;
-                json.statistics.goal.untilTimerEnd.minutes = Math.floor(totalSecondsUntilGoalEnd / 60);
-            } else {
-                json.statistics.goal.untilTimerEnd.seconds = totalSecondsUntilGoalEnd;
-                json.statistics.goal.untilTimerEnd.minutes = 0;
-            }
-
-            //calc hours
-            if (totalSecondsUntilGoalEnd > (60 * 60)) {
-                json.statistics.goal.untilTimerEnd.minutes = json.statistics.goal.untilTimerEnd.minutes % 60;
-                json.statistics.goal.untilTimerEnd.hours = Math.floor(totalSecondsUntilGoalEnd / (60 * 60));
-            } else {
-                json.statistics.goal.untilTimerEnd.hours = 0;
-            }
-
-            //calc days
-            if (totalSecondsUntilGoalEnd > (60 * 60 * 24)) {
-                json.statistics.goal.untilTimerEnd.hours = json.statistics.goal.untilTimerEnd.hours % 24;
-                json.statistics.goal.untilTimerEnd.days = Math.floor(totalSecondsUntilGoalEnd / (60 * 60 * 24));
-            } else {
-                json.statistics.goal.untilTimerEnd.days = 0;
-            }
-
+            TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
         }
 
         //Restrict possible dates chosen in goal tab datepicker
