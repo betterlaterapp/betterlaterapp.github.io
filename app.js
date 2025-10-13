@@ -2395,15 +2395,15 @@ $(document).ready(function () {
             // Handle UI updates based on storage result
             if (result.wasExtended) {
                 loadGoalTimerValues(result.totalSecondsUntilGoalEnd);
-                initiateGoalTimer();
-                showActiveStatistics();
-                adjustFibonacciTimerToBoxes("goal-timer");
+                    initiateGoalTimer();
+                    showActiveStatistics();
+                    adjustFibonacciTimerToBoxes("goal-timer");
             } else if (result.goalWasShorter) {
-                //requested was shorter than original goal!!
-                var message = "Your current goal was longer than the one you just requested. " +
-                    "Don't worry if you can't make it all the way, just try a more manageable goal next time!";
-                createNotification(message);
-            }
+                    //requested was shorter than original goal!!
+                    var message = "Your current goal was longer than the one you just requested. " +
+                        "Don't worry if you can't make it all the way, just try a more manageable goal next time!";
+                    createNotification(message);
+                }
         }
 
         /* CONVERT JSON TO LIVE STATS */
@@ -2925,7 +2925,7 @@ $(document).ready(function () {
         //undo last click
         function undoLastAction() {
             var undoneActionClickType = StorageModule.undoLastAction();
-            
+
             //UNBREAK GOAL
             //if action could have broken a goal
             if (undoneActionClickType == "used" || undoneActionClickType == "bought") {
@@ -2980,6 +2980,22 @@ $(document).ready(function () {
         function adjustFibonacciTimerToBoxes(timerId) {
             TimersModule.adjustFibonacciTimerToBoxes(timerId, userWasInactive);
         }
+        
+        // Helper function for hiding zero value timer boxes - used by TimerStateManager
+        function hideZeroValueTimerBoxes(timerSection) {
+            // Make boxes with value of zero hidden until find a non zero value
+            for (var i = 0; i < $("#" + timerSection + " .boxes div").length; i++) {
+                var currTimerSpanValue = $("#" + timerSection + " .boxes div .timerSpan")[i];
+                if (currTimerSpanValue.innerHTML == "0") {
+                    $(currTimerSpanValue).parent().hide();
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        // Make hideZeroValueTimerBoxes globally available for TimerStateManager
+        window.hideZeroValueTimerBoxes = hideZeroValueTimerBoxes;
 
         //open more info div
         function openClickDialog(clickDialogTarget) {
@@ -3271,229 +3287,9 @@ $(document).ready(function () {
             $("#goal-button").click();
         })
 
-        //START USED TIMER		
+        //START USED TIMER
         function initiateSmokeTimer(requestedTimestamp) {
-            //if there is a more recent timer than newly requested
-            var existingTimer = 
-                requestedTimestamp != undefined && 
-                requestedTimestamp < json.statistics.use.lastClickStamp;
-
-            if (existingTimer) {
-                return false;
-            }
-            //USE TIMER
-            clearInterval(smokeTimer);
-
-            if ($("#smoke-timer").hasClass("counting")) {
-                //reset local vars
-                var daysSinceUse = 0,
-                    hoursSinceUse = 0,
-                    minutesSinceUse = 0,
-                    secondsSinceUse = 0,
-                    totalSecondsSinceUse = 0;
-
-                var nowTimestamp = Math.floor(new Date().getTime() / 1000);
-
-                if (requestedTimestamp != undefined) {
-                    totalSecondsSinceUse = nowTimestamp - requestedTimestamp;
-                    daysSinceUse = Math.floor(totalSecondsSinceUse / (60*60*24));
-                    hoursSinceUse = Math.floor(totalSecondsSinceUse / (60*60)) % 24;
-                    minutesSinceUse = Math.floor(totalSecondsSinceUse / (60)) % 60;
-                    secondsSinceUse = totalSecondsSinceUse % 60;
-                    
-
-                    //reset json vars
-                    json.statistics.use.sinceTimerStart.days = daysSinceUse;
-                    json.statistics.use.sinceTimerStart.hours = hoursSinceUse;
-                    json.statistics.use.sinceTimerStart.minutes = minutesSinceUse;
-                    json.statistics.use.sinceTimerStart.seconds = secondsSinceUse;
-                    json.statistics.use.sinceTimerStart.totalSeconds = requestedTimestamp;
-
-                } else {
-                    //reset json vars
-                    json.statistics.use.sinceTimerStart.days = 0;
-                    json.statistics.use.sinceTimerStart.hours = 0;
-                    json.statistics.use.sinceTimerStart.minutes = 0;
-                    json.statistics.use.sinceTimerStart.seconds = 0;
-                    json.statistics.use.sinceTimerStart.totalSeconds = 0;
-                }
-                
-                //Insert timer values into timer
-                $("#use-content .secondsSinceLastClick:first-child").html("0" + secondsSinceUse);
-                $("#use-content .minutesSinceLastClick:first-child").html(minutesSinceUse);
-                $("#use-content .hoursSinceLastClick:first-child").html(hoursSinceUse);
-                $("#use-content .daysSinceLastClick:first-child").html(daysSinceUse);
-
-                if (requestedTimestamp != undefined) {
-                    for (let timerBox of $("#use-content .boxes div:visible")) {
-                        if (parseInt($(timerBox).find(".timerSpan").html()) == 0) {
-                            
-                            //console.log("$(timerBox): ", $(timerBox))
-                            $(timerBox).hide();
-                        } else { //found a non-zero value
-                            $(timerBox).show();
-                            break;
-                        }
-                    }
-
-                } else {
-                    if (!$("#use-content .fibonacci-timer").is(':visible')) {
-                        $("#use-content .fibonacci-timer:first-child").toggle();
-                   }
-                   while ($("#use-content .boxes div:visible").length > 1) {
-                       $( $("#use-content .boxes div:visible")[0] ).toggle();
-                   }
-                }
-
-                adjustFibonacciTimerToBoxes("smoke-timer");
-
-            } else {
-
-                //reset timer from values
-                var daysSinceUse = json.statistics.use.sinceTimerStart.days,
-                    hoursSinceUse = json.statistics.use.sinceTimerStart.hours,
-                    minutesSinceUse = json.statistics.use.sinceTimerStart.minutes,
-                    secondsSinceUse = json.statistics.use.sinceTimerStart.seconds,
-                    totalSecondsSinceUse = json.statistics.use.sinceTimerStart.totalSeconds;
-
-                    // console.log("daysSinceUse: ", daysSinceUse)
-                    // console.log("hoursSinceUse: ", hoursSinceUse)
-                    // console.log("minutesSinceUse: ", minutesSinceUse)
-                    // console.log("secondsSinceUse: ", secondsSinceUse)
-
-                var nowTimestamp = Math.floor(new Date().getTime() / 1000);
-
-                if (requestedTimestamp != undefined) {
-                    totalSecondsSinceUse = nowTimestamp - requestedTimestamp;
-                    daysSinceUse = Math.floor(totalSecondsSinceUse / (60*60*24));
-                    hoursSinceUse = Math.floor(totalSecondsSinceUse / (60*60)) % 24;
-                    minutesSinceUse = Math.floor(totalSecondsSinceUse / (60)) % 60;
-                    secondsSinceUse = totalSecondsSinceUse % 60;
-                
-                }
-
-                //Insert timer values into timer
-                if (secondsSinceUse >= 10) {
-                    $("#use-content .secondsSinceLastClick:first-child").html(secondsSinceUse);
-                } else {
-                    $("#use-content .secondsSinceLastClick:first-child").html("0" + secondsSinceUse);
-                }
-                $("#use-content .minutesSinceLastClick:first-child").html(minutesSinceUse);
-                $("#use-content .hoursSinceLastClick:first-child").html(hoursSinceUse);
-                $("#use-content .daysSinceLastClick:first-child").html(daysSinceUse);
-
-                //Hide timer boxes which have zero values
-                var foundNonZero = false;
-            
-                if (daysSinceUse == 0) {
-                    $("#use-content .daysSinceLastClick").parent().toggle();
-                } else {
-                    foundNonZero = true;
-                }
-                
-                if (hoursSinceUse == 0 && !foundNonZero) {
-                    $("#use-content .hoursSinceLastClick").parent().toggle();
-                } else {
-                    foundNonZero = true;
-                }
-
-                if (minutesSinceUse == 0 && !foundNonZero) {
-                    $("#use-content .minutesSinceLastClick").parent().toggle();
-                } else if(minutesSinceUse == 0) {
-                    $("#use-content .minutesSinceLastClick:first-child").html(minutesSinceUse);
-                } else {
-                    foundNonZero = true;
-                }
-                
-                adjustFibonacciTimerToBoxes("smoke-timer");
-
-            }
-
-            smokeTimer = setInterval(function() {
-                //reset local scope vars
-                totalSecondsSinceUse++;
-                secondsSinceUse++;
-                //update json
-                json.statistics.use.sinceTimerStart.totalSeconds++;
-                json.statistics.use.sinceTimerStart.seconds++;
-
-                if (secondsSinceUse >= 10) {
-                    $("#use-content .secondsSinceLastClick:first-child").html(secondsSinceUse);
-                } else {
-                    $("#use-content .secondsSinceLastClick:first-child").html("0" + secondsSinceUse);
-                }
-
-                if (secondsSinceUse >= 60) {
-                    //reset local scope vars
-                    secondsSinceUse = 0;
-                    minutesSinceUse++;
-                    //update json
-                    json.statistics.use.sinceTimerStart.seconds = 0;
-                    json.statistics.use.sinceTimerStart.minutes++;
-
-                    if ($("#use-content .boxes div:visible").length == 1) {
-                        var numberOfBoxesHidden = $("#use-content .boxes div:hidden").length;
-                        $($("#use-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-
-                    }
-
-                    if (minutesSinceUse >= 10) {
-                        $("#use-content .minutesSinceLastClick:first-child").html(minutesSinceUse);
-                    } else {
-                        $("#use-content .minutesSinceLastClick:first-child").html("0" + minutesSinceUse);
-                    }
-                    $("#use-content .secondsSinceLastClick:first-child").html("0" + secondsSinceUse);
-                    adjustFibonacciTimerToBoxes("smoke-timer");
-
-
-                }
-                if (minutesSinceUse >= 60) {
-                    //reset local scope vars
-                    minutesSinceUse = 0;
-                    hoursSinceUse++;
-                    //update json
-                    json.statistics.use.sinceTimerStart.minutes = 0;
-                    json.statistics.use.sinceTimerStart.hours++;
-
-                    if ($("#use-content .boxes div:visible").length == 2) {
-                        var numberOfBoxesHidden = $("#use-content .boxes div:hidden").length;
-                        $($("#use-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-
-                    if (hoursSinceUse >= 10) {
-                        $("#use-content .hoursSinceLastClick:first-child").html(hoursSinceUse);
-                    } else {
-                        $("#use-content .hoursSinceLastClick:first-child").html("0" + hoursSinceUse);
-                    }
-
-                    $("#use-content .minutesSinceLastClick:first-child").html("0" + minutesSinceUse);
-                    adjustFibonacciTimerToBoxes("smoke-timer");
-
-                }
-                if (hoursSinceUse >= 24) {
-
-                    //reset local vars
-                    hoursSinceUse = 0;
-                    daysSinceUse++;
-                    //update json
-                    json.statistics.use.sinceTimerStart.hours = 0;
-                    json.statistics.use.sinceTimerStart.days++;
-
-                    if ($("#use-content .boxes div:visible").length == 3) {
-                        var numberOfBoxesHidden = $('#use-content .boxes div:hidden').length;
-                        $($("#use-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-
-                    $("#use-content .hoursSinceLastClick:first-child").html("0" + hoursSinceUse);
-                    $("#use-content .daysSinceLastClick:first-child").html(daysSinceUse);
-
-                }
-
-            }, 1000); //end setInterval
-
-            $("#smoke-timer").addClass("counting");
-            $("#smoke-timer").show();
-
+            return TimerStateManager.initiate('smoke', requestedTimestamp, json);
         }
 
         //USE DIALOG CLICK
@@ -3681,290 +3477,58 @@ $(document).ready(function () {
 
         //START BOUGHT TIMER
         function initiateBoughtTimer() {
-            clearInterval(boughtTimer);
-
-            if ($("#bought-timer").hasClass("counting")) {
-
-                //reset local vars
-                var daysSinceBought = 0,
-                    hoursSinceBought = 0,
-                    minutesSinceBought = 0,
-                    secondsSinceBought = 0,
-                    totalSecondsSinceBought = 0;
-                //reset json vars
-                json.statistics.cost.sinceTimerStart.days = 0,
-                    json.statistics.cost.sinceTimerStart.hours = 0,
-                    json.statistics.cost.sinceTimerStart.minutes = 0,
-                    json.statistics.cost.sinceTimerStart.seconds = 0,
-                    json.statistics.cost.sinceTimerStart.totalSeconds = 0;
-
-                //Insert timer values into timer
-                $("#cost-content .secondsSinceLastClick:first-child").html("0" + secondsSinceBought);
-                $("#cost-content .minutesSinceLastClick:first-child").html(minutesSinceBought);
-                $("#cost-content .hoursSinceLastClick:first-child").html(hoursSinceBought);
-                $("#cost-content .daysSinceLastClick:first-child").html(daysSinceBought);
-
-                if (!$("#cost-content .fibonacci-timer").is(':visible')) {
-                    $("#cost-content .fibonacci-timer:first-child").toggle();
-                }
-                while ($("#cost-content .boxes div:visible").length > 1) {
-                    $($("#cost-content .boxes div:visible")[0]).toggle();
-
-                }
-
-            } else {
-
-                //reset timer from values
-                var daysSinceBought = json.statistics.cost.sinceTimerStart.days,
-                    hoursSinceBought = json.statistics.cost.sinceTimerStart.hours,
-                    minutesSinceBought = json.statistics.cost.sinceTimerStart.minutes,
-                    secondsSinceBought = json.statistics.cost.sinceTimerStart.seconds,
-                    totalSecondsSinceBought = json.statistics.cost.sinceTimerStart.totalSeconds;
-
-                //Insert timer values into timer
-                if (secondsSinceBought >= 10) {
-                    $("#cost-content .secondsSinceLastClick:first-child").html(secondsSinceBought);
-                } else {
-                    $("#cost-content .secondsSinceLastClick:first-child").html("0" + secondsSinceBought);
-                }
-                $("#cost-content .minutesSinceLastClick:first-child").html(minutesSinceBought);
-                $("#cost-content .hoursSinceLastClick:first-child").html(hoursSinceBought);
-                $("#cost-content .daysSinceLastClick:first-child").html(daysSinceBought);
-
-                //Hide timer boxes which have zero values
-                if ($("#cost-content .secondsSinceLastClick:first-child").html() == "0") {
-                    $("#cost-content .secondsSinceLastClick").parent().toggle();
-                }
-
-                if ($("#cost-content .minutesSinceLastClick:first-child").html() == "0") {
-                    $("#cost-content .minutesSinceLastClick").parent().toggle();
-
-                }
-
-                if ($("#cost-content .hoursSinceLastClick:first-child").html() == "0") {
-                    $("#cost-content .hoursSinceLastClick").parent().toggle();
-                }
-
-                //this temporarily toggles seconds box
-                if ($("#cost-content .daysSinceLastClick:first-child").html() == "0") {
-                    $("#cost-content .daysSinceLastClick").parent().toggle();
-                }
-
-                adjustFibonacciTimerToBoxes("bought-timer");
-            }
-
-            boughtTimer = setInterval(function () {
-                totalSecondsSinceBought++;
-                secondsSinceBought++;
-
-                if (secondsSinceBought >= 10) {
-                    $("#cost-content .secondsSinceLastClick:first-child").html(secondsSinceBought);
-                } else {
-                    $("#cost-content .secondsSinceLastClick:first-child").html("0" + secondsSinceBought);
-                }
-
-                if (secondsSinceBought >= 60) {
-                    secondsSinceBought = 0;
-                    minutesSinceBought++;
-                    if ($("#cost-content .boxes div:visible").length == 1) {
-                        var numberOfBoxesHidden = $("#cost-content .boxes div:hidden").length;
-                        $($("#cost-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-                    //add trailing zero to below 10 values
-                    if (minutesSinceBought >= 10) {
-                        $("#cost-content .minutesSinceLastClick:first-child").html(minutesSinceBought);
-                    } else {
-                        $("#cost-content .minutesSinceLastClick:first-child").html("0" + minutesSinceBought);
-                    }
-                    $("#cost-content .secondsSinceLastClick:first-child").html("0" + secondsSinceBought);
-
-                    adjustFibonacciTimerToBoxes("bought-timer");
-                }
-                if (minutesSinceBought >= 60) {
-                    minutesSinceBought = 0;
-                    hoursSinceBought++;
-                    if ($("#cost-content .boxes div:visible").length == 2) {
-                        var numberOfBoxesHidden = $("#cost-content .boxes div:hidden").length;
-                        $($("#cost-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-                    //add trailing zero to below 10 values
-                    if (hoursSinceBought >= 10) {
-                        $("#cost-content .hoursSinceLastClick:first-child").html(hoursSinceBought);
-                    } else {
-                        $("#cost-content .hoursSinceLastClick:first-child").html("0" + hoursSinceBought);
-                    }
-                    $("#cost-content .minutesSinceLastClick:first-child").html("0" + minutesSinceBought);
-
-                    adjustFibonacciTimerToBoxes("bought-timer");
-                }
-                if (hoursSinceBought >= 24) {
-                    hoursSinceBought = 0;
-                    daysSinceBought++;
-                    if ($("#cost-content .boxes div:visible").length == 3) {
-                        var numberOfBoxesHidden = $('#cost-content .boxes div:hidden').length;
-                        $($("#cost-content .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-                    $("#cost-content .hoursSinceLastClick:first-child").html("0" + hoursSinceBought);
-                    $("#cost-content .daysSinceLastClick:first-child").html(daysSinceBought);
-
-                    adjustFibonacciTimerToBoxes("bought-timer");
-                }
-
-            }, 1000); //end setInterval
-            $("#bought-timer").addClass("counting");
-            $("#bought-timer").show();
+            return TimerStateManager.initiate('bought', undefined, json);
         }
 
         //GOAL TIMER	
         function initiateGoalTimer() {
-            var timerSection = "#goal-content";
-
+            // Increment counter first
             json.statistics.goal.clickCounter++;
+            
+            // Add handler for goal completion
+            window.handleGoalCompletion = function(timerSection, json) {
+                toggleActiveStatGroups();
+                hideInactiveStatistics();
 
-            clearInterval(goalTimer);
+                //find most recent goal type
+                var goalType = "";
+                if (json.statistics.goal.activeGoalBoth == 1) {
+                    goalType = "both";
+                    json.statistics.goal.activeGoalBoth = 0;
 
-            var jsonDaysString = json.statistics.goal.untilTimerEnd.days,
-                jsonHoursString = json.statistics.goal.untilTimerEnd.hours,
-                jsonMinutesString = json.statistics.goal.untilTimerEnd.minutes,
-                jsonSecondsString = json.statistics.goal.untilTimerEnd.seconds,
-                jsonTotalSecondsString = json.statistics.goal.untilTimerEnd.totalSeconds;
+                } else if (json.statistics.goal.activeGoalBought == 1) {
+                    goalType = "bought";
+                    json.statistics.goal.activeGoalBought = 0;
 
-            $(timerSection + " .secondsSinceLastClick:first-child").html(jsonSecondsString);
-            $(timerSection + " .minutesSinceLastClick:first-child").html(jsonMinutesString);
-            $(timerSection + " .hoursSinceLastClick:first-child").html(jsonHoursString);
-            $(timerSection + " .daysSinceLastClick:first-child").html(jsonDaysString);
-
-            //return to default all visible value
-            $("#goal-content .boxes div").show();
-
-            //make boxes with value of zero hidden	until find a non zero value
-            function hideZeroValueTimerBoxes(timerSection) {
-                //make boxes with value of zero hidden	until find a non zero value
-                for (var i = 0; i < $("#" + timerSection + " .boxes div").length; i++) {
-                    var currTimerSpanValue = $("#" + timerSection + " .boxes div .timerSpan")[i];
-                    if (currTimerSpanValue.innerHTML == "0") {
-                        $(currTimerSpanValue).parent().hide();
-                    } else {
-                        break;
-                    }
-                }
-            }
-            hideZeroValueTimerBoxes("goal-content");
-
-            goalTimer = setInterval(function () {
-
-                jsonTotalSecondsString--;
-                jsonSecondsString--;
-
-                if (jsonSecondsString >= 10) {
-                    $(timerSection + " .secondsSinceLastClick:first-child").html(jsonSecondsString);
-                } else {
-                    $(timerSection + " .secondsSinceLastClick:first-child").html("0" + jsonSecondsString);
+                } else if (json.statistics.goal.activeGoalUse == 1) {
+                    goalType = "use";
+                    json.statistics.goal.activeGoalUse = 0;
                 }
 
-                if (jsonSecondsString < 0) {
+                var actualEnd = Math.round(new Date() / 1000);
+                changeGoalStatus(3, goalType, actualEnd);
 
-                    if (jsonMinutesString > 0 || jsonHoursString > 0 || jsonDaysString > 0) {
-                        jsonSecondsString = 59;
-                        jsonMinutesString--;
-                        if (jsonMinutesString == 0 && jsonHoursString == 0 && jsonDaysString == 0) {
-                            if ($(timerSection + ' .boxes div:visible').length > 1) {
-                                $($(timerSection + ' .boxes div:visible')[0]).toggle();
+                //(startStamp, endStamp, goalType) =>
+                var startStamp = json.statistics.goal.lastClickStamp;
+                placeGoalIntoLog(startStamp, actualEnd, goalType, false);
 
-                                adjustFibonacciTimerToBoxes("goal-timer");
-                            }
-                        }
+                //if longest goal just happened
+                replaceLongestGoal(startStamp, actualEnd);
+                //update number of goals
+                json.statistics.goal.completedGoals++;
+                $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
+                showActiveStatistics();
 
-                    } else {
-                        /* ENTIRE GOAL IS DONE */
-                        jsonSecondsString = 0;
-                        clearInterval(goalTimer);
-                        toggleActiveStatGroups();
-                        hideInactiveStatistics();
+                var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
+                //notify user that goal ended
+                var message = "Congrats! You made it :) . " + affirmation;
+                createNotification(message);
 
-                        //find most recent goal type
-                        var goalType = "";
-                        if (json.statistics.goal.activeGoalBoth == 1) {
-                            goalType = "both";
-                            json.statistics.goal.activeGoalBoth = 0;
-
-                        } else if (json.statistics.goal.activeGoalBought == 1) {
-                            goalType = "bought";
-                            json.statistics.goal.activeGoalBought = 0;
-
-                        } else if (json.statistics.goal.activeGoalUse == 1) {
-                            goalType = "use";
-                            json.statistics.goal.activeGoalUse = 0;
-                        }
-
-                        var actualEnd = Math.round(new Date() / 1000);
-                        changeGoalStatus(3, goalType, actualEnd);
-
-                        //(startStamp, endStamp, goalType) =>
-                        var startStamp = json.statistics.goal.lastClickStamp;
-                        placeGoalIntoLog(startStamp, actualEnd, goalType, false);
-
-                        //if longest goal just happened
-                        replaceLongestGoal(startStamp, actualEnd);
-                        //update number of goals
-                        json.statistics.goal.completedGoals++;
-                        $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
-                        showActiveStatistics();
-
-                        var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
-                        //notify user that goal ended
-                        var message = "Congrats! You made it :) . " + affirmation;
-                        createNotification(message);
-
-                        //disappear zero seconds left timer
-                        $(timerSection + " .fibonacci-timer").parent().hide();
-                    }
-
-                    $(timerSection + " .minutesSinceLastClick:first-child").html(jsonMinutesString);
-                    $(timerSection + " .secondsSinceLastClick:first-child").html(jsonSecondsString);
-                }
-                if (jsonMinutesString < 0) {
-
-                    if (jsonHoursString > 0 || jsonDaysString > 0) {
-                        jsonMinutesString = 59;
-                        jsonHoursString--;
-                        if (jsonHoursString == 0 && jsonDaysString == 0) {
-                            if ($(timerSection + ' .boxes div:visible').length > 1) {
-                                $($(timerSection + ' .boxes div:visible')[0]).toggle();
-
-                                adjustFibonacciTimerToBoxes("goal-timer");
-                            }
-                        }
-                    }
-
-                    $(timerSection + " .minutesSinceLastClick:first-child").html(jsonMinutesString);
-                    $(timerSection + " .hoursSinceLastClick:first-child").html(jsonHoursString);
-                }
-                if (jsonHoursString < 0) {
-                    if (jsonDaysString > 0) {
-                        jsonHoursString = 23;
-                        jsonDaysString--;
-                        if (jsonDaysString == 0) {
-                            //console.log("days turns to zero");
-                            setTimeout(function () {
-                                $($("#goal-content .boxes div")[0]).hide();
-                                adjustFibonacciTimerToBoxes("goal-timer");
-                            }, 0);
-
-                        }
-                    }
-
-                    if ($(timerSection + " .boxes div:visible").length == 3) {
-                        var numberOfBoxesHidden = $(timerSection + ' .boxes div:hidden').length;
-                        $($(timerSection + " .boxes div:hidden")[numberOfBoxesHidden - 1]).toggle();
-                    }
-                    $(timerSection + " .hoursSinceLastClick:first-child").html(jsonHoursString);
-                    $(timerSection + " .daysSinceLastClick:first-child").html(jsonDaysString);
-                }
-
-            }, 1000); //end setInterval
-
-            $("#goal-button").addClass("counting");
+                //disappear zero seconds left timer
+                $(timerSection + " .fibonacci-timer").parent().hide();
+            };
+            
+            return TimerStateManager.initiate('goal', undefined, json);
         }
 
         //COST DIALOG CLICK
