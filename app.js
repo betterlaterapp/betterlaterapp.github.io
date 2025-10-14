@@ -914,7 +914,8 @@ $(document).ready(function () {
                 var introMessage = "<b>Welcome back!</b> Start tracking your habit now by clicking any of the buttons on the right.";
                 var responseTools = '<button class="btn btn-md btn-outline-info clear-notification" onClick="$(\'.statistics-tab-toggler\').click();">' +
                     "Statistics Panel</button>";
-                createNotification(introMessage, responseTools);
+
+                NotificationsModule.createNotification(introMessage, responseTools);
 
             } else {
                 /* ADD ACTIONS INTO LOG */
@@ -1051,9 +1052,6 @@ $(document).ready(function () {
                 $('html').animate({ scrollTop: 0 })
             }
         });
-
-        // Baseline questionnaire initialization will be moved after createNotification is defined
-        
 
         //function to read settings changes for which stats to display
         (function settingsDisplayChanges() {
@@ -1208,8 +1206,6 @@ $(document).ready(function () {
         /* NOTIFICATION CREATION AND RESPONSES */
         // Notification functions are now in js/notifications.js module
         // Create local aliases for backward compatibility
-        var clearNotification = NotificationsModule.clearNotification;
-        var createNotification = NotificationsModule.createNotification;
         var createGoalEndNotification = NotificationsModule.createGoalEndNotification;
         
         // Initialize notifications module with required functions
@@ -1217,7 +1213,7 @@ $(document).ready(function () {
         
         // Baseline questionnaire initialization
         // Event handlers moved to js/baseline.js module
-        BaselineModule.init(json, createNotification, retrieveStorageObject, setStorageObject);
+        BaselineModule.init(json, NotificationsModule.createNotification, retrieveStorageObject, setStorageObject);
         
         // Initialize UI module with json
         UIModule.init(json);
@@ -1225,25 +1221,26 @@ $(document).ready(function () {
         // Initialize Goals module with dependencies
         var goalDependencies = {
             json: json,
-            createNotification: createNotification,
-            updateActionTable: updateActionTable,
+            createNotification: NotificationsModule.createNotification,
+            updateActionTable: StorageModule.updateActionTable,
             loadGoalTimerValues: loadGoalTimerValues,
             initiateGoalTimer: initiateGoalTimer,
             showActiveStatistics: showActiveStatistics,
             adjustFibonacciTimerToBoxes: adjustFibonacciTimerToBoxes,
-            closeClickDialog: closeClickDialog
+            closeClickDialog: UIModule.closeClickDialog
         };
         GoalsModule.init(goalDependencies);
         
         // Initialize Buttons module with dependencies
         var buttonDependencies = {
-            createNotification: createNotification,
-            updateActionTable: updateActionTable,
+            createNotification: NotificationsModule.createNotification,
+            updateActionTable: StorageModule.updateActionTable,
             placeActionIntoLog: placeActionIntoLog,
             shootConfetti: shootConfetti,
             showActiveStatistics: showActiveStatistics,
             initiateReport: initiateReport,
             openClickDialog: openClickDialog,
+            closeClickDialog: UIModule.closeClickDialog,
             initiateGoalTimer: initiateGoalTimer,
             initiateSmokeTimer: initiateSmokeTimer,
             initiateBoughtTimer: initiateBoughtTimer,
@@ -1263,7 +1260,7 @@ $(document).ready(function () {
         function endActiveGoal() {
             var dependencies = {
                 changeGoalStatus: changeGoalStatus,
-                createNotification: createNotification,
+                createNotification: NotificationsModule.createNotification,
                 placeGoalIntoLog: placeGoalIntoLog,
                 replaceLongestGoal: replaceLongestGoal,
                 showActiveStatistics: showActiveStatistics,
@@ -1330,7 +1327,6 @@ $(document).ready(function () {
                 '</p>' +
                 '</div><!--end habit-log item div-->';
 
-                //console.log("TEMPLATE: ", clickType, template)
 
             if (json.option.logItemsToDisplay[clickType] === true) {
                 if (placeBelow) {
@@ -1556,6 +1552,7 @@ $(document).ready(function () {
 
         });
 
+
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
         if (StorageModule.hasStorageData()) {
@@ -1623,9 +1620,10 @@ $(document).ready(function () {
             $(".settings-tab-toggler").click();
             $(".displayed-statistics-heading").hide();
 
+
             //ABSOLUTE NEW USER
             var introMessage = "<b>Welcome to Better Later</b> - the anonymous habit tracking app that shows you statistics about your habit as you go!";
-            createNotification(introMessage);
+            NotificationsModule.createNotification(introMessage);
         }
 
         // Button handlers moved to ButtonsModule
@@ -1635,159 +1633,6 @@ $(document).ready(function () {
             return TimerStateManager.initiate('smoke', requestedTimestamp, json);
         }
 
-        //USE DIALOG CLICK
-        $(".use.log-more-info button.submit").click(function () {
-            if (json.baseline.decreaseHabit == false) {
-                shootConfetti();
-            }
-            var date = new Date();
-            var timestampSeconds = Math.round(date / 1000);
-
-            //get time selection from form
-            var requestedTimeStartHours = parseInt($(".use.log-more-info select.time-picker-hour").val());
-            var requestedTimeStartMinutes = parseInt($(".use.log-more-info select.time-picker-minute").val());
-
-            var userDidItNow = $("#nowUseRadio").is(':checked');
-            if( userDidItNow ) {
-                requestedTimeStartHours = date.getHours();
-                requestedTimeStartMinutes = date.getMinutes();
-            }
-
-            //12 am is actually the first hour in a day... goddamn them.
-            if (requestedTimeStartHours == 12) {
-                requestedTimeStartHours = 0;
-            }
-            //account for am vs pm from userfriendly version of time input
-            if ($(".use.log-more-info select.time-picker-am-pm").val() == "PM") {
-                requestedTimeStartHours = requestedTimeStartHours + 12;
-            }
-
-            var requestedTimeDiffSeconds = 0;
-                requestedTimeDiffSeconds += date.getHours()*60*60 - requestedTimeStartHours*60*60;
-                requestedTimeDiffSeconds += date.getMinutes()*60 - requestedTimeStartMinutes*60;
-
-                //use requested time
-                requestedTimestamp = timestampSeconds - requestedTimeDiffSeconds;
-
-                //return to relevant screen
-                $(".statistics-tab-toggler").click();
-
-                //fake firstStampUses in json obj
-                if (json.statistics.use.clickCounter == 0) {
-                    json.statistics.use.firstClickStamp = json.statistics.use.firstClickStamp + timestampSeconds;
-
-                } 
-
-                json.statistics.use.clickCounter++;
-                $("#use-total").html(json.statistics.use.clickCounter);
-
-                // var currCravingsPerSmokes = Math.round(json.statistics.use.craveCounter / json.statistics.use.clickCounter * 10) / 10;
-                // $("#avgDidntPerDid").html(currCravingsPerSmokes);
-
-                json.statistics.use.cravingsInARow = 0;
-                $("#cravingsResistedInARow").html(json.statistics.use.cravingsInARow);
-
-                //start timer with optional param for past date
-                var userDidItNow = $("#nowUseRadio").is(':checked');
-                if (userDidItNow) {
-                    //update relevant statistics
-                    updateActionTable(timestampSeconds, "used");
-                    placeActionIntoLog(timestampSeconds, "used", null, null, null, false);
-                    initiateSmokeTimer();
-
-                } else {
-                    //user is selecting time that appears to be in the future
-                    //will interpret as minus one day
-                    var secondsToNow = date.getHours()*60*60 + date.getMinutes()*60;
-                    var secondsToRequested = requestedTimeStartHours*60*60 + requestedTimeStartMinutes*60;
-
-                    if( secondsToRequested > secondsToNow) {
-                        //take one day off
-                        requestedTimestamp = requestedTimestamp - (1*24*60*60);
-                    }
-
-                    //update relevant statistics
-                    updateActionTable(requestedTimestamp, "used");
-                    initiateSmokeTimer(requestedTimestamp);
-                }
-                
-                var newTotals = {
-                    total: parseInt( $(".statistic.use.totals.total").html() ) + 1,
-                    week: parseInt( $(".statistic.use.totals.week").html() ) + 1,
-                    month: parseInt( $(".statistic.use.totals.month").html() ) + 1,
-                    year: parseInt( $(".statistic.use.totals.year").html() ) + 1,
-                }
-                $(".statistic.use.totals.total").html(newTotals.total);
-                $(".statistic.use.totals.week").html(newTotals.week);
-                $(".statistic.use.totals.month").html(newTotals.month);
-                $(".statistic.use.totals.year").html(newTotals.year);
-
-                var betweenClicks = {
-                    total: json.statistics.use.betweenClicks.total,
-                    week: json.statistics.use.betweenClicks.week,
-                    month: json.statistics.use.betweenClicks.month,
-                    year: json.statistics.use.betweenClicks.year 
-                }
-
-
-                $(".statistic.use.timeBetween.total").html(betweenClicks.total);
-                $(".statistic.use.timeBetween.week").html(betweenClicks.week);
-                $(".statistic.use.timeBetween.month").html(betweenClicks.month);
-                $(".statistic.use.timeBetween.year").html(betweenClicks.year);
-
-                //there is an active bought related goal
-                if (json.statistics.goal.activeGoalUse !== 0 || json.statistics.goal.activeGoalBoth !== 0) {
-                    
-                    
-                    var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
-                    if (json.statistics.goal.activeGoalUse !== 0) {
-                        var goalType = "use";
-                        
-                        json.statistics.goal.activeGoalUse = 0;
-
-                    } else if (json.statistics.goal.activeGoalBoth !== 0) {
-                        var goalType = "both";
-                        
-                        json.statistics.goal.activeGoalBoth = 0;
-
-                    }
-
-                    changeGoalStatus(2, goalType, requestedTimestamp);
-                    createNotification(message);
-                    clearInterval(goalTimer);
-
-                    $("#goal-content .timer-recepticle").hide();
-                    toggleActiveStatGroups();
-                    hideInactiveStatistics();
-
-                    //place a goal into the goal log
-                    var startStamp = json.statistics.goal.lastClickStamp;
-                    var actualEnd = requestedTimestamp;
-                    placeGoalIntoLog(startStamp, actualEnd, goalType, false);
-
-                    //if longest goal just happened longestGoal
-                    replaceLongestGoal(startStamp, actualEnd)
-
-                    //update number of goals
-                    json.statistics.goal.completedGoals++;
-                    $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
-
-                }
-                
-                initiateReport();
-
-                showActiveStatistics();
-                //keep lastClickStamp up to date while using app
-                json.statistics.use.lastClickStamp = timestampSeconds;
-                closeClickDialog(".use");
-
-        });
-        
-        //notify user when requested times are for yesterday - Moved to UIModule
-
-        $(".use.log-more-info button.cancel").click(function () {
-            closeClickDialog(".use");
-        });
 
         //START BOUGHT TIMER
         function initiateBoughtTimer() {
@@ -1803,105 +1648,10 @@ $(document).ready(function () {
                 placeGoalIntoLog: placeGoalIntoLog,
                 replaceLongestGoal: replaceLongestGoal,
                 showActiveStatistics: showActiveStatistics,
-                createNotification: createNotification
+                createNotification: NotificationsModule.createNotification
             };
             return GoalsModule.initiateGoalTimer(json, dependencies);
-        }
-
-        //COST DIALOG CLICK
-        $(".cost.log-more-info button.submit").click(function () {
-            var amountSpent = $("#spentInput").val();
-
-            if (!$.isNumeric(amountSpent)) {
-                alert("Please enter in a number!");
-
-            } else {
-
-                //return to relevant screen
-                $(".statistics-tab-toggler").click();
-
-                var timestampSeconds = Math.round(new Date() / 1000);
-                updateActionTable(timestampSeconds, "bought", amountSpent);
-
-                //add record into log
-                placeActionIntoLog(timestampSeconds, "bought", amountSpent, null, null, false);
-
-                //fake firstStampBought in json obj
-                if (json.statistics.cost.clickCounter == 0) {
-                    json.statistics.cost.firstClickStamp = json.statistics.cost.firstClickStamp + timestampSeconds;
-
-                } else if (json.statistics.cost.clickCounter == 1) {
-                    json.statistics.cost.betweenClicks.total = timestampSeconds - json.statistics.cost.firstClickStamp;
-
-                }
-
-                //update display
-                json.statistics.cost.clickCounter++;
-                $("#bought-total").html(json.statistics.cost.clickCounter);
-
-                //update spent in json
-                json.statistics.cost.totals.total = parseInt(json.statistics.cost.totals.total) + parseInt(amountSpent);
-                json.statistics.cost.totals.week = parseInt(json.statistics.cost.totals.week) + parseInt(amountSpent);
-                json.statistics.cost.totals.month = parseInt(json.statistics.cost.totals.month) + parseInt(amountSpent);
-                json.statistics.cost.totals.year = parseInt(json.statistics.cost.totals.year) + parseInt(amountSpent);
-
-                // console.log("json.statistics.cost.totals after submit: ", json.statistics.cost.totals)
-                //update display
-                $(".statistic.cost.totals.total").html("$" + json.statistics.cost.totals.total);
-                $(".statistic.cost.totals.week").html("$" + json.statistics.cost.totals.week );
-                $(".statistic.cost.totals.month").html("$" + json.statistics.cost.totals.month );
-                $(".statistic.cost.totals.year").html("$" + json.statistics.cost.totals.year );
-
-                closeClickDialog(".cost");
-                initiateBoughtTimer();
-                showActiveStatistics();
-                toggleActiveStatGroups();
-                hideInactiveStatistics();
-                adjustFibonacciTimerToBoxes("bought-timer");
-                var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
-                //there is an active bought related goal
-                if (json.statistics.goal.activeGoalBought !== 0 || json.statistics.goal.activeGoalBoth !== 0) {
-                    if (json.statistics.goal.activeGoalBought !== 0) {
-                        var goalType = "bought";
-                        json.statistics.goal.activeGoalBought = 0;
-
-                    } else if (json.statistics.goal.activeGoalBoth !== 0) {
-                        var goalType = "both";
-
-                        json.statistics.goal.activeGoalBoth = 0;
-
-                    }
-
-                    changeGoalStatus(2, goalType, timestampSeconds);
-                    createNotification(message);
-                    clearInterval(goalTimer);
-
-                    $("#goal-content .timer-recepticle").hide();
-                    toggleActiveStatGroups();
-                    hideInactiveStatistics();
-
-                    //place a goal into the goal log
-                    var startStamp = json.statistics.goal.lastClickStamp;
-                    var actualEnd = timestampSeconds;
-                    placeGoalIntoLog(startStamp, actualEnd, goalType, false);
-
-                    //if longest goal just happened
-                    replaceLongestGoal(startStamp, actualEnd)
-                    
-                    //update number of goals
-                    json.statistics.goal.completedGoals++;
-                    $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
-                    showActiveStatistics();
-                }
-                //keep lastClickStamp up to date while using app
-                json.statistics.cost.lastClickStamp = timestampSeconds;
-            }
-
-        });
-
-        $(".cost.log-more-info button.cancel").click(function () {
-            closeClickDialog(".cost");
-        });
+        } 
 
         // Calculate goal timer values - now using TimersModule
         function loadGoalTimerValues(totalSecondsUntilGoalEnd) {
