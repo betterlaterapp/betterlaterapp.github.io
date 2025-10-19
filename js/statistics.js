@@ -77,11 +77,10 @@ var StatisticsModule = (function() {
     /**
      * Calculate the maximum report height based on actions
      * @param {Object} storageObject - The storage object
-     * @param {Function} retrieveStorageObject - Function to retrieve storage object
      * @returns {number} - Maximum report height
      */
-    function calculateMaxReportHeight(storageObject, retrieveStorageObject) {
-        var jsonObject = storageObject ? storageObject : retrieveStorageObject();
+    function calculateMaxReportHeight(storageObject) {
+        var jsonObject = storageObject ? storageObject : StorageModule.retrieveStorageObject();
         var actions = jsonObject.action.filter(function(e) {
             return e.clickType == "used" || e.clickType == "craved";
         });
@@ -118,11 +117,9 @@ var StatisticsModule = (function() {
      * Create object of week values from the end date timestamp
      * @param {number} reportEndStamp - Report end timestamp
      * @param {Object} json - App state object
-     * @param {Function} retrieveStorageObject - Function to retrieve storage object
-     * @param {Function} midnightOfTimestamp - Function to get midnight timestamp
      * @returns {Object} - Values object for report
      */
-    function calculateReportValues(reportEndStamp, json, retrieveStorageObject, midnightOfTimestamp) {
+    function calculateReportValues(reportEndStamp, json) {
         var valuesObject = {
             "reportStart": -1,
             "reportEnd": -1,
@@ -143,7 +140,7 @@ var StatisticsModule = (function() {
             }
         };
 
-        var jsonObject = retrieveStorageObject();
+        var jsonObject = StorageModule.retrieveStorageObject();
 
         // Build new date as midnight of requested date
         var midnightLastDay = midnightOfTimestamp(reportEndStamp);
@@ -218,18 +215,14 @@ var StatisticsModule = (function() {
     /**
      * Initiate the weekly report
      * @param {Object} json - App state object
-     * @param {Function} retrieveStorageObject - Function to retrieve storage object
-     * @param {Function} calculateMaxReportHeight - Function to calculate max report height
-     * @param {Function} calculateReportValues - Function to calculate report values
-     * @param {Function} createReport - Function to create the report
      * @returns {boolean} - Whether the report was initiated
      */
-    function initiateReport(json, retrieveStorageObject, calculateMaxReportHeight, calculateReportValues, createReport) {
+    function initiateReport(json) {
         if (!json.option.reportItemsToDisplay.useVsResistsGraph) {
             return false;
         }
 
-        var jsonObject = retrieveStorageObject();
+        var jsonObject = StorageModule.retrieveStorageObject();
         var timeNow = Math.round(new Date() / 1000);
 
         json.report.maxHeight = calculateMaxReportHeight(jsonObject);
@@ -255,7 +248,7 @@ var StatisticsModule = (function() {
         json.report.maxEndStamp = parseInt(reportEndStamp) + (60 * 60 * 24 * 7);
 
         // Show most recent report
-        createReport(calculateReportValues(reportEndStamp));
+        createReport(calculateReportValues(reportEndStamp, json), json);
         
         // Hide report description
         $(".weekly-report-description").hide();
@@ -432,11 +425,9 @@ var StatisticsModule = (function() {
      * @param {string} actionType - Action type (cost, use)
      * @param {string} timeIncrement - Time increment (total, week, month, year)
      * @param {Object} json - App state object
-     * @param {Function} retrieveStorageObject - Function to retrieve storage object
-     * @param {Function} displayAverageTimeBetween - Function to display average time
      */
-    function recalculateAverageTimeBetween(actionType, timeIncrement, json, retrieveStorageObject, displayAverageTimeBetween) {
-        var jsonObject = retrieveStorageObject();
+    function recalculateAverageTimeBetween(actionType, timeIncrement, json) {
+        var jsonObject = StorageModule.retrieveStorageObject();
         var timeNow = Math.round(new Date() / 1000);
 
         var timestampLength = {
@@ -481,7 +472,7 @@ var StatisticsModule = (function() {
         }
 
         // Call function to display new stat
-        displayAverageTimeBetween(actionType, timeIncrement);
+        displayAverageTimeBetween(actionType, timeIncrement, json, convertSecondsToDateFormat);
     }
 
     /**
@@ -502,11 +493,8 @@ var StatisticsModule = (function() {
      * Create weekly report
      * @param {Object} reportValues - Report values
      * @param {Object} json - App state object
-     * @param {Function} timestampToShortHandDate - Function to format dates
-     * @param {Function} percentChangedBetween - Function to calculate percent change
-     * @param {Function} formatPercentChangedStat - Function to format percent change
      */
-    function createReport(reportValues, json, timestampToShortHandDate, percentChangedBetween, formatPercentChangedStat) {
+    function createReport(reportValues, json) {
         // Remove d-none from report template
         if ($($(".weekly-report")[0]).hasClass("d-none")) {
             $($(".weekly-report")[0]).removeClass("d-none");
@@ -656,21 +644,9 @@ var StatisticsModule = (function() {
     return {
         segregatedTimeRange: segregatedTimeRange,
         midnightOfTimestamp: midnightOfTimestamp,
-        calculateMaxReportHeight: function(storageObject, retrieveStorageObject) {
-            return calculateMaxReportHeight(storageObject, retrieveStorageObject);
-        },
-        calculateReportValues: function(reportEndStamp, json, retrieveStorageObject) {
-            return calculateReportValues(reportEndStamp, json, retrieveStorageObject, midnightOfTimestamp);
-        },
-        initiateReport: function(json, retrieveStorageObject, createReport) {
-            return initiateReport(
-                json,
-                retrieveStorageObject,
-                function(so) { return calculateMaxReportHeight(so, retrieveStorageObject); },
-                function(res) { return calculateReportValues(res, json, retrieveStorageObject, midnightOfTimestamp); },
-                createReport
-            );
-        },
+        calculateMaxReportHeight: calculateMaxReportHeight,
+        calculateReportValues: calculateReportValues,
+        initiateReport: initiateReport,
         percentChangedBetween: percentChangedBetween,
         formatPercentChangedStat: formatPercentChangedStat,
         timestampToShortHandDate: timestampToShortHandDate,
@@ -678,20 +654,16 @@ var StatisticsModule = (function() {
         displayAverageTimeBetween: function(actionType, timeIncrement, json) {
             displayAverageTimeBetween(actionType, timeIncrement, json, convertSecondsToDateFormat);
         },
-        recalculateAverageTimeBetween: function(actionType, timeIncrement, json, retrieveStorageObject) {
-            recalculateAverageTimeBetween(
-                actionType,
-                timeIncrement,
-                json,
-                retrieveStorageObject,
-                function(at, ti) { displayAverageTimeBetween(at, ti, json, convertSecondsToDateFormat); }
-            );
-        },
+        recalculateAverageTimeBetween: recalculateAverageTimeBetween,
         displayLongestGoal: function(timeIncrement, json) {
             displayLongestGoal(timeIncrement, json, convertSecondsToDateFormat);
         },
         createReport: function(reportValues, json) {
-            createReport(reportValues, json, timestampToShortHandDate, percentChangedBetween, formatPercentChangedStat);
+            createReport(reportValues, json);
+        },
+        createReportForEndStamp: function(reportEndStamp, json) {
+            var reportValues = calculateReportValues(reportEndStamp, json);
+            createReport(reportValues, json);
         }
     };
 })();

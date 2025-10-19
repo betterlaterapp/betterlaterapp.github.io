@@ -201,10 +201,8 @@ var UIModule = (function() {
     /**
      * Show active statistics based on data and user settings
      * @param {Object} json - The app state object
-     * @param {Function} recalculateAverageTimeBetween - Function to recalculate average time between actions
-     * @param {Function} displayLongestGoal - Function to display longest goal
      */
-    function showActiveStatistics(json, recalculateAverageTimeBetween, displayLongestGoal) {
+    function showActiveStatistics(json) {
         var display = json.option.liveStatsToDisplay;
         var stat = json.statistics;
         
@@ -241,19 +239,19 @@ var UIModule = (function() {
 
         if (display.avgBetweenSpent && stat.cost.betweenClicks.total !== 0) {
             $("#cost-content .betweenClicks").parent().show();
-            recalculateAverageTimeBetween("cost", "total");
+            StatisticsModule.recalculateAverageTimeBetween("cost", "total", json);
             
             if (stat.cost.betweenClicks.week !== 0) {
                 $("#cost-content .betweenClicks.week.statistic").show();
-                recalculateAverageTimeBetween("cost", "week");
+                StatisticsModule.recalculateAverageTimeBetween("cost", "week", json);
             }
             if (stat.cost.betweenClicks.month !== 0) {
                 $("#cost-content .betweenClicks.month.statistic").show();
-                recalculateAverageTimeBetween("cost", "month");
+                StatisticsModule.recalculateAverageTimeBetween("cost", "month", json);
             }
             if (stat.cost.betweenClicks.year !== 0) {
                 $("#cost-content .betweenClicks.year.statistic").show();
-                recalculateAverageTimeBetween("cost", "year");
+                StatisticsModule.recalculateAverageTimeBetween("cost", "year", json);
             }
         }
 
@@ -270,19 +268,19 @@ var UIModule = (function() {
 
         if (display.avgBetweenDone && stat.use.betweenClicks.total !== 0) {
             $("#use-content .betweenClicks").parent().show();
-            recalculateAverageTimeBetween("use", "total");
+            StatisticsModule.recalculateAverageTimeBetween("use", "total", json);
             
             if (stat.use.betweenClicks.week !== 0) {
                 $("#use-content .betweenClicks.week.statistic").show();
-                recalculateAverageTimeBetween("use", "week");
+                StatisticsModule.recalculateAverageTimeBetween("use", "week", json);
             }
             if (stat.use.betweenClicks.month !== 0) {
                 $("#use-content .betweenClicks.month.statistic").show();
-                recalculateAverageTimeBetween("use", "month");
+                StatisticsModule.recalculateAverageTimeBetween("use", "month", json);
             }
             if (stat.use.betweenClicks.year !== 0) {
                 $("#use-content .betweenClicks.year.statistic").show();
-                recalculateAverageTimeBetween("use", "year");
+                StatisticsModule.recalculateAverageTimeBetween("use", "year", json);
             }
         }
         
@@ -312,15 +310,15 @@ var UIModule = (function() {
 
             if (bestTime.week !== "N/A") {
                 $(".longestGoal.week.statistic").show();
-                displayLongestGoal("week");
+                StatisticsModule.displayLongestGoal("week", json);
             }
             if (bestTime.month !== bestTime.week && bestTime.month !== "N/A") {
                 $(".longestGoal.month.statistic").show();
-                displayLongestGoal("month");
+                StatisticsModule.displayLongestGoal("month", json);
             }
             if (bestTime.year !== bestTime.month && bestTime.year !== "N/A") {
                 $(".longestGoal.year.statistic").show();
-                displayLongestGoal("year");
+                StatisticsModule.displayLongestGoal("year", json);
             }
         }
         
@@ -477,10 +475,7 @@ var UIModule = (function() {
      */
     function init(appJson) {
         json = appJson || json;
-        
-        // Make hideZeroValueTimerBoxes globally available for TimerStateManager
-        window.hideZeroValueTimerBoxes = hideZeroValueTimerBoxes;
-        
+
         // Setup time picker notification
         setupTimePickerNotification();
     }

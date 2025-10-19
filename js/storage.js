@@ -3,7 +3,8 @@
  * Handles all localStorage operations for Better Later app
  */
 
-const STORAGE_KEY = 'esCrave';
+var StorageModule = (function() {
+    const STORAGE_KEY = 'esCrave';
 
 /**
  * Retrieve storage object from localStorage
@@ -144,30 +145,23 @@ function undoLastAction() {
     return undoneActionClickType;
 }
 
-// Export functions for use in app.js
+    // Public API
+    return {
+        retrieveStorageObject,
+        setStorageObject,
+        hasStorageData,
+        clearStorage,
+        updateActionTable,
+        changeGoalStatus,
+        undoLastAction,
+        STORAGE_KEY
+    };
+})();
+
+// Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {
-    // Node.js/CommonJS
-    module.exports = {
-        retrieveStorageObject,
-        setStorageObject,
-        hasStorageData,
-        clearStorage,
-        updateActionTable,
-        changeGoalStatus,
-        undoLastAction,
-        STORAGE_KEY
-    };
+    module.exports = StorageModule;
 } else {
-    // Browser global
-    window.StorageModule = {
-        retrieveStorageObject,
-        setStorageObject,
-        hasStorageData,
-        clearStorage,
-        updateActionTable,
-        changeGoalStatus,
-        undoLastAction,
-        STORAGE_KEY
-    };
+    window.StorageModule = StorageModule;
 }
 

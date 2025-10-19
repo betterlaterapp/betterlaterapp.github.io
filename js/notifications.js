@@ -131,13 +131,8 @@ var NotificationsModule = (function() {
     /**
      * Initialize notification event handlers
      * @param {Object} json - The app state object
-     * @param {Function} convertDateTimeToTimestamp - Function to convert date/time to timestamp
-     * @param {Function} changeGoalStatus - Function to change goal status
-     * @param {Function} placeGoalIntoLog - Function to place goal in log
-     * @param {Function} extendActiveGoal - Function to extend active goal
-     * @param {Function} endActiveGoal - Function to end active goal
      */
-    function setupNotificationEventHandlers(json, convertDateTimeToTimestamp, changeGoalStatus, placeGoalIntoLog, extendActiveGoal, endActiveGoal) {
+    function setupNotificationEventHandlers(json) {
         // Close notification on click
         $('#notifications-container').on('click', '.notification-close, .clear-notification', function(event) {
             clearNotification.call(event, this);
@@ -165,11 +160,11 @@ var NotificationsModule = (function() {
             if ($(this).hasClass("goal-ended-on-time")) {
                 //this is to just shoot the goal straight through the pipeline
                 clearNotification.call(event, this);
-                placeGoalIntoLog(startStamp, endStamp, goalType, false);
+                GoalsModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                 var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                 var message = "congrats on completing your goal! " + affirmation;
                 createNotification(message);
-                changeGoalStatus(3, goalType);
+                GoalsModule.changeGoalStatus(3, goalType);
 
                 //update json about if there's an active goal
                 json.statistics.goal.activeGoalBoth = 0;
@@ -237,11 +232,11 @@ var NotificationsModule = (function() {
             //if goal ended ahead of schedule, when did it end?
             //submitted new date/time
             if ($(this).hasClass("submit-new-goal-time")) {
-                var tempEndStamp = convertDateTimeToTimestamp('#datepicker-notification', '#goalEndTimePicker');
+                var tempEndStamp = StatisticsModule.convertDateTimeToTimestamp('#datepicker-notification', '#goalEndTimePicker');
                 //console.log(tempEndStamp);
                 if (tempEndStamp - startStamp > 0 || endStamp - tempEndStamp < 0) {
-                    changeGoalStatus(2, goalType, tempEndStamp);
-                    placeGoalIntoLog(startStamp, tempEndStamp, goalType, false);
+                    GoalsModule.changeGoalStatus(2, goalType, tempEndStamp);
+                    GoalsModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                     clearNotification.call(event, this);
 
                     //update json about if there's an active goal
@@ -257,13 +252,13 @@ var NotificationsModule = (function() {
         // Handle goal extension
         $('#notifications-container').on('click', '.extend-goal', function(event) {
             clearNotification.call(event, this);
-            extendActiveGoal();
+            GoalsModule.extendActiveGoal(json, {});
         });
 
         // Handle goal ending
         $('#notifications-container').on('click', '.end-goal', function(event) {
             clearNotification.call(event, this);
-            endActiveGoal();
+            GoalsModule.endActiveGoal(json, {});
         });
     }
 
@@ -274,9 +269,9 @@ var NotificationsModule = (function() {
         createNotification: createNotification,
         createGoalEndNotification: createGoalEndNotification,
         setupNotificationEventHandlers: setupNotificationEventHandlers,
-        init: function(json, convertDateTimeToTimestamp, changeGoalStatus, placeGoalIntoLog, extendActiveGoal, endActiveGoal) {
+        init: function(json) {
             setupSwipeNotification();
-            setupNotificationEventHandlers(json, convertDateTimeToTimestamp, changeGoalStatus, placeGoalIntoLog, extendActiveGoal, endActiveGoal);
+            setupNotificationEventHandlers(json);
         }
     };
 })();

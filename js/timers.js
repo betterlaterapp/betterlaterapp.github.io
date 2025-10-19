@@ -3,10 +3,11 @@
  * Handles all timer-related functionality for Better Later app
  */
 
-// Timer interval references
-var smokeTimer;
-var boughtTimer;
-var goalTimer;
+var TimersModule = (function() {
+    // Timer interval references
+    var smokeTimer;
+    var boughtTimer;
+    var goalTimer;
 
 /**
  * Convert last timestamp to a running timer
@@ -75,17 +76,14 @@ function restartTimerAtValues(timerArea, sinceLastAction, json) {
 /**
  * Hide timers on load if needed
  * @param {object} json - JSON object with statistics
- * @param {function} initiateSmokeTimer - Function to initiate smoke timer
- * @param {function} initiateBoughtTimer - Function to initiate bought timer
- * @param {function} initiateGoalTimer - Function to initiate goal timer
  */
-function hideTimersOnLoad(json, initiateSmokeTimerFn, initiateBoughtTimerFn, initiateGoalTimerFn) {
+function hideTimersOnLoad(json) {
     if (json.statistics.use.sinceTimerStart.totalSeconds == 0) {
         $("#use-content .fibonacci-timer:first-child").toggle();
 
     } else {
         //start timer from json values
-        initiateSmokeTimerFn();
+        TimerStateManager.initiate('smoke', undefined, json);
     }
 
     if (json.statistics.cost.sinceTimerStart.totalSeconds == 0) {
@@ -93,7 +91,7 @@ function hideTimersOnLoad(json, initiateSmokeTimerFn, initiateBoughtTimerFn, ini
 
     } else {
         //start timer from json values
-        initiateBoughtTimerFn();
+        TimerStateManager.initiate('bought', undefined, json);
     }
 
     if (json.statistics.goal.untilTimerEnd.totalSeconds == 0) {
@@ -101,7 +99,16 @@ function hideTimersOnLoad(json, initiateSmokeTimerFn, initiateBoughtTimerFn, ini
 
     } else {
         //start timer from json values
-        initiateGoalTimerFn();
+        var dependencies = {
+            toggleActiveStatGroups: UIModule.toggleActiveStatGroups,
+            hideInactiveStatistics: UIModule.hideInactiveStatistics,
+            changeGoalStatus: GoalsModule.changeGoalStatus,
+            placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
+            replaceLongestGoal: GoalsModule.replaceLongestGoal,
+            showActiveStatistics: UIModule.showActiveStatistics,
+            createNotification: NotificationsModule.createNotification
+        };
+        GoalsModule.initiateGoalTimer(json, dependencies);
     }
 }
 
@@ -201,29 +208,23 @@ function loadGoalTimerValues(totalSecondsUntilGoalEnd, json) {
 
 }
 
-// Export timer references and functions
+    // Public API
+    return {
+        smokeTimer,
+        boughtTimer,
+        goalTimer,
+        restartTimerAtValues,
+        hideTimersOnLoad,
+        adjustFibonacciTimerToBoxes,
+        loadGoalTimerValues
+    };
+})();
+
+// Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {
-    // Node.js/CommonJS
-    module.exports = {
-        smokeTimer,
-        boughtTimer,
-        goalTimer,
-        restartTimerAtValues,
-        hideTimersOnLoad,
-        adjustFibonacciTimerToBoxes,
-        loadGoalTimerValues
-    };
+    module.exports = TimersModule;
 } else {
-    // Browser global
-    window.TimersModule = {
-        smokeTimer,
-        boughtTimer,
-        goalTimer,
-        restartTimerAtValues,
-        hideTimersOnLoad,
-        adjustFibonacciTimerToBoxes,
-        loadGoalTimerValues
-    };
+    window.TimersModule = TimersModule;
 }
 
 

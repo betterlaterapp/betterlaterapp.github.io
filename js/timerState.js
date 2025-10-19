@@ -136,7 +136,7 @@ const TimerStateManager = {
         }
 
         // Adjust the timer box sizing
-        window.adjustFibonacciTimerToBoxes(timer.id);
+        UIModule.adjustFibonacciTimerToBoxes(timer.id);
 
         // Create interval for updating the timer
         const intervalFunction = timer.countdown ? 
@@ -282,7 +282,7 @@ const TimerStateManager = {
                     if (minutes === 0 && hours === 0 && days === 0) {
                         if ($(`${timerSection} .boxes div:visible`).length > 1) {
                             $($(`${timerSection} .boxes div:visible`)[0]).toggle();
-                            window.adjustFibonacciTimerToBoxes(timer.id);
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
                         }
                     }
                 } else {
@@ -292,8 +292,8 @@ const TimerStateManager = {
                     timer.intervalRef = null;
                     
                     // Signal completion to app - this has to be handled in app.js
-                    if (window.handleGoalCompletion) {
-                        window.handleGoalCompletion(timerSection, json);
+                    if (GoalsModule.handleGoalCompletion) {
+                        GoalsModule.handleGoalCompletion(timerSection, json);
                     }
                 }
 
@@ -311,7 +311,7 @@ const TimerStateManager = {
                     if (hours === 0 && days === 0) {
                         if ($(`${timerSection} .boxes div:visible`).length > 1) {
                             $($(`${timerSection} .boxes div:visible`)[0]).toggle();
-                            window.adjustFibonacciTimerToBoxes(timer.id);
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
                         }
                     }
                 }
@@ -329,7 +329,7 @@ const TimerStateManager = {
                     if (days === 0) {
                         setTimeout(() => {
                             $($(`#goal-content .boxes div`)[0]).hide();
-                            window.adjustFibonacciTimerToBoxes(timer.id);
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
                         }, 0);
                     }
                 }
@@ -405,7 +405,7 @@ const TimerStateManager = {
                 }
                 
                 $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
-                window.adjustFibonacciTimerToBoxes(timer.id);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
             }
 
             // Handle minutes rollover
@@ -431,7 +431,7 @@ const TimerStateManager = {
                 }
                 
                 $(`${timerSection} .minutesSinceLastClick:first-child`).html("0" + minutes);
-                window.adjustFibonacciTimerToBoxes(timer.id);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
             }
 
             // Handle hours rollover
@@ -451,11 +451,15 @@ const TimerStateManager = {
                 
                 $(`${timerSection} .hoursSinceLastClick:first-child`).html("0" + hours);
                 $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
-                window.adjustFibonacciTimerToBoxes(timer.id);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
             }
         }, 1000); // End interval
     }
 };
 
-// Export for global use
-window.TimerStateManager = TimerStateManager;
+// Make the module available globally
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TimerStateManager;
+} else {
+    window.TimerStateManager = TimerStateManager;
+}

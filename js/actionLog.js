@@ -1,0 +1,232 @@
+/**
+ * Action Log Module
+ * Handles all action logging functionality for Better Later app
+ */
+
+var ActionLogModule = (function() {
+    // Private variables
+    var json;
+
+    /**
+     * Place action into the habit log
+     * @param {number} clickStamp - Timestamp of the action
+     * @param {string} clickType - Type of action (used, craved, bought, mood)
+     * @param {number} amountSpent - Amount spent (for bought actions)
+     * @param {string} comment - Comment for mood actions
+     * @param {number} smiley - Smiley index for mood actions
+     * @param {boolean} placeBelow - Whether to place below existing items
+     */
+    function placeActionIntoLog(clickStamp, clickType, amountSpent, comment, smiley, placeBelow) {
+        //data seems to be in order
+        var endDateObj = new Date(parseInt(clickStamp + "000"));
+        var dayOfTheWeek = endDateObj.toString().split(' ')[0];
+        var shortHandDate = (endDateObj.getMonth() + 1) + "/" +
+            endDateObj.getDate() + "/" +
+            (endDateObj.getFullYear());
+        var shortHandTimeHours = (endDateObj.getHours()),
+            shortHandTimeMinutes = (endDateObj.getMinutes()),
+            shortHandTimeAMPM = "am";
+        if (shortHandTimeHours == 12) {
+            shortHandTimeAMPM = "pm";
+        } else if (shortHandTimeHours > 12) {
+            shortHandTimeHours = shortHandTimeHours % 12;
+            shortHandTimeAMPM = "pm";
+        }
+        if (shortHandTimeMinutes < 10) {
+            shortHandTimeMinutes = "0" + shortHandTimeMinutes;
+        }
+
+        var shortHandTime = shortHandTimeHours + "<b>:</b>" + shortHandTimeMinutes + shortHandTimeAMPM;
+
+        var titleHTML = "";
+        var target = "#habit-log";
+
+        if (clickType == "bought") {
+            titleHTML = '<i class="fas fa-dollar-sign"></i>&nbsp;&nbsp;' + "You spent <b>$" + parseInt(amountSpent) + "</b> on it.";
+            //target = "#cost-log";
+        } else if (clickType == "used") {
+            titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did it at <b>" + shortHandTime + "</b>.";
+            //target = "#use-log";
+        } else if (clickType == "craved") {
+            titleHTML = '<i class="fas fa-ban"></i>&nbsp;' + "You resisted it at <b>" + shortHandTime + "</b>.";
+            //target = "#use-log";
+        } else if(clickType == "mood") {
+            var scrubbedComment = comment.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+            titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
+        }
+
+        var template = '<div class="item ' + clickType + '-record">' +
+            '<hr/><p class="title">' + titleHTML + '</p>' +
+            '<p class="date" style="text-align:center;color:D8D8D8">' +
+            '<span class="dayOfTheWeek">' + dayOfTheWeek + '</span>,&nbsp;' +
+            '<span class="shortHandDate">' + shortHandDate + '</span>' +
+            '</p>' +
+            '</div><!--end habit-log item div-->';
+
+
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (jsonObject.option.logItemsToDisplay[clickType] === true) {
+            if (placeBelow) {
+                $(target).append(template);
+            } else {
+                $(target).prepend(template);
+            }
+            //and make sure the heading exists too
+            $(target + "-heading").show();
+        }
+    }
+
+    /**
+     * Populate the initial habit log on page load
+     */
+    function populateHabitLogOnLoad() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var allActions = jsonObject.action.filter(function (e) {
+            return e.clickType == "used" ||
+                e.clickType == "craved" ||
+                e.clickType == "bought" ||
+                e.clickType == "mood" ||
+                (e.clickType == "goal" && (e.status == 2 || e.status == 3));
+        });
+        allActions = allActions.sort((a, b) => {
+            return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
+        });
+
+        /* only display a certain number of actions per page */
+        var actionsToAddMax = allActions.length - 1,
+            actionsToAddMin = allActions.length - 10;
+
+        // Set up pagination data attributes
+        $("#habit-log-show-more").attr("data-actions-to-add-min", actionsToAddMin);
+        $("#habit-log-show-more").attr("data-actions-to-add-max", actionsToAddMax);
+
+        if (actionsToAddMax >= 0) {
+            for (var i = actionsToAddMax; i >= actionsToAddMin && i >= 0; i--) {
+
+                var currClickStamp = allActions[i].timestamp,
+                    currClickType = allActions[i].clickType,
+                    currClickCost = null,
+                    currGoalEndStamp = -1,
+                    currGoalType = "",
+                    comment = "",
+                    smiley = -1;
+
+                if (currClickType == "used" || currClickType == "craved") {
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+
+                } else if (currClickType == "bought") {
+                    currClickCost = allActions[i].spent;
+                    //append curr action
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+
+                } else if (currClickType == "goal") {
+                    currGoalEndStamp = allActions[i].goalStopped,
+                        currGoalType = allActions[i].goalType;
+                    //append 10 new goals
+                    GoalsModule.placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                } else if (currClickType == "mood") {
+                    //append curr action
+                    comment = allActions[i].comment;
+                    smiley = allActions[i].smiley;
+                    
+                    placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
+
+                }
+
+                if (i == actionsToAddMin || i == 0) {
+                    actionsToAddMin -= 10;
+                    actionsToAddMax -= 10;
+
+                    //if button is not displayed
+                    if ($("#habit-log-show-more").hasClass("d-none") && allActions.length > 10) {
+                        $("#habit-log-show-more").removeClass("d-none");
+                        $("#habit-log-show-more").click(function () {
+                            addMoreIntoHabitLog();
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Add more items to the habit log
+     */
+    function addMoreIntoHabitLog() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var allActions = jsonObject.action;
+        var actionsToAddMin = parseInt($("#habit-log-show-more").attr("data-actions-to-add-min"));
+        var actionsToAddMax = parseInt($("#habit-log-show-more").attr("data-actions-to-add-max"));
+
+        if (actionsToAddMax >= 0) {
+            for (var i = actionsToAddMax; i >= actionsToAddMin && i >= 0; i--) {
+
+                var currClickStamp = allActions[i].timestamp,
+                    currClickType = allActions[i].clickType,
+                    currClickCost = null,
+                    currGoalEndStamp = -1,
+                    currGoalType = "",
+                    comment = "",
+                    smiley = -1;
+
+                if (currClickType == "used" || currClickType == "craved") {
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+
+                } else if (currClickType == "bought") {
+                    currClickCost = allActions[i].spent;
+                    //append curr action
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+
+                } else if (currClickType == "goal") {
+                    currGoalEndStamp = allActions[i].goalStopped,
+                        currGoalType = allActions[i].goalType;
+                    //append 10 new goals
+                    GoalsModule.placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                } else if (currClickType == "mood") {
+                    //append curr action
+                    comment = allActions[i].comment;
+                    smiley = allActions[i].smiley;
+                    
+                    placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
+
+                }
+
+                if (i == actionsToAddMin || i == 0) {
+                    actionsToAddMin -= 10;
+                    actionsToAddMax -= 10;
+
+                    //if button is not displayed
+                    if ($("#habit-log-show-more").hasClass("d-none") && allActions.length > 10) {
+                        $("#habit-log-show-more").removeClass("d-none");
+                        $("#habit-log-show-more").click(function () {
+                            addMoreIntoHabitLog();
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Initialize the module
+     * @param {Object} appJson - The application JSON object
+     */
+    function init(appJson) {
+        json = appJson;
+    }
+
+    // Public API
+    return {
+        placeActionIntoLog: placeActionIntoLog,
+        addMoreIntoHabitLog: addMoreIntoHabitLog,
+        populateHabitLogOnLoad: populateHabitLogOnLoad,
+        init: init
+    };
+})();
+
+// Make the module available globally
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ActionLogModule;
+}

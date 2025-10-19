@@ -16,11 +16,8 @@ var BaselineModule = (function() {
      * @param {Function} retrieveFn - Function to retrieve storage object
      * @param {Function} setFn - Function to set storage object
      */
-    function init(appJson, notifyFn, retrieveFn, setFn) {
+    function init(appJson) {
         json = appJson;
-        createNotification = notifyFn;
-        retrieveStorageObject = retrieveFn;
-        setStorageObject = setFn;
         
         // Set up event listeners
         setupEventListeners();
@@ -36,7 +33,7 @@ var BaselineModule = (function() {
 
             var message = "Feel free to poke around, you can reset the entire app (in settings) if you decide to track something specific.";
             var responseTools = "<a class='btn btn-md btn-outline-info' href='https://betterlaterapp.github.io/about/index.html#habits'>Some Suggestions</a>";
-            createNotification(message, responseTools);
+            NotificationsModule.createNotification(message, responseTools);
         });
 
         // User declared they have chosen something to track - display further baseline questions
@@ -44,9 +41,9 @@ var BaselineModule = (function() {
             $($(".baseline-questionnaire .question-set:hidden")[0]).removeClass("d-none");
             // Save user response
             json.baseline.specificSubject = true;
-            var jsonObject = retrieveStorageObject();
+            var jsonObject = StorageModule.retrieveStorageObject();
             jsonObject.baseline.specificSubject = true;
-            setStorageObject(jsonObject);
+            StorageModule.setStorageObject(jsonObject);
         });
         
         // Check both relevant N/A checkboxes when one is clicked
@@ -63,7 +60,7 @@ var BaselineModule = (function() {
         // Follow-up questions submitted
         $(".baseline-questionnaire .submit").on("click", function () {
             // Required to update local storage
-            var jsonObject = retrieveStorageObject();
+            var jsonObject = StorageModule.retrieveStorageObject();
 
             if ($(".decreaseHabit").is(":checked")) {
                 // console.log("desires decrease")
@@ -193,7 +190,7 @@ var BaselineModule = (function() {
 
             // Track if any submission has been made
             jsonObject.baseline.userSubmitted = true;
-            setStorageObject(jsonObject);
+            StorageModule.setStorageObject(jsonObject);
             
             // SETTINGS PAGE INITIAL DISPLAY
             // LIVE STATS
@@ -220,7 +217,7 @@ var BaselineModule = (function() {
             }, 700);
 
             var message = "Thank you for answering those questions! Let's get going";
-            createNotification(message);
+            NotificationsModule.createNotification(message);
         });
     }
     
@@ -228,7 +225,7 @@ var BaselineModule = (function() {
      * Load baseline form values from storage
      */
     function loadBaselineValues() {
-        var jsonObject = retrieveStorageObject();
+        var jsonObject = StorageModule.retrieveStorageObject();
         
         if (jsonObject.baseline.userSubmitted) {
             $(".baseline-questionnaire").removeClass("show");

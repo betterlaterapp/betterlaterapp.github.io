@@ -100,7 +100,7 @@ var GoalsModule = (function() {
         var message = 'Any progress is good progress! ' + affirmation;
 
         changeGoalStatus(2, goalType, timestampSeconds);
-        createNotification(message);
+        NotificationsModule.createNotification(message);
 
         var startStamp = json.statistics.goal.lastClickStamp;
         var actualEnd = timestampSeconds;
@@ -111,7 +111,7 @@ var GoalsModule = (function() {
         // Update number of goals
         json.statistics.goal.completedGoals++;
         $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
-        showActiveStatistics();
+        UIModule.showActiveStatistics(json);
 
         var requestedGoalEnd = $('#goalEndPicker').datepicker({
             dateFormat: 'yy-mm-dd'
@@ -133,15 +133,15 @@ var GoalsModule = (function() {
         var jsonHandle = "activeGoal" + goalType.charAt(0).toUpperCase() + goalType.slice(1);
         json.statistics.goal[jsonHandle] = 1;
 
-        updateActionTable(timestampSeconds, "goal", "", goalStampSeconds, goalType);
+        StorageModule.updateActionTable(timestampSeconds, "goal", "", goalStampSeconds, goalType);
 
         // Convert goalend to days hours minutes seconds
         var totalSecondsUntilGoalEnd = Math.round(goalStampSeconds - timestampSeconds);
 
-        loadGoalTimerValues(totalSecondsUntilGoalEnd);
+        TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
         initiateGoalTimer();
-        showActiveStatistics();
-        adjustFibonacciTimerToBoxes("goal-timer");
+        UIModule.showActiveStatistics(json);
+        UIModule.adjustFibonacciTimerToBoxes("goal-timer");
     }
 
     /**
@@ -242,8 +242,8 @@ var GoalsModule = (function() {
         
         // Add handler for goal completion
         window.handleGoalCompletion = function(timerSection, json) {
-            toggleActiveStatGroups();
-            hideInactiveStatistics();
+            UIModule.toggleActiveStatGroups(json);
+            UIModule.hideInactiveStatistics(json);
 
             // Find most recent goal type
             var goalType = "";
@@ -271,13 +271,13 @@ var GoalsModule = (function() {
             // Update number of goals
             json.statistics.goal.completedGoals++;
             $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
-            showActiveStatistics();
+            UIModule.showActiveStatistics(json);
 
             var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
             
             // Notify user that goal ended
             var message = "Congrats! You made it :) . " + affirmation;
-            createNotification(message);
+            NotificationsModule.createNotification(message);
 
             // Disappear zero seconds left timer
             $(timerSection + " .fibonacci-timer").parent().hide();
@@ -352,7 +352,7 @@ var GoalsModule = (function() {
                     '<button class="notification-response-tool end-goal" href="#">' +
                     'No</button>';
 
-                createNotification(message, responseTools);
+                NotificationsModule.createNotification(message, responseTools);
             } else {
                 // Keep lastClickStamp up to date while using app
                 json.statistics.goal.lastClickStamp = timestampSeconds;
@@ -364,19 +364,19 @@ var GoalsModule = (function() {
                 var jsonHandle = "activeGoal" + goalType.charAt(0).toUpperCase() + goalType.slice(1);
                 json.statistics.goal[jsonHandle] = 1;
 
-                updateActionTable(timestampSeconds, "goal", "", goalStampSeconds, goalType);
+                StorageModule.updateActionTable(timestampSeconds, "goal", "", goalStampSeconds, goalType);
 
                 // Convert goalend to days hours minutes seconds
                 var totalSecondsUntilGoalEnd = Math.round(goalStampSeconds - timestampSeconds);
 
-                loadGoalTimerValues(totalSecondsUntilGoalEnd);
+                TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
                 initiateGoalTimer();
 
-                showActiveStatistics();
-                adjustFibonacciTimerToBoxes("goal-timer");
+                UIModule.showActiveStatistics(json);
+                UIModule.adjustFibonacciTimerToBoxes("goal-timer");
             }
 
-            closeClickDialog(".goal");
+            UIModule.closeClickDialog(".goal");
         } else {
             /* User selected a time on today (equal to or) prior to current time */
             alert("Please choose a time later than right now!");
@@ -415,13 +415,7 @@ var GoalsModule = (function() {
      * @param {Object} dependencies - Object containing required functions
      */
     function init(dependencies) {
-        createNotification = dependencies.createNotification;
-        updateActionTable = dependencies.updateActionTable;
-        loadGoalTimerValues = dependencies.loadGoalTimerValues;
         initiateGoalTimer = dependencies.initiateGoalTimer;
-        showActiveStatistics = dependencies.showActiveStatistics;
-        adjustFibonacciTimerToBoxes = dependencies.adjustFibonacciTimerToBoxes;
-        closeClickDialog = dependencies.closeClickDialog;
 
         // Set up event handlers
         $(".goal.log-more-info button.submit").click(function() {
@@ -445,9 +439,7 @@ var GoalsModule = (function() {
         replaceLongestGoal: function(start, end, json, convertSecondsToDateFormat) {
             return replaceLongestGoal(start, end, json, convertSecondsToDateFormat);
         },
-        initiateGoalTimer: function(json, dependencies) {
-            return initiateGoalTimer(json, dependencies);
-        },
+        initiateGoalTimer: initiateGoalTimer,
         setupGoalDialog: setupGoalDialog,
         handleGoalDialogSubmit: handleGoalDialogSubmit,
         init: init
