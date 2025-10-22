@@ -184,7 +184,6 @@ $(document).ready(function () {
                 'You are open to opportunities',
                 'Forgive your mistakes',
                 'Know your worth',
-                'Radiate confidence',
                 'Trust your decisions',
                 'Succeed today',
                 'You are allowed to take up space',
@@ -664,8 +663,6 @@ $(document).ready(function () {
 
                     }
                 }
-
-                
             }
             
             var spentStatistic = StatisticsModule.segregatedTimeRange(timeNow, costCount, "spent");
@@ -736,17 +733,8 @@ $(document).ready(function () {
 
                     var totalSecondsUntilGoalEnd = mostRecentGoal.goalStamp - timeNow;
                     if (totalSecondsUntilGoalEnd > 0) {
-                        GoalsModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
-                        var dependencies = {
-                            toggleActiveStatGroups: UIModule.toggleActiveStatGroups,
-                            hideInactiveStatistics: UIModule.hideInactiveStatistics,
-                            changeGoalStatus: GoalsModule.changeGoalStatus,
-                            placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
-                            replaceLongestGoal: GoalsModule.replaceLongestGoal,
-                            showActiveStatistics: UIModule.showActiveStatistics,
-                            createNotification: NotificationsModule.createNotification
-                        };
-                        GoalsModule.initiateGoalTimer(json, dependencies);
+                        TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
+                        TimerStateManager.initiate('goal', undefined, json);
                     } else {
                         //console.log("goal ended while user away")
                         //goal ended ewhile user was away
@@ -1055,45 +1043,10 @@ $(document).ready(function () {
         
         NotificationsModule.init(json);        
         BaselineModule.init(json);
-    
         UIModule.init(json);
-    
         ActionLogModule.init(json);
-        
-        // Initialize Goals module with dependencies
-        var goalDependencies = {
-            json: json,
-            initiateGoalTimer: function() {
-                var dependencies = {
-                    changeGoalStatus: GoalsModule.changeGoalStatus,
-                    placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
-                    replaceLongestGoal: GoalsModule.replaceLongestGoal
-                };
-                return GoalsModule.initiateGoalTimer(json, dependencies);
-            }
-        };
-        GoalsModule.init(goalDependencies);
-        
-        // Initialize Buttons module with dependencies
-        var buttonDependencies = {
-            initiateReport: StatisticsModule.initiateReport,
-            initiateGoalTimer: function() {
-                var dependencies = {
-                    changeGoalStatus: GoalsModule.changeGoalStatus,
-                    placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
-                    replaceLongestGoal: GoalsModule.replaceLongestGoal
-                };
-                return GoalsModule.initiateGoalTimer(json, dependencies);
-            },
-            initiateSmokeTimer: function(requestedTimestamp) {
-                return TimerStateManager.initiate('smoke', requestedTimestamp, json);
-            },
-            initiateBoughtTimer: function() {
-                return TimerStateManager.initiate('bought', undefined, json);
-            }
-        };
-        ButtonsModule.init(json, buttonDependencies);
-
+        GoalsModule.init(json);
+        ButtonsModule.init(json);
 
 
         /* Goal completion management */
@@ -1102,17 +1055,8 @@ $(document).ready(function () {
 
             // Handle UI updates based on storage result
             if (result.wasExtended) {
-                GoalsModule.loadGoalTimerValues(result.totalSecondsUntilGoalEnd, json);
-                var dependencies = {
-                    toggleActiveStatGroups: UIModule.toggleActiveStatGroups,
-                    hideInactiveStatistics: UIModule.hideInactiveStatistics,
-                    changeGoalStatus: GoalsModule.changeGoalStatus,
-                    placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
-                    replaceLongestGoal: GoalsModule.replaceLongestGoal,
-                    showActiveStatistics: UIModule.showActiveStatistics,
-                    createNotification: NotificationsModule.createNotification
-                };
-                GoalsModule.initiateGoalTimer(json, dependencies);
+                TimersModule.loadGoalTimerValues(result.totalSecondsUntilGoalEnd, json);
+                TimerStateManager.initiate('goal', undefined, json);
                 UIModule.showActiveStatistics(json);
                 UIModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
             } else if (result.goalWasShorter) {

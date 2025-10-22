@@ -99,16 +99,7 @@ function hideTimersOnLoad(json) {
 
     } else {
         //start timer from json values
-        var dependencies = {
-            toggleActiveStatGroups: UIModule.toggleActiveStatGroups,
-            hideInactiveStatistics: UIModule.hideInactiveStatistics,
-            changeGoalStatus: GoalsModule.changeGoalStatus,
-            placeGoalIntoLog: ActionLogModule.placeGoalIntoLog,
-            replaceLongestGoal: GoalsModule.replaceLongestGoal,
-            showActiveStatistics: UIModule.showActiveStatistics,
-            createNotification: NotificationsModule.createNotification
-        };
-        GoalsModule.initiateGoalTimer(json, dependencies);
+        TimerStateManager.initiate('goal', undefined, json);
     }
 }
 

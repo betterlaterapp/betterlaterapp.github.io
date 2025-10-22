@@ -211,10 +211,10 @@ var ButtonsModule = (function() {
         if (userDidItNow) {
             StorageModule.updateActionTable(timestampSeconds, "used");
             ActionLogModule.placeActionIntoLog(timestampSeconds, "used", null, null, null, false);
-            initiateSmokeTimer();
+            TimerStateManager.initiate('smoke', undefined, json);
         } else {
             StorageModule.updateActionTable(requestedTimestamp, "used");
-            initiateSmokeTimer(requestedTimestamp);
+            TimerStateManager.initiate('smoke', requestedTimestamp, json);
         }
 
         // Update statistics display
@@ -322,7 +322,7 @@ var ButtonsModule = (function() {
 
         // Final updates
         UIModule.closeClickDialog(".cost");
-        initiateBoughtTimer();
+        TimerStateManager.initiate('bought', undefined, json);
         UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
@@ -394,16 +394,11 @@ var ButtonsModule = (function() {
     }
 
     /**
-     * Initialize the module with required dependencies
+     * Initialize the module
      * @param {Object} appJson - The application JSON object
-     * @param {Object} dependencies - Object containing required functions
      */
-    function init(appJson, dependencies) {
+    function init(appJson) {
         json = appJson;
-        initiateReport = dependencies.initiateReport;
-        initiateGoalTimer = dependencies.initiateGoalTimer;
-        initiateSmokeTimer = dependencies.initiateSmokeTimer;
-        initiateBoughtTimer = dependencies.initiateBoughtTimer;
 
         // Setup button handlers
         setupButtonHandlers();

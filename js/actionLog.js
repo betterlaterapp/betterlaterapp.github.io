@@ -76,6 +76,46 @@ var ActionLogModule = (function() {
         }
     }
 
+     /**
+     * Place a goal into the log
+     * @param {number} startStamp - Start timestamp
+     * @param {number} endStamp - End timestamp
+     * @param {string} goalType - Goal type
+     * @param {boolean} placeBelow - Whether to place the log entry below others
+     * @param {Object} json - The app state object
+     */
+     function placeGoalIntoLog(startStamp, endStamp, goalType, placeBelow, json) {
+        var endDateObj = new Date(parseInt(endStamp + "000"));
+        var timeElapsed = StatisticsModule.convertSecondsToDateFormat(endStamp - startStamp, false);
+        var dayOfTheWeek = endDateObj.toString().split(' ')[0];
+
+        var shortHandDate = (endDateObj.getMonth() + 1) + "/" +
+            endDateObj.getDate() + "/" +
+            (endDateObj.getFullYear());
+
+        var template = '<div class="item goal-record">' +
+            '<hr/><p class="title"><i class="far fa-calendar-plus"></i>&nbsp;' +
+            'You waited <b><span class="timeElapsed">' + timeElapsed + '</span></b>.' +
+            '</p>' +
+            '<p class="date" style="text-align:center;color:D8D8D8">' +
+            '<span class="dayOfTheWeek">' + dayOfTheWeek + '</span>,&nbsp;' +
+            '<span class="shortHandDate">' + shortHandDate + '</span>' +
+            '</p>' +
+            '</div><!--end habit-log item div-->';
+
+        // Assure user has selected to display this log item type
+        // Controller is on settings pane
+        if (json.option.logItemsToDisplay.goal === true) {
+            if (placeBelow) {
+                $('#habit-log').append(template);
+            } else {
+                $('#habit-log').prepend(template);
+            }
+            // And make sure the heading exists too
+            $("#habit-log-heading").show();
+        }
+    }
+
     /**
      * Populate the initial habit log on page load
      */
@@ -123,7 +163,7 @@ var ActionLogModule = (function() {
                     currGoalEndStamp = allActions[i].goalStopped,
                         currGoalType = allActions[i].goalType;
                     //append 10 new goals
-                    GoalsModule.placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
                 } else if (currClickType == "mood") {
                     //append curr action
                     comment = allActions[i].comment;
@@ -182,7 +222,7 @@ var ActionLogModule = (function() {
                     currGoalEndStamp = allActions[i].goalStopped,
                         currGoalType = allActions[i].goalType;
                     //append 10 new goals
-                    GoalsModule.placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
                 } else if (currClickType == "mood") {
                     //append curr action
                     comment = allActions[i].comment;
@@ -220,6 +260,7 @@ var ActionLogModule = (function() {
     // Public API
     return {
         placeActionIntoLog: placeActionIntoLog,
+        placeGoalIntoLog: placeGoalIntoLog,
         addMoreIntoHabitLog: addMoreIntoHabitLog,
         populateHabitLogOnLoad: populateHabitLogOnLoad,
         init: init
@@ -229,4 +270,6 @@ var ActionLogModule = (function() {
 // Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ActionLogModule;
+} else {
+    window.ActionLogModule = ActionLogModule;
 }

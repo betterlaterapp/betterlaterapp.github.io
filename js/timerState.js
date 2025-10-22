@@ -292,8 +292,8 @@ const TimerStateManager = {
                     timer.intervalRef = null;
                     
                     // Signal completion to app - this has to be handled in app.js
-                    if (GoalsModule.handleGoalCompletion) {
-                        GoalsModule.handleGoalCompletion(timerSection, json);
+                    if (TimerStateManager.handleGoalCompletion) {
+                        TimerStateManager.handleGoalCompletion(timerSection, json);
                     }
                 }
 

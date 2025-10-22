@@ -160,7 +160,7 @@ var NotificationsModule = (function() {
             if ($(this).hasClass("goal-ended-on-time")) {
                 //this is to just shoot the goal straight through the pipeline
                 clearNotification.call(event, this);
-                GoalsModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
+                ActionLogModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                 var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                 var message = "congrats on completing your goal! " + affirmation;
                 createNotification(message);
@@ -236,7 +236,7 @@ var NotificationsModule = (function() {
                 //console.log(tempEndStamp);
                 if (tempEndStamp - startStamp > 0 || endStamp - tempEndStamp < 0) {
                     GoalsModule.changeGoalStatus(2, goalType, tempEndStamp);
-                    GoalsModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
+                    ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                     clearNotification.call(event, this);
 
                     //update json about if there's an active goal
@@ -252,13 +252,13 @@ var NotificationsModule = (function() {
         // Handle goal extension
         $('#notifications-container').on('click', '.extend-goal', function(event) {
             clearNotification.call(event, this);
-            GoalsModule.extendActiveGoal(json, {});
+            GoalsModule.extendActiveGoal(json);
         });
 
         // Handle goal ending
         $('#notifications-container').on('click', '.end-goal', function(event) {
             clearNotification.call(event, this);
-            GoalsModule.endActiveGoal(json, {});
+            GoalsModule.endActiveGoal(json);
         });
     }
 
