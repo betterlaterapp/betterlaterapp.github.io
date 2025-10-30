@@ -287,7 +287,7 @@ var ButtonsModule = (function() {
         UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
-        UIModule.adjustFibonacciTimerToBoxes("bought-timer");
+        TimersModule.adjustFibonacciTimerToBoxes("bought-timer");
         json.statistics.cost.lastClickStamp = timestampSeconds;
     }
     

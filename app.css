@@ -3,6 +3,25 @@ body, body * {
 	font-family: helvetica, Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Show/hide content based on decrease/increase behavior preference */
+/* Default (or when body has desires-decrease): Show decrease wording, hide increase wording */
+body .desires-increase,
+body.desires-decrease .desires-increase {
+	display: none !important;
+}
+body .desires-decrease,
+body.desires-decrease .desires-decrease {
+	display: inline !important;
+}
+
+/* When body has desires-increase class: Show increase wording, hide decrease wording */
+body.desires-increase .desires-increase {
+	display: inline !important;
+}
+body.desires-increase .desires-decrease {
+	display: none !important;
+}
+
 .footer {
     width: 100%;
 }

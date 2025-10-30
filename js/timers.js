@@ -84,12 +84,10 @@ var TimersModule = (function () {
             TimerStateManager.initiate('bought', undefined, json);
         }
 
+        // Note: Goal timer is already initialized in setStatsFromRecords() in app.js
+        // No need to initialize it here - just hide if it's not active
         if (json.statistics.goal.untilTimerEnd.totalSeconds == 0) {
             $("#goal-content .fibonacci-timer").toggle();
-
-        } else {
-            //start timer from json values
-            TimerStateManager.initiate('goal', undefined, json);
         }
     }
 

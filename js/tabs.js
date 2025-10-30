@@ -29,9 +29,9 @@ var TabsModule = (function () {
                 UIModule.toggleActiveStatGroups(json);
                 UIModule.hideInactiveStatistics(json);
 
-                UIModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
-                UIModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
-                UIModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
+                TimersModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
+                TimersModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
+                TimersModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
 
             }, 0);
 

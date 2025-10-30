@@ -83,10 +83,13 @@ var GoalsModule = (function () {
         json.statistics.goal.clickCounter++;
         TimerStateManager.initiate('goal', undefined, json);
         UIModule.showActiveStatistics(json);
-        UIModule.adjustFibonacciTimerToBoxes("goal-timer");
+        TimersModule.adjustFibonacciTimerToBoxes("goal-timer");
     }
 
-    function replaceLongestGoal(start, end) {
+    function replaceLongestGoal(start, end, jsonParam) {
+        // Use passed json if provided, otherwise use module-level json
+        var jsonToUse = jsonParam || json;
+        
         var timeNow = Math.round(new Date() / 1000);
         var timestampLength = {
             week: 7 * 24 * 60 * 60,
@@ -105,9 +108,9 @@ var GoalsModule = (function () {
 
         var goalLength = end - start;
 
-        if (goalLength > json.statistics.goal.longestGoal[timeIncrement]) {
+        if (goalLength > jsonToUse.statistics.goal.longestGoal[timeIncrement]) {
             // If longest goal just happened
-            json.statistics.goal.longestGoal[timeIncrement] = goalLength;
+            jsonToUse.statistics.goal.longestGoal[timeIncrement] = goalLength;
             $(".statistic.longestGoal." + timeIncrement).html(
                 StatisticsModule.convertSecondsToDateFormat(goalLength, true)
             );
@@ -134,12 +137,12 @@ var GoalsModule = (function () {
         var actualEnd = Math.round(new Date() / 1000);
         StorageModule.changeGoalStatus(3, goalType, actualEnd);
 
-        // (startStamp, endStamp, goalType) =>
+        // (startStamp, endStamp, goalType, placeBelow, json) =>
         var startStamp = json.statistics.goal.lastClickStamp;
-        ActionLogModule.placeGoalIntoLog(startStamp, actualEnd, goalType, false);
+        ActionLogModule.placeGoalIntoLog(startStamp, actualEnd, goalType, false, json);
 
         // If longest goal just happened
-        replaceLongestGoal(startStamp, actualEnd);
+        replaceLongestGoal(startStamp, actualEnd, json);
 
         // Update number of goals
         json.statistics.goal.completedGoals++;
@@ -152,8 +155,8 @@ var GoalsModule = (function () {
         var message = "Congrats! You made it :) . " + affirmation;
         NotificationsModule.createNotification(message);
 
-        // Disappear zero seconds left timer
-        $(timerSection + " .fibonacci-timer").parent().hide();
+        // Disappear the entire timer section including the "Until goal ends" text
+        $(timerSection + " .timer-recepticle").hide();
     }
 
     function handleGoalDialogSubmit(json) {
@@ -242,7 +245,7 @@ var GoalsModule = (function () {
                 TimerStateManager.initiate('goal', undefined, json);
 
                 UIModule.showActiveStatistics(json);
-                UIModule.adjustFibonacciTimerToBoxes("goal-timer");
+                TimersModule.adjustFibonacciTimerToBoxes("goal-timer");
             }
 
             UIModule.closeClickDialog(".goal");

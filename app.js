@@ -599,7 +599,7 @@ $(document).ready(function () {
                 avgTimeBetween.total = Math.round(totalTimeBetween.total / (costCount.length - 1));
 
                 if (costCountWeek.length > 1) {
-                    // console.log("avg time between COST (week) is  ", costCountWeek[costCountWeek.length - 1].timestamp - costCountWeek[0].timestamp)
+                    //console.log("avg time between COST (week) is  ", costCountWeek[costCountWeek.length - 1].timestamp - costCountWeek[0].timestamp)
                     if (costCountMonth.length == costCountWeek.length) {
                         totalTimeBetween.week = costCountWeek[costCountWeek.length - 1].timestamp - costCountWeek[0].timestamp;
                         avgTimeBetween.week = Math.round(totalTimeBetween.week / (costCountWeek.length - 1));
@@ -736,10 +736,8 @@ $(document).ready(function () {
                         TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
                         TimerStateManager.initiate('goal', undefined, json);
                     } else {
-                        //console.log("goal ended while user away")
-                        //goal ended ewhile user was away
+                        //goal ended while user was away
                         var mostRecentGoal = goalCount[goalCount.length - 1];
-                        //console.log("mostRecentGoal: ", mostRecentGoal)
                         NotificationsModule.createGoalEndNotification(mostRecentGoal);
                         //last made goal time has concluded
                         $("#goal-content .timer-recepticle").hide();
@@ -892,7 +890,7 @@ $(document).ready(function () {
                 TimersModule.loadGoalTimerValues(result.totalSecondsUntilGoalEnd, json);
                 TimerStateManager.initiate('goal', undefined, json);
                 UIModule.showActiveStatistics(json);
-                UIModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
+                TimersModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
             } else if (result.goalWasShorter) {
                 var message = "Your current goal was longer than the one you just requested. " +
                     "Don't worry if you can't make it all the way, just try a more manageable goal next time!";
