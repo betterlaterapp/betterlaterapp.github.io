@@ -1,31 +1,7 @@
-/**
- * Baseline Questionnaire Module
- * Handles all functionality related to the baseline questionnaire
- */
 var BaselineModule = (function() {
     // Private variables
     var json;
-    var createNotification;
-    var retrieveStorageObject;
-    var setStorageObject;
     
-    /**
-     * Initialize the module with required dependencies
-     * @param {Object} appJson - The application JSON object
-     * @param {Function} notifyFn - Function to create notifications
-     * @param {Function} retrieveFn - Function to retrieve storage object
-     * @param {Function} setFn - Function to set storage object
-     */
-    function init(appJson) {
-        json = appJson;
-        
-        // Set up event listeners
-        setupEventListeners();
-    }
-    
-    /**
-     * Setup all event listeners for the baseline questionnaire
-     */
     function setupEventListeners() {
         // User doesn't know what to track, send them to 'what to track' help docs
         $(".baseline-questionnaire .passerby-user").on('change', function () {
@@ -220,10 +196,7 @@ var BaselineModule = (function() {
             NotificationsModule.createNotification(message);
         });
     }
-    
-    /**
-     * Load baseline form values from storage
-     */
+
     function loadBaselineValues() {
         var jsonObject = StorageModule.retrieveStorageObject();
         
@@ -289,9 +262,21 @@ var BaselineModule = (function() {
         }
     }
     
+    function init(appJson) {
+        json = appJson;
+        setupEventListeners();
+    }
+
     // Public API
     return {
         init: init,
         loadBaselineValues: loadBaselineValues
     };
 })();
+
+// Make the module available globally
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = BaselineModule;
+} else {
+    window.BaselineModule = BaselineModule;
+}

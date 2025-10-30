@@ -1,9 +1,4 @@
-/**
- * Statistics Module
- * Contains all statistics calculation and reporting functionality for Better Later app
- */
-
-var StatisticsModule = (function() {
+var StatisticsModule = (function () {
     /**
      * Calculate statistics for different time ranges
      * @param {number} timeNow - Current timestamp
@@ -16,7 +11,7 @@ var StatisticsModule = (function() {
             runningWeek = 0,
             runningMonth = 0,
             runningYear = 0;
-        
+
         // Calculate timestamps for past week, month, year
         var oneWeekAgoTimeStamp = timeNow - (60 * 60 * 24 * 7);
         var oneMonthAgoTimeStamp = timeNow - (60 * 60 * 24 * 30);
@@ -36,11 +31,11 @@ var StatisticsModule = (function() {
                 runningYear = runningYear + parseInt(value != undefined ? action[i][value] : 1);
             }
         }
-        
+
         return {
-            total: runningTotal, 
-            week: runningWeek, 
-            month: runningMonth, 
+            total: runningTotal,
+            week: runningWeek,
+            month: runningMonth,
             year: runningYear
         };
     }
@@ -69,7 +64,7 @@ var StatisticsModule = (function() {
         }
         // Add hours
         newMidnightStr += "T23:59:59";
-        
+
         var midnightOfTimestamp = Math.round(new Date(newMidnightStr) / 1000);
         return midnightOfTimestamp;
     }
@@ -81,7 +76,7 @@ var StatisticsModule = (function() {
      */
     function calculateMaxReportHeight(storageObject) {
         var jsonObject = storageObject ? storageObject : StorageModule.retrieveStorageObject();
-        var actions = jsonObject.action.filter(function(e) {
+        var actions = jsonObject.action.filter(function (e) {
             return e.clickType == "used" || e.clickType == "craved";
         });
 
@@ -94,8 +89,8 @@ var StatisticsModule = (function() {
             var actionMonth = actionDate.getMonth();
             var actionDay = actionDate.getDate();
 
-            var actionOnCurrDate = 
-                   actionYear == currDate.getFullYear()
+            var actionOnCurrDate =
+                actionYear == currDate.getFullYear()
                 && actionMonth == currDate.getMonth()
                 && actionDay == currDate.getDate();
 
@@ -155,20 +150,20 @@ var StatisticsModule = (function() {
         // To make the "previous report" arrow button workable
         json.report.activeEndStamp = midnightLastDay;
 
-        var boughtThisWeek = jsonObject.action.filter(function(e) {
-            return (e.clickType == "bought") 
+        var boughtThisWeek = jsonObject.action.filter(function (e) {
+            return (e.clickType == "bought")
                 && e.timestamp >= reportStartStamp
                 && e.timestamp <= midnightLastDay;
         });
-        
-        var didLastWeek = jsonObject.action.filter(function(e) {
-            return (e.clickType == "used" || e.clickType == "craved") 
+
+        var didLastWeek = jsonObject.action.filter(function (e) {
+            return (e.clickType == "used" || e.clickType == "craved")
                 && e.timestamp >= lastWeekStartStamp
                 && e.timestamp <= reportStartStamp;
         });
-        
-        var boughtLastWeek = jsonObject.action.filter(function(e) {
-            return (e.clickType == "bought") 
+
+        var boughtLastWeek = jsonObject.action.filter(function (e) {
+            return (e.clickType == "bought")
                 && e.timestamp >= lastWeekStartStamp
                 && e.timestamp <= reportStartStamp;
         });
@@ -176,13 +171,13 @@ var StatisticsModule = (function() {
         for (var dayIndex = 0; dayIndex < 7; dayIndex++) {
             var startOfDayTimestamp = reportStartStamp + ((60 * 60 * 24) * dayIndex);
             var endOfDayTimestamp = reportStartStamp + ((60 * 60 * 24) * (dayIndex + 1));
-        
-            var actionsInRange = jsonObject.action.filter(function(e) {
-                return (e.clickType == "used" || e.clickType == "craved") 
+
+            var actionsInRange = jsonObject.action.filter(function (e) {
+                return (e.clickType == "used" || e.clickType == "craved")
                     && e.timestamp >= startOfDayTimestamp
                     && e.timestamp <= endOfDayTimestamp;
             });
-            
+
             // Sort actions into valuesObject
             for (var action of actionsInRange) {
                 // Insert action into array at day index
@@ -190,7 +185,7 @@ var StatisticsModule = (function() {
                 valuesObject[action.clickType].total++;
             }
         }
-        
+
         if (boughtThisWeek.length > 0) {
             for (var action of boughtThisWeek) {
                 valuesObject[action.clickType].total += parseFloat(action.spent);
@@ -249,10 +244,10 @@ var StatisticsModule = (function() {
 
         // Show most recent report
         createReport(calculateReportValues(reportEndStamp, json), json);
-        
+
         // Hide report description
         $(".weekly-report-description").hide();
-        
+
         return true;
     }
 
@@ -306,7 +301,7 @@ var StatisticsModule = (function() {
             statTarget.parent().find("i.fas").remove();
             statTarget.parent().prepend('<i class="fas fa-caret-down"></i>');
         }
-        
+
         // Format string
         if (percentChanged.toString().length == 1) {
             percentChanged = "&nbsp;&nbsp;&nbsp;&nbsp;" + percentChanged + "%";
@@ -414,7 +409,7 @@ var StatisticsModule = (function() {
 
             if (key == timeIncrement && reasonableNumber) {
                 $(htmlDestination).html(
-                    convertSecondsToDateFormat(finalStringStats[key], true) 
+                    convertSecondsToDateFormat(finalStringStats[key], true)
                 );
             }
         }
@@ -443,14 +438,14 @@ var StatisticsModule = (function() {
         }
 
         // Total uses
-        var count = jsonObject.action.filter(function(e) {
+        var count = jsonObject.action.filter(function (e) {
             return e.clickType == actionGerund;
         });
         count = count.sort((a, b) => {
             return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
         });
 
-        var countByIncrement = count.filter(function(e) {
+        var countByIncrement = count.filter(function (e) {
             return e.timestamp >= timeNow - timestampLength[timeIncrement];
         });
 
@@ -557,7 +552,7 @@ var StatisticsModule = (function() {
         weekAgo.setDate(weekAgo.getDate() - 7);
         weekAgo = weekAgo.getTime();
         var beenAWeek = weekAgo / 1000 > parseInt(json.statistics.use.firstClickStamp);
-        
+
         // Set uses vs baseline
         if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek) {
             var percentChanged = percentChangedBetween(json.baseline.amountDonePerWeek, totalUsesThisWeek);
@@ -633,7 +628,7 @@ var StatisticsModule = (function() {
         } else {
             $("#goalSpentPerWeek").parent().parent().hide();
         }
-        
+
         // Remove table headers given case of nothing to be displayed in table
         if (!(json.option.reportItemsToDisplay.useGoalVsThisWeek) && !(json.option.reportItemsToDisplay.costGoalVsThisWeek)) {
             $(".goal-report thead").hide();
@@ -651,17 +646,17 @@ var StatisticsModule = (function() {
         formatPercentChangedStat: formatPercentChangedStat,
         timestampToShortHandDate: timestampToShortHandDate,
         convertSecondsToDateFormat: convertSecondsToDateFormat,
-        displayAverageTimeBetween: function(actionType, timeIncrement, json) {
+        displayAverageTimeBetween: function (actionType, timeIncrement, json) {
             displayAverageTimeBetween(actionType, timeIncrement, json, convertSecondsToDateFormat);
         },
         recalculateAverageTimeBetween: recalculateAverageTimeBetween,
-        displayLongestGoal: function(timeIncrement, json) {
+        displayLongestGoal: function (timeIncrement, json) {
             displayLongestGoal(timeIncrement, json, convertSecondsToDateFormat);
         },
-        createReport: function(reportValues, json) {
+        createReport: function (reportValues, json) {
             createReport(reportValues, json);
         },
-        createReportForEndStamp: function(reportEndStamp, json) {
+        createReportForEndStamp: function (reportEndStamp, json) {
             var reportValues = calculateReportValues(reportEndStamp, json);
             createReport(reportValues, json);
         }

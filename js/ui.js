@@ -1,15 +1,7 @@
-/**
- * UI Module
- * Contains all UI-related functionality for Better Later app
- */
-
 var UIModule = (function() {
     // Private variables for module scope
     var json;
-    /**
-     * Toggle visibility of stat groups based on data
-     * @param {Object} json - The app state object
-     */
+
     function toggleActiveStatGroups(json) {
         // Loop through all stats and auto hide duplicate values inside of Total-Week-Month-Year style objects
         for (let statGroup in json.statistics) {
@@ -56,10 +48,6 @@ var UIModule = (function() {
         }
     }
 
-    /**
-     * Hide inactive statistics based on data and user settings
-     * @param {Object} json - The app state object
-     */
     function hideInactiveStatistics(json) {
         var display = json.option.liveStatsToDisplay;
         var stat = json.statistics;
@@ -198,10 +186,6 @@ var UIModule = (function() {
         }
     }
 
-    /**
-     * Show active statistics based on data and user settings
-     * @param {Object} json - The app state object
-     */
     function showActiveStatistics(json) {
         var display = json.option.liveStatsToDisplay;
         var stat = json.statistics;
@@ -332,9 +316,6 @@ var UIModule = (function() {
         }
     }
 
-    /**
-     * Show confetti animation
-     */
     function shootConfetti() {
         const duration = 2 * 1000,
             animationEnd = Date.now() + duration,
@@ -367,15 +348,6 @@ var UIModule = (function() {
                 })
             );
         }, 250);
-    }
-
-    /**
-     * Adjust Fibonacci timer boxes
-     * @param {string} timerId - The ID of the timer element
-     * @param {boolean} userWasInactive - Whether the user was inactive
-     */
-    function adjustFibonacciTimerToBoxes(timerId, userWasInactive) {
-        TimersModule.adjustFibonacciTimerToBoxes(timerId, userWasInactive);
     }
 
     /**
@@ -486,7 +458,6 @@ var UIModule = (function() {
         hideInactiveStatistics: hideInactiveStatistics,
         showActiveStatistics: showActiveStatistics,
         shootConfetti: shootConfetti,
-        adjustFibonacciTimerToBoxes: adjustFibonacciTimerToBoxes,
         hideZeroValueTimerBoxes: hideZeroValueTimerBoxes,
         openClickDialog: openClickDialog,
         closeClickDialog: closeClickDialog,

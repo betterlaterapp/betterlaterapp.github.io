@@ -1,9 +1,4 @@
-/**
- * Action Log Module
- * Handles all action logging functionality for Better Later app
- */
-
-var ActionLogModule = (function() {
+var ActionLogModule = (function () {
     // Private variables
     var json;
 
@@ -50,7 +45,7 @@ var ActionLogModule = (function() {
         } else if (clickType == "craved") {
             titleHTML = '<i class="fas fa-ban"></i>&nbsp;' + "You resisted it at <b>" + shortHandTime + "</b>.";
             //target = "#use-log";
-        } else if(clickType == "mood") {
+        } else if (clickType == "mood") {
             var scrubbedComment = comment.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
             titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
         }
@@ -76,15 +71,15 @@ var ActionLogModule = (function() {
         }
     }
 
-     /**
-     * Place a goal into the log
-     * @param {number} startStamp - Start timestamp
-     * @param {number} endStamp - End timestamp
-     * @param {string} goalType - Goal type
-     * @param {boolean} placeBelow - Whether to place the log entry below others
-     * @param {Object} json - The app state object
-     */
-     function placeGoalIntoLog(startStamp, endStamp, goalType, placeBelow, json) {
+    /**
+    * Place a goal into the log
+    * @param {number} startStamp - Start timestamp
+    * @param {number} endStamp - End timestamp
+    * @param {string} goalType - Goal type
+    * @param {boolean} placeBelow - Whether to place the log entry below others
+    * @param {Object} json - The app state object
+    */
+    function placeGoalIntoLog(startStamp, endStamp, goalType, placeBelow, json) {
         var endDateObj = new Date(parseInt(endStamp + "000"));
         var timeElapsed = StatisticsModule.convertSecondsToDateFormat(endStamp - startStamp, false);
         var dayOfTheWeek = endDateObj.toString().split(' ')[0];
@@ -116,9 +111,6 @@ var ActionLogModule = (function() {
         }
     }
 
-    /**
-     * Populate the initial habit log on page load
-     */
     function populateHabitLogOnLoad() {
         var jsonObject = StorageModule.retrieveStorageObject();
         var allActions = jsonObject.action.filter(function (e) {
@@ -168,7 +160,7 @@ var ActionLogModule = (function() {
                     //append curr action
                     comment = allActions[i].comment;
                     smiley = allActions[i].smiley;
-                    
+
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
                 }
@@ -190,9 +182,6 @@ var ActionLogModule = (function() {
         }
     }
 
-    /**
-     * Add more items to the habit log
-     */
     function addMoreIntoHabitLog() {
         var jsonObject = StorageModule.retrieveStorageObject();
         var allActions = jsonObject.action;
@@ -227,7 +216,7 @@ var ActionLogModule = (function() {
                     //append curr action
                     comment = allActions[i].comment;
                     smiley = allActions[i].smiley;
-                    
+
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
                 }
@@ -249,12 +238,35 @@ var ActionLogModule = (function() {
         }
     }
 
+    function setupMoodTracker() {
+        $("#mood-tracker-area .smiley").on("mouseup", function () {
+            $("#mood-tracker-area .smiley").removeClass('selected');
+            $(this).addClass('selected')
+        });
+
+        $("#mood-tracker-area .response .submit").on("mouseup", function () {
+            var now = Math.round(new Date() / 1000);
+            var comment = $("#mood-tracker-area .response .text").val();
+
+            $.each($("#mood-tracker-area .smiley"), function (i, value) {
+                if ($(this).hasClass('selected')) {
+                    StorageModule.updateActionTable(now, "mood", null, null, null, comment, i);
+                    placeActionIntoLog(now, "mood", null, comment, i, false);
+                }
+            });
+
+            $('#mood-tracker-area .response textarea').val("");
+            $("#statistics-content .initial-instructions").hide();
+        });
+    }
+
     /**
      * Initialize the module
      * @param {Object} appJson - The application JSON object
      */
     function init(appJson) {
         json = appJson;
+        setupMoodTracker();
     }
 
     // Public API
@@ -263,6 +275,7 @@ var ActionLogModule = (function() {
         placeGoalIntoLog: placeGoalIntoLog,
         addMoreIntoHabitLog: addMoreIntoHabitLog,
         populateHabitLogOnLoad: populateHabitLogOnLoad,
+        setupMoodTracker: setupMoodTracker,
         init: init
     };
 })();

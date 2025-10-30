@@ -1,9 +1,4 @@
-/**
- * Notifications Module
- * Contains all notification-related functionality for Better Later app
- */
-
-var NotificationsModule = (function() {
+var NotificationsModule = (function () {
     /**
      * Clear a notification by sliding it off screen
      * @param {Event} event - The event that triggered the clear
@@ -25,9 +20,6 @@ var NotificationsModule = (function() {
             });
     }
 
-    /**
-     * Setup swipe detection for notifications
-     */
     function setupSwipeNotification() {
         document.addEventListener('touchstart', handleTouchStart, false);
         document.addEventListener('touchmove', handleTouchMove, false);
@@ -134,19 +126,19 @@ var NotificationsModule = (function() {
      */
     function setupNotificationEventHandlers(json) {
         // Close notification on click
-        $('#notifications-container').on('click', '.notification-close, .clear-notification', function(event) {
+        $('#notifications-container').on('click', '.notification-close, .clear-notification', function (event) {
             clearNotification.call(event, this);
         });
 
         // Handle notification response tools
-        $('#notifications-container').on('click', '.notification-response-tool', function(event) {
+        $('#notifications-container').on('click', '.notification-response-tool', function (event) {
             //need these variables: startStamp, endStamp, goalType
             //convert localStorage to json
             var currJsonString = localStorage.esCrave;
             var jsonObject = JSON.parse(currJsonString);
 
             //return active goal
-            var activeGoals = jsonObject.action.filter(function(e) {
+            var activeGoals = jsonObject.action.filter(function (e) {
                 return e.clickType == "goal" && e.status == 1;
             });
             var mostRecentGoal = activeGoals[activeGoals.length - 1];
@@ -164,13 +156,13 @@ var NotificationsModule = (function() {
                 var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)]
                 var message = "congrats on completing your goal! " + affirmation;
                 createNotification(message);
-                GoalsModule.changeGoalStatus(3, goalType);
+                StorageModule.changeGoalStatus(3, goalType);
 
                 //update json about if there's an active goal
                 json.statistics.goal.activeGoalBoth = 0;
                 json.statistics.goal.activeGoalUse = 0;
                 json.statistics.goal.activeGoalBought = 0;
-            } 
+            }
             else if ($(this).hasClass("goal-ended-early")) {
                 clearNotification.call(event, this);
                 var now = Math.round(new Date() / 1000);
@@ -191,7 +183,7 @@ var NotificationsModule = (function() {
                 } else {
                     maxFormatted = (maxFormatted * -1);
                 }
-            
+
                 var message = "Bummmer. " +
                     "When do you think you broke your goal?";
 
@@ -232,10 +224,29 @@ var NotificationsModule = (function() {
             //if goal ended ahead of schedule, when did it end?
             //submitted new date/time
             if ($(this).hasClass("submit-new-goal-time")) {
-                var tempEndStamp = StatisticsModule.convertDateTimeToTimestamp('#datepicker-notification', '#goalEndTimePicker');
+                // Get the date and time from the pickers
+                var selectedDate = $('#datepicker-notification').datepicker('getDate');
+                var selectedHours = parseInt($('#goalEndTimePicker .time-picker-hour').val());
+                var selectedAMPM = $('#goalEndTimePicker .time-picker-am-pm').val();
+
+                // Convert 12-hour to 24-hour format
+                if (selectedHours == 12) {
+                    selectedHours = 0;
+                }
+                if (selectedAMPM == "PM") {
+                    selectedHours += 12;
+                }
+
+                // Set hours on the selected date
+                selectedDate.setHours(selectedHours);
+                selectedDate.setMinutes(0);
+                selectedDate.setSeconds(0);
+
+                var tempEndStamp = Math.round(selectedDate.getTime() / 1000);
+
                 //console.log(tempEndStamp);
                 if (tempEndStamp - startStamp > 0 || endStamp - tempEndStamp < 0) {
-                    GoalsModule.changeGoalStatus(2, goalType, tempEndStamp);
+                    StorageModule.changeGoalStatus(2, goalType, tempEndStamp);
                     ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                     clearNotification.call(event, this);
 
@@ -250,13 +261,13 @@ var NotificationsModule = (function() {
         });
 
         // Handle goal extension
-        $('#notifications-container').on('click', '.extend-goal', function(event) {
+        $('#notifications-container').on('click', '.extend-goal', function (event) {
             clearNotification.call(event, this);
             GoalsModule.extendActiveGoal(json);
         });
 
         // Handle goal ending
-        $('#notifications-container').on('click', '.end-goal', function(event) {
+        $('#notifications-container').on('click', '.end-goal', function (event) {
             clearNotification.call(event, this);
             GoalsModule.endActiveGoal(json);
         });
@@ -269,7 +280,7 @@ var NotificationsModule = (function() {
         createNotification: createNotification,
         createGoalEndNotification: createGoalEndNotification,
         setupNotificationEventHandlers: setupNotificationEventHandlers,
-        init: function(json) {
+        init: function (json) {
             setupSwipeNotification();
             setupNotificationEventHandlers(json);
         }

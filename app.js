@@ -846,7 +846,7 @@ $(document).ready(function () {
 
                         //console.log('Longest goal (year) is ', StatisticsModule.convertSecondsToDateFormat(largestDiff, true))
                         json.statistics.goal.longestGoal["year"] = largestDiff;
-                        $(".statistic.longestGoal" + ".yeah").html(StatisticsModule.convertSecondsToDateFormat(largestDiff, true));
+                        $(".statistic.longestGoal" + ".year").html(StatisticsModule.convertSecondsToDateFormat(largestDiff, true));
 
                     } else {
                         //console.log('Longest goal (year) is default: N/A' )
@@ -873,174 +873,9 @@ $(document).ready(function () {
             }
         }
 
-        $(".previous-report").on("click", function () {
-            $('.next-report').prop("disabled", false)
-            if (json.report.activeEndStamp - (60 * 60 * 24 * 7) >= json.report.minEndStamp) {
-                var reportEndStamp = json.report.activeEndStamp - (60 * 60 * 24 * 7);
-                StatisticsModule.createReportForEndStamp(reportEndStamp, json);
-            } else {
-                $('.previous-report').prop("disabled", true)
-                NotificationsModule.createNotification("Looks like there isn't enough data to make that report!");
-
-                $('html').animate({ scrollTop: 0 })
-            }
-        });
-
-        $(".next-report").on("click", function () {
-            $('.previous-report').prop("disabled", false)
-            if (json.report.activeEndStamp + (60 * 60 * 24 * 7) < json.report.maxEndStamp) {
-                var reportEndStamp = json.report.activeEndStamp + (60 * 60 * 24 * 7);
-                StatisticsModule.createReportForEndStamp(reportEndStamp, json);
-            } else {
-                $('.next-report').prop("disabled", true)
-                NotificationsModule.createNotification("The next report is for a week that has not happened yet!");
-
-                $('html').animate({ scrollTop: 0 })
-            }
-        });
-
-        //function to read settings changes for which stats to display
-        (function settingsDisplayChanges() {
-            //LIVE STATISTICS
-            //listen when changed checkbox inside display options area
-            $(".statistics-display-options .form-check-input").on('change', function () {
-
-                //detect specific id
-                var itemHandle = this.id;
-                var displayCorrespondingStat = false;
-
-                if ($("#" + itemHandle).is(":checked")) {
-                    displayCorrespondingStat = true;
-                }
-
-                //change value in JSON
-                var jsonHandle = itemHandle.replace("Displayed", "");
-                json.option.liveStatsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                //update option table value
-                var jsonObject = StorageModule.retrieveStorageObject();
-                jsonObject.option.liveStatsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                StorageModule.setStorageObject(jsonObject);
-                UIModule.showActiveStatistics(json);
-                UIModule.toggleActiveStatGroups(json);
-                UIModule.hideInactiveStatistics(json);
-
-            });
-
-            //HABIT LOG 
-            //listen when changed checkbox inside display options area
-            $(".habit-log-display-options .form-check-input").on('change', function () {
-                //detect specific id
-                var itemHandle = this.id;
-                var jsonHandle = itemHandle.replace("RecordDisplayed", "");
-                var displayCorrespondingStat = false;
-
-                if ($("#" + itemHandle).is(":checked")) {
-                    displayCorrespondingStat = true;
-                    //remove display none from relevant habit log items
-                    $("#habit-log .item." + jsonHandle + "-record").removeClass("d-none");
-
-                } else {
-                    //add display none to relevant habit log items
-                    $("#habit-log .item." + jsonHandle + "-record").addClass("d-none");
-                }
-
-                //change value in JSON
-                json.option.logItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                //update option table value
-                var jsonObject = StorageModule.retrieveStorageObject();
-                jsonObject.option.logItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                StorageModule.setStorageObject(jsonObject);
-
-            });
-
-            //WEEKLY REPORT
-            //listen when changed checkbox inside display options area
-            $(".report-display-options .form-check-input").on('change', function () {
-
-                //detect specific id
-                var itemHandle = this.id;
-                var displayCorrespondingStat = false;
-
-                if ($("#" + itemHandle).is(":checked")) {
-                    displayCorrespondingStat = true;
-                }
-
-                //change value in JSON
-                var jsonHandle = itemHandle.replace("Displayed", "");
-                json.option.reportItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                //update option table value
-                var jsonObject = StorageModule.retrieveStorageObject();
-                jsonObject.option.reportItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-                //case to remove an existing graph
-                if (!json.option.reportItemsToDisplay.useVsResistsGraph) {
-                    $(".weekly-report .chart-title").hide();
-                    $(".weekly-report .bar-chart").hide();
-                    $(".weekly-report .week-range").hide();
-                } else {
-                    $(".weekly-report .chart-title").show();
-                    $(".weekly-report .bar-chart").show();
-                    $(".weekly-report .week-range").show();
-
-                }
-
-                StorageModule.setStorageObject(jsonObject);
-            });
-        }); // End of original baseline code */
-
-        //return to last active tab
-        function returnToActiveTab() {
-            if (json.option.activeTab) {
-                var tabName = json.option.activeTab.split("-")[0];
-                $("." + tabName + "-tab-toggler").click();
-            } else {
-                $("." + "statistics" + "-tab-toggler").click();
-            }
-        }
-
-        //save current tab on switch
-        function saveActiveTab() {
-            //update instance json
-            json.option.activeTab = $(".tab-pane.active").attr('id');
-
-            //update in option table
-            //convert localStorage to json
-            var jsonObject = StorageModule.retrieveStorageObject();
-            jsonObject.option.activeTab = $(".tab-pane.active").attr('id');
-            StorageModule.setStorageObject(jsonObject);
-
-        }
-
-
-        $("#mood-tracker-area .smiley").on("mouseup", function () {
-            $("#mood-tracker-area .smiley").removeClass('selected');
-            $(this).addClass('selected')
-        });
-
-        $("#mood-tracker-area .response .submit").on("mouseup", function () {
-            var now = Math.round(new Date() / 1000);
-            var comment = $("#mood-tracker-area .response .text").val();
-
-            $.each($("#mood-tracker-area .smiley"), function (i, value) {
-                if ($(this).hasClass('selected')) {
-                    StorageModule.updateActionTable(now, "mood", null, null, null, comment, i);
-
-                    ActionLogModule.placeActionIntoLog(now, "mood", null, comment, i, false);
-                }
-            });
-
-            $('#mood-tracker-area .response textarea').val("");
-            $("#statistics-content .initial-instructions").hide();
-
-        });
-
-
         NotificationsModule.init(json);
+        TabsModule.init(json, userWasInactive);
+        SettingsModule.init(json);
         BaselineModule.init(json);
         UIModule.init(json);
         ActionLogModule.init(json);
@@ -1050,7 +885,7 @@ $(document).ready(function () {
 
         /* Goal completion management */
         function changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo) {
-            var result = GoalsModule.changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo);
+            var result = StorageModule.changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo);
 
             // Handle UI updates based on storage result
             if (result.wasExtended) {
@@ -1066,109 +901,6 @@ $(document).ready(function () {
 
             return result;
         }
-
-
-        /*SETTINGS MENU FUNCTIONS*/
-        //undo last click
-        function undoLastAction() {
-            var undoneActionClickType = StorageModule.undoLastAction();
-
-            //UNBREAK GOAL
-            //if action could have broken a goal
-            if (undoneActionClickType == "used" || undoneActionClickType == "bought") {
-                var jsonObject = StorageModule.retrieveStorageObject();
-                //cycle back through records until you find most recent goal
-                for (var i = jsonObject["action"].length - 1; i >= 0; i--) {
-                    var currRecord = jsonObject["action"][i];
-                    var goalTypeIsRelevant = (currRecord.goalType == "both" || currRecord.goalType == undoneActionClickType);
-                    if (goalTypeIsRelevant && currRecord.clickType == "goal") {
-                        //if this first finds a goal which would have been broken by undoneActionClickType, 
-                        //change this.status to active, exit loop 
-                        changeGoalStatus(1, currRecord.goalType, -1);
-                        break;
-
-                    } else if (currRecord.clickType == undoneActionClickType) {
-                        //if this first finds an action.clickType == undoneActionClickType, 
-                        //then a goal could not have been broken, so exit loop without changing goal status
-                        break;
-                    }
-                }
-            }
-            window.location.reload();
-
-        }
-        //reset all stats
-        function clearActions() {
-            StorageModule.clearStorage();
-            window.location.reload();
-        }
-
-        /*SETTINGS MENU CLICK EVENTS */
-        $("#undoActionButton").click(function (event) {
-            event.preventDefault();
-            if (confirm("Your last click will be undone - irreversibly. Are you sure?")) {
-                undoLastAction();
-            }
-        });
-
-        $("#clearTablesButton").click(function (event) {
-            event.preventDefault();
-            if (confirm("ALL your data will be cleared - irreversibly. Are you sure??")) {
-                clearActions();
-            }
-
-        });
-
-
-        /*Actions on switch tab */
-        $(document).delegate(".statistics-tab-toggler", 'click', function (e) {
-            saveActiveTab();
-
-            setTimeout(function () {
-                UIModule.toggleActiveStatGroups(json);
-                UIModule.hideInactiveStatistics(json);
-
-                UIModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
-                UIModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
-                UIModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
-
-            }, 0);
-
-            $(".baseline-tab-toggler").removeClass("active");
-            $(".settings-tab-toggler").removeClass("active");
-            $(".reports-tab-toggler").removeClass("active");
-
-            if ($('#settings-content').hasClass("active")) {
-                $('#settings-content').removeClass("active")
-                $('#settings-content').attr("aria-expanded", false)
-            }
-
-            $(".statistics-tab-toggler").addClass("active");
-
-            //close dropdown nav
-            if ($("#options-collapse-menu").hasClass("show")) {
-                $(".navbar-toggler").click();
-            }
-
-            //get them notifcations for useful reports
-            StatisticsModule.initiateReport(json);
-        });
-
-        $(document).delegate(".settings-tab-toggler", 'click', function (e) {
-
-            saveActiveTab();
-            $(".baseline-tab-toggler").removeClass("active");
-            $(".reports-tab-toggler").removeClass("active");
-            $(".statistics-tab-toggler").removeClass("active");
-
-            $(this).addClass('active')
-
-            //close dropdown nav
-            if ($("#options-collapse-menu").hasClass("show")) {
-                $(".navbar-toggler").click();
-            }
-
-        });
 
 
         /* CALL INITIAL STATE OF APP */
@@ -1208,7 +940,7 @@ $(document).ready(function () {
                 StatisticsModule.displayLongestGoal("total", json);
             }
 
-            returnToActiveTab();
+            TabsModule.returnToActiveTab();
             TimersModule.hideTimersOnLoad(json);
 
             //after all is said and done 

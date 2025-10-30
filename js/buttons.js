@@ -1,23 +1,7 @@
-/**
- * Buttons Module
- * Contains all button click handlers for Better Later app
- */
-
 var ButtonsModule = (function() {
     // Private variables
     var json;
-    var createNotification;
-    var updateActionTable;
-    var placeActionIntoLog;
-    var initiateReport;
-    var initiateGoalTimer;
-    var initiateSmokeTimer;
-    var initiateBoughtTimer;
 
-    /**
-     * Handle crave button click
-     * @param {number} timestampSeconds - Current timestamp in seconds
-     */
     function handleCraveButtonClick(timestampSeconds) {
 
         
@@ -57,9 +41,6 @@ var ButtonsModule = (function() {
         }
     }
 
-    /**
-     * Handle use button click
-     */
     function handleUseButtonClick() {
         UIModule.openClickDialog(".use");
 
@@ -88,9 +69,6 @@ var ButtonsModule = (function() {
         UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
     }
 
-    /**
-     * Calculate requested timestamp from form inputs
-     */
     function calculateRequestedTimestamp() {
         var date = new Date();
         var timestampSeconds = Math.round(date / 1000);
@@ -129,9 +107,6 @@ var ButtonsModule = (function() {
         return { timestampSeconds, requestedTimestamp, userDidItNow };
     }
 
-    /**
-     * Update statistics display for use actions
-     */
     function updateUseStatistics() {
         var newTotals = {
             total: parseInt($(".statistic.use.totals.total").html()) + 1,
@@ -152,9 +127,6 @@ var ButtonsModule = (function() {
         $(".statistic.use.timeBetween.year").html(betweenClicks.year);
     }
 
-    /**
-     * Handle goal completion for use actions
-     */
     function handleUseGoalCompletion(requestedTimestamp) {
         if (json.statistics.goal.activeGoalUse === 0 && json.statistics.goal.activeGoalBoth === 0) {
             return;
@@ -167,18 +139,17 @@ var ButtonsModule = (function() {
         json.statistics.goal.activeGoalUse = 0;
         json.statistics.goal.activeGoalBoth = 0;
 
-        changeGoalStatus(2, goalType, requestedTimestamp);
+        StorageModule.changeGoalStatus(2, goalType, requestedTimestamp);
         NotificationsModule.createNotification(message);
-        clearInterval(goalTimer);
 
         $("#goal-content .timer-recepticle").hide();
-        toggleActiveStatGroups();
-        hideInactiveStatistics();
+        UIModule.toggleActiveStatGroups(json);
+        UIModule.hideInactiveStatistics(json);
 
         // Log completed goal
         var startStamp = json.statistics.goal.lastClickStamp;
-        placeGoalIntoLog(startStamp, requestedTimestamp, goalType, false);
-        replaceLongestGoal(startStamp, requestedTimestamp);
+        ActionLogModule.placeActionIntoLog(startStamp, "used", null, null, null, false);
+        GoalsModule.replaceLongestGoal(startStamp, requestedTimestamp, json);
 
         // Update goal counter
         json.statistics.goal.completedGoals++;
@@ -187,7 +158,7 @@ var ButtonsModule = (function() {
 
     function handleUseButtonDialog() {
         if (json.baseline.decreaseHabit === false) {
-            shootConfetti();
+            UIModule.shootConfetti();
         }
 
         var timeData = calculateRequestedTimestamp();
@@ -230,16 +201,10 @@ var ButtonsModule = (function() {
         UIModule.closeClickDialog(".use");
     }
 
-    /**
-     * Handle bought button click
-     */
     function handleBoughtButtonClick() {
         UIModule.openClickDialog(".cost");
     }
 
-    /**
-     * Update cost statistics display
-     */
     function updateCostStatistics(amountSpent) {
         // Update totals in JSON
         json.statistics.cost.totals.total = parseInt(json.statistics.cost.totals.total) + parseInt(amountSpent);
@@ -254,9 +219,6 @@ var ButtonsModule = (function() {
         $(".statistic.cost.totals.year").html("$" + json.statistics.cost.totals.year);
     }
 
-    /**
-     * Handle goal completion for bought actions
-     */
     function handleBoughtGoalCompletion(timestampSeconds) {
         if (json.statistics.goal.activeGoalBought === 0 && json.statistics.goal.activeGoalBoth === 0) {
             return;
@@ -269,18 +231,17 @@ var ButtonsModule = (function() {
         json.statistics.goal.activeGoalBought = 0;
         json.statistics.goal.activeGoalBoth = 0;
 
-        changeGoalStatus(2, goalType, timestampSeconds);
+        StorageModule.changeGoalStatus(2, goalType, timestampSeconds);
         NotificationsModule.createNotification(message);
-        clearInterval(goalTimer);
 
         $("#goal-content .timer-recepticle").hide();
-        toggleActiveStatGroups();
-        hideInactiveStatistics();
+        UIModule.toggleActiveStatGroups(json);
+        UIModule.hideInactiveStatistics(json);
 
         // Log completed goal
         var startStamp = json.statistics.goal.lastClickStamp;
-        placeGoalIntoLog(startStamp, timestampSeconds, goalType, false);
-        replaceLongestGoal(startStamp, timestampSeconds);
+        ActionLogModule.placeGoalIntoLog(startStamp, timestampSeconds, goalType, false, json);
+        GoalsModule.replaceLongestGoal(startStamp, timestampSeconds, json);
 
         // Update goal counter
         json.statistics.goal.completedGoals++;
@@ -326,13 +287,10 @@ var ButtonsModule = (function() {
         UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
-        UIModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
+        UIModule.adjustFibonacciTimerToBoxes("bought-timer");
         json.statistics.cost.lastClickStamp = timestampSeconds;
     }
     
-    /**
-     * Handle goal button click
-     */
     function handleGoalButtonClick() {
         UIModule.openClickDialog(".goal");
 
@@ -340,9 +298,6 @@ var ButtonsModule = (function() {
         GoalsModule.setupGoalDialog();
     }
 
-    /**
-     * Setup button click handlers
-     */
     function setupButtonHandlers() {
         $("#bought-button, #crave-button, #use-button, #goal-button").click(function() {
             // Detect section
@@ -378,7 +333,7 @@ var ButtonsModule = (function() {
             handleUseButtonDialog();
         });
         $(".use.log-more-info button.cancel").click(function () {
-            closeClickDialog(".use");
+            UIModule.closeClickDialog(".use");
         });
 
         //COST DIALOG CLICK
@@ -388,19 +343,13 @@ var ButtonsModule = (function() {
         });
 
         $(".cost.log-more-info button.cancel").click(function () {
-            closeClickDialog(".cost");
+            UIModule.closeClickDialog(".cost");
         })
         
     }
 
-    /**
-     * Initialize the module
-     * @param {Object} appJson - The application JSON object
-     */
     function init(appJson) {
         json = appJson;
-
-        // Setup button handlers
         setupButtonHandlers();
     }
 

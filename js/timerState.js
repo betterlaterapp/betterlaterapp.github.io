@@ -3,8 +3,8 @@
  * Handles all timer functionality for Better Later app
  */
 
-const TimerStateManager = {
-    timers: {
+var TimerStateManager = (function () {
+    var timers = {
         smoke: {
             id: 'smoke-timer',
             selector: '#use-content',
@@ -21,29 +21,315 @@ const TimerStateManager = {
         },
         goal: {
             id: 'goal-timer',
-            selector: '#goal-content', 
+            selector: '#goal-content',
             jsonPath: 'goal',
             intervalRef: null,
             countdown: true,
             stateKey: 'untilTimerEnd' // Different from others
         }
-    },
+    }
 
     /**
-     * Initialize a timer with optional timestamp
-     * @param {string} timerType - 'smoke', 'bought', or 'goal'
-     * @param {number} requestedTimestamp - Optional timestamp for initialization
-     * @param {object} json - App data object
+     * Calculate time units from total seconds
+     * @param {number} totalSeconds
+     * @returns {object} Object with days, hours, minutes, seconds
      */
-    initiate(timerType, requestedTimestamp, json) {
-        const timer = this.timers[timerType];
+    function calculateTimeUnits(totalSeconds) {
+        const days = Math.floor(totalSeconds / (60 * 60 * 24));
+        const hours = Math.floor(totalSeconds / (60 * 60)) % 24;
+        const minutes = Math.floor(totalSeconds / 60) % 60;
+        const seconds = totalSeconds % 60;
+
+        return { days, hours, minutes, seconds };
+    }
+
+    function updateTimerDisplay(timerSection, seconds, minutes, hours, days) {
+        // Format seconds with leading zero if needed
+        const formattedSeconds = seconds >= 10 ? seconds : "0" + seconds;
+
+        $(`${timerSection} .secondsSinceLastClick:first-child`).html(formattedSeconds);
+        $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
+        $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
+        $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
+    }
+
+    function resetTimerBoxVisibility(timerSection) {
+        if (!$(`${timerSection} .fibonacci-timer`).is(':visible')) {
+            $(`${timerSection} .fibonacci-timer:first-child`).toggle();
+        }
+
+        while ($(`${timerSection} .boxes div:visible`).length > 1) {
+            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
+        }
+    }
+
+    function adjustTimerBoxVisibility(timerSection, fromValues, timeValues) {
+        if (fromValues) {
+            // For initiation with values
+            for (let timerBox of $(`${timerSection} .boxes div:visible`)) {
+                if (parseInt($(timerBox).find(".timerSpan").html()) === 0) {
+                    $(timerBox).hide();
+                } else { // Found a non-zero value
+                    $(timerBox).show();
+                    break;
+                }
+            }
+        } else {
+            // For restarting from storage
+            let foundNonZero = false;
+
+            if (timeValues.days === 0) {
+                $(`${timerSection} .daysSinceLastClick`).parent().toggle();
+            } else {
+                foundNonZero = true;
+            }
+
+            if (timeValues.hours === 0 && !foundNonZero) {
+                $(`${timerSection} .hoursSinceLastClick`).parent().toggle();
+            } else {
+                foundNonZero = true;
+            }
+
+            if (timeValues.minutes === 0 && !foundNonZero) {
+                $(`${timerSection} .minutesSinceLastClick`).parent().toggle();
+            } else if (timeValues.minutes === 0) {
+                $(`${timerSection} .minutesSinceLastClick:first-child`).html(timeValues.minutes);
+            } else {
+                foundNonZero = true;
+            }
+        }
+    }
+
+    function hideZeroValueTimerBoxes(timerSection) {
+        //make boxes with value of zero hidden until find a non zero value
+        for (var i = 0; i < $(`#${timerSection} .boxes div`).length; i++) {
+            var currTimerSpanValue = $(`#${timerSection} .boxes div .timerSpan`)[i];
+            if (currTimerSpanValue.innerHTML === "0") {
+                $(currTimerSpanValue).parent().hide();
+            } else {
+                break;
+            }
+        }
+    }
+
+    function createCountdownInterval(timer, timerSection, json) {
+        const stateKey = timer.stateKey || 'untilTimerEnd';
+
+        // Get initial values from json
+        let days = json.statistics[timer.jsonPath][stateKey].days;
+        let hours = json.statistics[timer.jsonPath][stateKey].hours;
+        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
+        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
+        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
+
+        return setInterval(() => {
+            // Decrease seconds
+            totalSeconds--;
+            seconds--;
+
+            // Format seconds
+            if (seconds >= 10) {
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
+            } else {
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
+            }
+
+            // Handle seconds rollover
+            if (seconds < 0) {
+                if (minutes > 0 || hours > 0 || days > 0) {
+                    seconds = 59;
+                    minutes--;
+
+                    // Handle visibility when down to last minute
+                    if (minutes === 0 && hours === 0 && days === 0) {
+                        if ($(`${timerSection} .boxes div:visible`).length > 1) {
+                            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
+                        }
+                    }
+                } else {
+                    /* ENTIRE GOAL IS DONE */
+                    seconds = 0;
+                    clearInterval(timer.intervalRef);
+                    timer.intervalRef = null;
+
+                    // Signal completion to app - this has to be handled in app.js
+                    if (TimerStateManager.handleGoalCompletion) {
+                        TimerStateManager.handleGoalCompletion(timerSection, json);
+                    }
+                }
+
+                $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
+            }
+
+            // Handle minutes rollover
+            if (minutes < 0) {
+                if (hours > 0 || days > 0) {
+                    minutes = 59;
+                    hours--;
+
+                    // Handle visibility when down to last hour
+                    if (hours === 0 && days === 0) {
+                        if ($(`${timerSection} .boxes div:visible`).length > 1) {
+                            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
+                        }
+                    }
+                }
+
+                $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
+                $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
+            }
+
+            // Handle hours rollover
+            if (hours < 0) {
+                if (days > 0) {
+                    hours = 23;
+                    days--;
+
+                    if (days === 0) {
+                        setTimeout(() => {
+                            $($(`#goal-content .boxes div`)[0]).hide();
+                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
+                        }, 0);
+                    }
+                }
+
+                if ($(`${timerSection} .boxes div:visible`).length === 3) {
+                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
+                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
+                }
+
+                $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
+                $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
+            }
+
+            // Update json with current values
+            json.statistics[timer.jsonPath][stateKey].totalSeconds = totalSeconds;
+            json.statistics[timer.jsonPath][stateKey].seconds = seconds;
+            json.statistics[timer.jsonPath][stateKey].minutes = minutes;
+            json.statistics[timer.jsonPath][stateKey].hours = hours;
+            json.statistics[timer.jsonPath][stateKey].days = days;
+
+        }, 1000); // End interval
+    }
+
+    function createCountupInterval(timer, timerSection, json) {
+        const stateKey = timer.stateKey || 'sinceTimerStart';
+
+        // Get initial values
+        let days = json.statistics[timer.jsonPath][stateKey].days;
+        let hours = json.statistics[timer.jsonPath][stateKey].hours;
+        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
+        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
+        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
+
+        return setInterval(() => {
+            // Increment seconds
+            totalSeconds++;
+            seconds++;
+
+            // Update json
+            json.statistics[timer.jsonPath][stateKey].totalSeconds++;
+            json.statistics[timer.jsonPath][stateKey].seconds++;
+
+            // Format seconds
+            if (seconds >= 10) {
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
+            } else {
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
+            }
+
+            // Handle seconds rollover
+            if (seconds >= 60) {
+                seconds = 0;
+                minutes++;
+
+                // Update json
+                json.statistics[timer.jsonPath][stateKey].seconds = 0;
+                json.statistics[timer.jsonPath][stateKey].minutes++;
+
+                // Handle box visibility
+                if ($(`${timerSection} .boxes div:visible`).length === 1) {
+                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
+                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
+                }
+
+                // Format minutes
+                if (minutes >= 10) {
+                    $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
+                } else {
+                    $(`${timerSection} .minutesSinceLastClick:first-child`).html("0" + minutes);
+                }
+
+                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
+            }
+
+            // Handle minutes rollover
+            if (minutes >= 60) {
+                minutes = 0;
+                hours++;
+
+                // Update json
+                json.statistics[timer.jsonPath][stateKey].minutes = 0;
+                json.statistics[timer.jsonPath][stateKey].hours++;
+
+                // Handle box visibility
+                if ($(`${timerSection} .boxes div:visible`).length === 2) {
+                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
+                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
+                }
+
+                // Format hours
+                if (hours >= 10) {
+                    $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
+                } else {
+                    $(`${timerSection} .hoursSinceLastClick:first-child`).html("0" + hours);
+                }
+
+                $(`${timerSection} .minutesSinceLastClick:first-child`).html("0" + minutes);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
+            }
+
+            // Handle hours rollover
+            if (hours >= 24) {
+                hours = 0;
+                days++;
+
+                // Update json
+                json.statistics[timer.jsonPath][stateKey].hours = 0;
+                json.statistics[timer.jsonPath][stateKey].days++;
+
+                // Handle box visibility
+                if ($(`${timerSection} .boxes div:visible`).length === 3) {
+                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
+                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
+                }
+
+                $(`${timerSection} .hoursSinceLastClick:first-child`).html("0" + hours);
+                $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
+                UIModule.adjustFibonacciTimerToBoxes(timer.id);
+            }
+        }, 1000); // End interval
+    }
+
+    /**
+    * Initialize a timer with optional timestamp
+    * @param {string} timerType - 'smoke', 'bought', or 'goal'
+    * @param {number} requestedTimestamp - Optional timestamp for initialization
+    * @param {object} json - App data object
+    */
+    function initiate(timerType, requestedTimestamp, json) {
+        const timer = timers[timerType];
         if (!timer) return console.error(`Timer type '${timerType}' not found`);
 
         const timerElement = $(`#${timer.id}`);
         const timerSection = timer.selector;
         const stateKey = timer.stateKey || 'sinceTimerStart';
         const jsonPath = timer.jsonPath;
-        
+
         // Clear existing interval
         if (timer.intervalRef) {
             clearInterval(timer.intervalRef);
@@ -98,7 +384,7 @@ const TimerStateManager = {
 
             // Handle visibility based on timestamp
             if (requestedTimestamp !== undefined && !timer.countdown) {
-                this.adjustTimerBoxVisibility(timerSection, true, {days, hours, minutes, seconds});
+                this.adjustTimerBoxVisibility(timerSection, true, { days, hours, minutes, seconds });
             } else {
                 this.resetTimerBoxVisibility(timerSection);
             }
@@ -125,7 +411,7 @@ const TimerStateManager = {
 
             // Update display with calculated values
             this.updateTimerDisplay(timerSection, seconds, minutes, hours, days);
-            this.adjustTimerBoxVisibility(timerSection, false, {days, hours, minutes, seconds});
+            this.adjustTimerBoxVisibility(timerSection, false, { days, hours, minutes, seconds });
         }
 
         // Special handling for goal timer (all boxes visible initially)
@@ -139,323 +425,31 @@ const TimerStateManager = {
         UIModule.adjustFibonacciTimerToBoxes(timer.id);
 
         // Create interval for updating the timer
-        const intervalFunction = timer.countdown ? 
-            this.createCountdownInterval(timer, timerSection, json) : 
+        const intervalFunction = timer.countdown ?
+            this.createCountdownInterval(timer, timerSection, json) :
             this.createCountupInterval(timer, timerSection, json);
 
         timer.intervalRef = intervalFunction;
-        
+
         // Add active class and show timer
         timerElement.addClass("counting");
         timerElement.show();
-        
+
         return true;
-    },
-
-    /**
-     * Calculate time units from total seconds
-     * @param {number} totalSeconds
-     * @returns {object} Object with days, hours, minutes, seconds
-     */
-    calculateTimeUnits(totalSeconds) {
-        const days = Math.floor(totalSeconds / (60 * 60 * 24));
-        const hours = Math.floor(totalSeconds / (60 * 60)) % 24;
-        const minutes = Math.floor(totalSeconds / 60) % 60;
-        const seconds = totalSeconds % 60;
-        
-        return { days, hours, minutes, seconds };
-    },
-
-    /**
-     * Update timer display with formatted values
-     */
-    updateTimerDisplay(timerSection, seconds, minutes, hours, days) {
-        // Format seconds with leading zero if needed
-        const formattedSeconds = seconds >= 10 ? seconds : "0" + seconds;
-        
-        $(`${timerSection} .secondsSinceLastClick:first-child`).html(formattedSeconds);
-        $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
-        $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
-        $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
-    },
-
-    /**
-     * Reset timer boxes visibility
-     */
-    resetTimerBoxVisibility(timerSection) {
-        if (!$(`${timerSection} .fibonacci-timer`).is(':visible')) {
-            $(`${timerSection} .fibonacci-timer:first-child`).toggle();
-        }
-        
-        while ($(`${timerSection} .boxes div:visible`).length > 1) {
-            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
-        }
-    },
-
-    /**
-     * Adjust which timer boxes are visible based on values
-     */
-    adjustTimerBoxVisibility(timerSection, fromValues, timeValues) {
-        if (fromValues) {
-            // For initiation with values
-            for (let timerBox of $(`${timerSection} .boxes div:visible`)) {
-                if (parseInt($(timerBox).find(".timerSpan").html()) === 0) {
-                    $(timerBox).hide();
-                } else { // Found a non-zero value
-                    $(timerBox).show();
-                    break;
-                }
-            }
-        } else {
-            // For restarting from storage
-            let foundNonZero = false;
-            
-            if (timeValues.days === 0) {
-                $(`${timerSection} .daysSinceLastClick`).parent().toggle();
-            } else {
-                foundNonZero = true;
-            }
-            
-            if (timeValues.hours === 0 && !foundNonZero) {
-                $(`${timerSection} .hoursSinceLastClick`).parent().toggle();
-            } else {
-                foundNonZero = true;
-            }
-            
-            if (timeValues.minutes === 0 && !foundNonZero) {
-                $(`${timerSection} .minutesSinceLastClick`).parent().toggle();
-            } else if (timeValues.minutes === 0) {
-                $(`${timerSection} .minutesSinceLastClick:first-child`).html(timeValues.minutes);
-            } else {
-                foundNonZero = true;
-            }
-        }
-    },
-
-    /**
-     * Hide timer boxes with zero values
-     */
-    hideZeroValueTimerBoxes(timerSection) {
-        //make boxes with value of zero hidden until find a non zero value
-        for (var i = 0; i < $(`#${timerSection} .boxes div`).length; i++) {
-            var currTimerSpanValue = $(`#${timerSection} .boxes div .timerSpan`)[i];
-            if (currTimerSpanValue.innerHTML === "0") {
-                $(currTimerSpanValue).parent().hide();
-            } else {
-                break;
-            }
-        }
-    },
-
-    /**
-     * Create countdown interval (for goal timer)
-     */
-    createCountdownInterval(timer, timerSection, json) {
-        const stateKey = timer.stateKey || 'untilTimerEnd';
-        
-        // Get initial values from json
-        let days = json.statistics[timer.jsonPath][stateKey].days;
-        let hours = json.statistics[timer.jsonPath][stateKey].hours;
-        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
-        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
-        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
-
-        return setInterval(() => {
-            // Decrease seconds
-            totalSeconds--;
-            seconds--;
-
-            // Format seconds
-            if (seconds >= 10) {
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
-            } else {
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
-            }
-
-            // Handle seconds rollover
-            if (seconds < 0) {
-                if (minutes > 0 || hours > 0 || days > 0) {
-                    seconds = 59;
-                    minutes--;
-                    
-                    // Handle visibility when down to last minute
-                    if (minutes === 0 && hours === 0 && days === 0) {
-                        if ($(`${timerSection} .boxes div:visible`).length > 1) {
-                            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
-                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
-                        }
-                    }
-                } else {
-                    /* ENTIRE GOAL IS DONE */
-                    seconds = 0;
-                    clearInterval(timer.intervalRef);
-                    timer.intervalRef = null;
-                    
-                    // Signal completion to app - this has to be handled in app.js
-                    if (TimerStateManager.handleGoalCompletion) {
-                        TimerStateManager.handleGoalCompletion(timerSection, json);
-                    }
-                }
-
-                $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
-            }
-
-            // Handle minutes rollover
-            if (minutes < 0) {
-                if (hours > 0 || days > 0) {
-                    minutes = 59;
-                    hours--;
-                    
-                    // Handle visibility when down to last hour
-                    if (hours === 0 && days === 0) {
-                        if ($(`${timerSection} .boxes div:visible`).length > 1) {
-                            $($(`${timerSection} .boxes div:visible`)[0]).toggle();
-                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
-                        }
-                    }
-                }
-
-                $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
-                $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
-            }
-
-            // Handle hours rollover
-            if (hours < 0) {
-                if (days > 0) {
-                    hours = 23;
-                    days--;
-                    
-                    if (days === 0) {
-                        setTimeout(() => {
-                            $($(`#goal-content .boxes div`)[0]).hide();
-                            UIModule.adjustFibonacciTimerToBoxes(timer.id);
-                        }, 0);
-                    }
-                }
-
-                if ($(`${timerSection} .boxes div:visible`).length === 3) {
-                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
-                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
-                }
-                
-                $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
-                $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
-            }
-            
-            // Update json with current values
-            json.statistics[timer.jsonPath][stateKey].totalSeconds = totalSeconds;
-            json.statistics[timer.jsonPath][stateKey].seconds = seconds;
-            json.statistics[timer.jsonPath][stateKey].minutes = minutes;
-            json.statistics[timer.jsonPath][stateKey].hours = hours;
-            json.statistics[timer.jsonPath][stateKey].days = days;
-            
-        }, 1000); // End interval
-    },
-
-    /**
-     * Create countup interval (for smoke and bought timers)
-     */
-    createCountupInterval(timer, timerSection, json) {
-        const stateKey = timer.stateKey || 'sinceTimerStart';
-        
-        // Get initial values
-        let days = json.statistics[timer.jsonPath][stateKey].days;
-        let hours = json.statistics[timer.jsonPath][stateKey].hours;
-        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
-        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
-        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
-
-        return setInterval(() => {
-            // Increment seconds
-            totalSeconds++;
-            seconds++;
-            
-            // Update json
-            json.statistics[timer.jsonPath][stateKey].totalSeconds++;
-            json.statistics[timer.jsonPath][stateKey].seconds++;
-
-            // Format seconds
-            if (seconds >= 10) {
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html(seconds);
-            } else {
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
-            }
-
-            // Handle seconds rollover
-            if (seconds >= 60) {
-                seconds = 0;
-                minutes++;
-                
-                // Update json
-                json.statistics[timer.jsonPath][stateKey].seconds = 0;
-                json.statistics[timer.jsonPath][stateKey].minutes++;
-
-                // Handle box visibility
-                if ($(`${timerSection} .boxes div:visible`).length === 1) {
-                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
-                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
-                }
-
-                // Format minutes
-                if (minutes >= 10) {
-                    $(`${timerSection} .minutesSinceLastClick:first-child`).html(minutes);
-                } else {
-                    $(`${timerSection} .minutesSinceLastClick:first-child`).html("0" + minutes);
-                }
-                
-                $(`${timerSection} .secondsSinceLastClick:first-child`).html("0" + seconds);
-                UIModule.adjustFibonacciTimerToBoxes(timer.id);
-            }
-
-            // Handle minutes rollover
-            if (minutes >= 60) {
-                minutes = 0;
-                hours++;
-                
-                // Update json
-                json.statistics[timer.jsonPath][stateKey].minutes = 0;
-                json.statistics[timer.jsonPath][stateKey].hours++;
-
-                // Handle box visibility
-                if ($(`${timerSection} .boxes div:visible`).length === 2) {
-                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
-                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
-                }
-
-                // Format hours
-                if (hours >= 10) {
-                    $(`${timerSection} .hoursSinceLastClick:first-child`).html(hours);
-                } else {
-                    $(`${timerSection} .hoursSinceLastClick:first-child`).html("0" + hours);
-                }
-                
-                $(`${timerSection} .minutesSinceLastClick:first-child`).html("0" + minutes);
-                UIModule.adjustFibonacciTimerToBoxes(timer.id);
-            }
-
-            // Handle hours rollover
-            if (hours >= 24) {
-                hours = 0;
-                days++;
-                
-                // Update json
-                json.statistics[timer.jsonPath][stateKey].hours = 0;
-                json.statistics[timer.jsonPath][stateKey].days++;
-
-                // Handle box visibility
-                if ($(`${timerSection} .boxes div:visible`).length === 3) {
-                    const numberOfBoxesHidden = $(`${timerSection} .boxes div:hidden`).length;
-                    $($(`${timerSection} .boxes div:hidden`)[numberOfBoxesHidden - 1]).toggle();
-                }
-                
-                $(`${timerSection} .hoursSinceLastClick:first-child`).html("0" + hours);
-                $(`${timerSection} .daysSinceLastClick:first-child`).html(days);
-                UIModule.adjustFibonacciTimerToBoxes(timer.id);
-            }
-        }, 1000); // End interval
     }
-};
+
+    // Public API
+    return {
+        initiate: initiate,
+        calculateTimeUnits: calculateTimeUnits,
+        updateTimerDisplay: updateTimerDisplay,
+        resetTimerBoxVisibility: resetTimerBoxVisibility,
+        adjustTimerBoxVisibility: adjustTimerBoxVisibility,
+        hideZeroValueTimerBoxes: hideZeroValueTimerBoxes,
+        createCountdownInterval: createCountdownInterval,
+        createCountupInterval: createCountupInterval
+    };
+})();
 
 // Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {

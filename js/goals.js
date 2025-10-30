@@ -1,15 +1,8 @@
-/**
- * Goals Module
- * Contains all goal management functionality for Better Later app
- */
+var GoalsModule = (function () {
+    var json;
 
-var GoalsModule = (function() {
-    /**
-     * Extend an active goal
-     * @param {Object} json - The app state object
-     */
     function extendActiveGoal(json) {
-        
+
         var goalType;
         if (json.statistics.goal.activeGoalUse !== 0) {
             goalType = "use";
@@ -27,11 +20,6 @@ var GoalsModule = (function() {
         StorageModule.changeGoalStatus(1, goalType, false, goalStampSeconds);
     }
 
-    /**
-     * End an active goal
-     * @param {Object} json - The app state object
-     * @param {Object} dependencies - Function dependencies
-     */
     function endActiveGoal(json) {
         var date = new Date();
         var timestampSeconds = Math.round(date / 1000);
@@ -47,7 +35,7 @@ var GoalsModule = (function() {
             goalType = "both";
             json.statistics.goal.activeGoalBoth = 0;
         }
-        
+
         var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
         var message = 'Any progress is good progress! ' + affirmation;
 
@@ -59,7 +47,7 @@ var GoalsModule = (function() {
         ActionLogModule.placeGoalIntoLog(startStamp, actualEnd, goalType, false);
 
         replaceLongestGoal(startStamp, actualEnd);
-        
+
         // Update number of goals
         json.statistics.goal.completedGoals++;
         $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
@@ -77,9 +65,9 @@ var GoalsModule = (function() {
         // Return to relevant screen
         $(".statistics-tab-toggler").click();
 
-        recalculateAverageTimeBetween(goalType, "total");
-        recalculateAverageTimeBetween(goalType, "week");
-        recalculateAverageTimeBetween(goalType, "month");
+        StatisticsModule.recalculateAverageTimeBetween(goalType, "total", json);
+        StatisticsModule.recalculateAverageTimeBetween(goalType, "week", json);
+        StatisticsModule.recalculateAverageTimeBetween(goalType, "month", json);
 
         // Set local json goal type which is active
         var jsonHandle = "activeGoal" + goalType.charAt(0).toUpperCase() + goalType.slice(1);
@@ -98,13 +86,7 @@ var GoalsModule = (function() {
         UIModule.adjustFibonacciTimerToBoxes("goal-timer");
     }
 
-    /**
-     * Replace longest goal if the current goal is longer
-     * @param {number} start - Start timestamp
-     * @param {number} end - End timestamp
-     * @param {Object} json - The app state object
-     */
-    function replaceLongestGoal(start, end, json) {
+    function replaceLongestGoal(start, end) {
         var timeNow = Math.round(new Date() / 1000);
         var timestampLength = {
             week: 7 * 24 * 60 * 60,
@@ -122,7 +104,7 @@ var GoalsModule = (function() {
         }
 
         var goalLength = end - start;
-        
+
         if (goalLength > json.statistics.goal.longestGoal[timeIncrement]) {
             // If longest goal just happened
             json.statistics.goal.longestGoal[timeIncrement] = goalLength;
@@ -132,8 +114,7 @@ var GoalsModule = (function() {
         }
     }
 
-     // Add handler for goal completion
-     function handleGoalCompletion(timerSection, json) {
+    function handleGoalCompletion(timerSection, json) {
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
 
@@ -159,26 +140,22 @@ var GoalsModule = (function() {
 
         // If longest goal just happened
         replaceLongestGoal(startStamp, actualEnd);
-        
+
         // Update number of goals
         json.statistics.goal.completedGoals++;
         $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
         UIModule.showActiveStatistics(json);
 
         var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
-        
+
         // Notify user that goal ended
         var message = "Congrats! You made it :) . " + affirmation;
         NotificationsModule.createNotification(message);
 
         // Disappear zero seconds left timer
         $(timerSection + " .fibonacci-timer").parent().hide();
-    };
+    }
 
-    /**
-     * Handle goal dialog submit
-     * @param {Object} json - The app state object
-     */
     function handleGoalDialogSubmit(json) {
         var date = new Date();
         var timestampSeconds = Math.round(date / 1000);
@@ -275,9 +252,6 @@ var GoalsModule = (function() {
         }
     }
 
-    /**
-     * Set up goal dialog with current time values
-     */
     function setupGoalDialog() {
         var date = new Date();
         var currHours = date.getHours(),
@@ -302,15 +276,19 @@ var GoalsModule = (function() {
         $(".goal.log-more-info .time-picker-hour").val(currHours);
     }
 
-    /**
-     * Initialize the module
-     * @param {Object} appJson - The application JSON object
-     */
+    function replaceLongestGoalPublic(start, end, appJson) {
+        // Update module json reference if different
+        if (appJson && appJson !== json) {
+            json = appJson;
+        }
+        return replaceLongestGoal(start, end);
+    }
+
     function init(appJson) {
         json = appJson;
 
         // Set up event handlers
-        $(".goal.log-more-info button.submit").click(function() {
+        $(".goal.log-more-info button.submit").click(function () {
             handleGoalDialogSubmit(json);
         });
     }
@@ -320,7 +298,7 @@ var GoalsModule = (function() {
         handleGoalCompletion: handleGoalCompletion,
         extendActiveGoal: extendActiveGoal,
         endActiveGoal: endActiveGoal,
-        replaceLongestGoal: replaceLongestGoal,
+        replaceLongestGoal: replaceLongestGoalPublic,
         setupGoalDialog: setupGoalDialog,
         handleGoalDialogSubmit: handleGoalDialogSubmit,
         init: init
