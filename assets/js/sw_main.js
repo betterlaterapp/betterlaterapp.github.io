@@ -1,8 +1,4 @@
-// ====================================
-// DEV MODE: Set to true during development to disable service worker caching
-// Set to false for production to enable offline PWA support
-// ====================================
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 //make sure service worker exists
 if('serviceWorker' in navigator){
