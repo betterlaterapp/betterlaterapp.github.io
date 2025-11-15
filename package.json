@@ -1,0 +1,42 @@
+{
+  "name": "betterlater",
+  "version": "1.0.0",
+  "description": "Better Later is an anonymous habit tracking web app which creates statistics from your inputs to put your habit into your own hands. The app can helps users get and keep control of their guilty pleasure.",
+  "main": "app.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:smoke": "playwright test e2e/smoke.spec.ts --headed",
+    "test:first": "playwright test e2e/first-action.spec.ts --headed",
+    "test:resist": "playwright test e2e/resist-action.spec.ts --headed",
+    "test:spending": "playwright test e2e/spending.spec.ts --headed",
+    "test:persistence": "playwright test e2e/persistence.spec.ts --headed",
+    "test:goals": "playwright test e2e/goals.spec.ts --headed",
+    "test:statistics": "playwright test e2e/statistics.spec.ts --headed",
+    "test:settings": "playwright test e2e/settings.spec.ts --headed",
+    "test:edge": "playwright test e2e/edge-cases.spec.ts --headed",
+    "test:day1": "playwright test e2e/smoke.spec.ts e2e/first-action.spec.ts e2e/resist-action.spec.ts e2e/spending.spec.ts e2e/persistence.spec.ts --headed",
+    "test:day2": "playwright test e2e/goals.spec.ts e2e/statistics.spec.ts --headed",
+    "test:day3": "playwright test e2e/settings.spec.ts e2e/edge-cases.spec.ts --headed",
+    "test:all": "playwright test",
+    "test:report": "playwright show-report",
+    "serve": "python3 -m http.server 8080"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/betterlaterapp/betterlaterapp.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/betterlaterapp/betterlaterapp.github.io/issues"
+  },
+  "homepage": "https://github.com/betterlaterapp/betterlaterapp.github.io#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0"
+  }
+}
