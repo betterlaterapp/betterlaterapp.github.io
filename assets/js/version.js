@@ -5,12 +5,12 @@ window.retrieveAppVersion = async function() {
         try {
             const cacheNames = await caches.keys();
             
-            //REGEX to find the cache that matches the pattern v*::pages
-            const versionCache = cacheNames.find(name => name.match(/^v\d+\.\d+::pages$/));
+            //REGEX to find the cache that matches the pattern v*::pages (supports v3.14, v32.14, v3.14.16, v3.15.17.94, etc.)
+            const versionCache = cacheNames.find(name => name.match(/^v\d+(\.\d+)+::pages$/));
             
             if (versionCache) {
                 // Extract the version number from the cache name
-                const versionMatch = versionCache.match(/v(\d+\.\d+)/);
+                const versionMatch = versionCache.match(/v([\d.]+)/);
                 
                 if (versionMatch && versionMatch[1]) {
                     return versionMatch[1];
@@ -40,8 +40,8 @@ window.retrieveAvailableVersion = async function() {
         
         const fileContent = await response.text();
         
-        // Extract version from first line: var version = "v3.18::pages";
-        const versionMatch = fileContent.match(/var\s+version\s*=\s*["']v(\d+\.\d+)::pages["']/);
+        // Extract version from first line: var version = "v3.18::pages"; (supports any number of version segments)
+        const versionMatch = fileContent.match(/var\s+version\s*=\s*["']v([\d.]+)::pages["']/);
         
         if (versionMatch && versionMatch[1]) {
             return versionMatch[1];
