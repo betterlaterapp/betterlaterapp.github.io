@@ -52,3 +52,24 @@ window.retrieveAvailableVersion = async function() {
         return 'Unable to check';
     }
 };
+
+window.refreshServiceWorker = async () => {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
+    try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+            await registration.unregister();
+            console.log('Service Worker unregistered successfully.');
+        } else {
+            console.log('No active Service Worker found to unregister.');
+        }
+    } catch (error) {
+        console.error('Error unregistering Service Worker:', error);
+        return;
+    }
+
+    //reload the page to apply the new service worker
+    window.location.reload();
+};

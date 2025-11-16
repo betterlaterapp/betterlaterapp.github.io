@@ -1443,10 +1443,16 @@
         <script type="application/javascript" src="assets/js/version.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
+
                 const yourVersion      = await window.retrieveAppVersion();
                 const availableVersion = await window.retrieveAvailableVersion();
                 document.querySelector('#appVersion').textContent = yourVersion;
                 document.querySelector('#availableAppVersion').textContent = availableVersion;
+
+                const unregisterButton = document.getElementById('refreshServiceWorkerButton');
+                unregisterButton.addEventListener('click', async () => {
+                    await window.refreshServiceWorker();
+                });
             });
         </script>
 </body>

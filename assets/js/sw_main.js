@@ -1,4 +1,8 @@
+// Auto-detect development mode
 const DEV_MODE = false;
+// const DEV_MODE = window.location.hostname === 'localhost' 
+//                  || window.location.hostname === '127.0.0.1'
+//                  || window.location.protocol === 'file:';
 
 //make sure service worker exists
 if('serviceWorker' in navigator){
