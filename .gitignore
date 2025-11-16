@@ -1,2 +1,46 @@
-.ds_store
-test-data.json
+# Dependencies
+node_modules/
+package-lock.json
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+tests/output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursorrules
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.test
+
+# Playwright
+playwright/.cache/
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

@@ -1298,22 +1298,27 @@
 
                             </div>
 
-                            <hr />
-                            <h3>App Controls</h3>
+            <hr />
+            <h3>App Controls</h3>
 
-                            <button id="clearTablesButton" class="btn btn-outline-danger" href="#"><i
-                                    class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
+            <button id="clearTablesButton" class="btn btn-outline-danger" href="#"><i
+                    class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
 
-                            <h3>Additional Information</h3>
+            <br />
+            <button id="refreshServiceWorkerButton" class="btn btn-outline-warning" href="#" 
+                    onclick="window.refreshServiceWorker(); return false;"><i
+                    class="fas fa-sync-alt"></i>&nbsp;Update app</button>
+
+            <p>Your version: <b><span id="appVersion">Loading...</span></b></p>
+            <p>available version: <b><span id="availableAppVersion">Loading...</span></b></p>
+
+            <p>Better Later does not update automatically. You can review the source code and update the app manually on <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank">GitHub</a>.</p>
+
+            <h3>Additional Information</h3>
 
                             <a href="about/index.html" class="btn btn-outline-info">
                                 <i class="fas fa-question"></i>
                                 &nbsp;About Better Later
-                            </a>
-                            <a href="https://www.surveymonkey.com/r/F8TDW8Z" target="_blank"
-                                class="btn btn-outline-success">
-                                <i class="far fa-comments"></i>
-                                &nbsp;Give Feedback
                             </a>
                         </div>
                     </div>
@@ -1420,9 +1425,36 @@
         <script src="assets/js/chartist.min.js"></script>
         <script src="assets/js/confetti.min.js"></script>
 
+        <script type="application/javascript" src="js/storage.js"></script>
+        <script type="application/javascript" src="js/timerState.js"></script>
+        <script type="application/javascript" src="js/timers.js"></script>
+        <script type="application/javascript" src="js/notifications.js"></script>
+        <script type="application/javascript" src="js/actionLog.js"></script>
+        <script type="application/javascript" src="js/goals.js"></script>
+        <script type="application/javascript" src="js/ui.js"></script>
+        <script type="application/javascript" src="js/statistics.js"></script>
+        <script type="application/javascript" src="js/baseline.js"></script>
+        <script type="application/javascript" src="js/tabs.js"></script>
+        <script type="application/javascript" src="js/settings.js"></script>
+        <script type="application/javascript" src="js/buttons.js"></script>
         <script type="application/javascript" src="app.js"></script>
         <!-- service worker for PWA -->
         <script type="application/javascript" src="assets/js/sw_main.js"></script>
+        <script type="application/javascript" src="assets/js/version.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', async () => {
+
+                const yourVersion      = await window.retrieveAppVersion();
+                const availableVersion = await window.retrieveAvailableVersion();
+                document.querySelector('#appVersion').textContent = yourVersion;
+                document.querySelector('#availableAppVersion').textContent = availableVersion;
+
+                const unregisterButton = document.getElementById('refreshServiceWorkerButton');
+                unregisterButton.addEventListener('click', async () => {
+                    await window.refreshServiceWorker();
+                });
+            });
+        </script>
 </body>
 
 </html>
