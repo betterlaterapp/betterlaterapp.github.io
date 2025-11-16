@@ -1304,20 +1304,21 @@
             <button id="clearTablesButton" class="btn btn-outline-danger" href="#"><i
                     class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
 
+            <br />
             <button id="refreshServiceWorkerButton" class="btn btn-outline-warning" href="#" 
                     onclick="window.refreshServiceWorker(); return false;"><i
-                    class="fas fa-sync-alt"></i>&nbsp;Refresh app cache</button>
+                    class="fas fa-sync-alt"></i>&nbsp;Update app</button>
+
+            <p>Your version: <b><span id="appVersion">Loading...</span></b></p>
+            <p>available version: <b><span id="availableAppVersion">Loading...</span></b></p>
+
+            <p>Better Later does not update automatically. You can review the source code and update the app manually on <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank">GitHub</a>.</p>
 
             <h3>Additional Information</h3>
 
                             <a href="about/index.html" class="btn btn-outline-info">
                                 <i class="fas fa-question"></i>
                                 &nbsp;About Better Later
-                            </a>
-                            <a href="https://www.surveymonkey.com/r/F8TDW8Z" target="_blank"
-                                class="btn btn-outline-success">
-                                <i class="far fa-comments"></i>
-                                &nbsp;Give Feedback
                             </a>
                         </div>
                     </div>
@@ -1439,6 +1440,15 @@
         <script type="application/javascript" src="app.js"></script>
         <!-- service worker for PWA -->
         <script type="application/javascript" src="assets/js/sw_main.js"></script>
+        <script type="application/javascript" src="assets/js/version.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', async () => {
+                const yourVersion      = await window.retrieveAppVersion();
+                const availableVersion = await window.retrieveAvailableVersion();
+                document.querySelector('#appVersion').textContent = yourVersion;
+                document.querySelector('#availableAppVersion').textContent = availableVersion;
+            });
+        </script>
 </body>
 
 </html>
