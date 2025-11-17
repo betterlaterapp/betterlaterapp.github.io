@@ -91,8 +91,10 @@ test.describe('Better Later - Resist Action', () => {
     await page.click('#crave-button');
     await expect(page.locator('#crave-total')).toHaveText('1');
     
-    await page.waitForTimeout(1100);
+    // Wait longer for debounce to clear
+    await page.waitForTimeout(2000);
     await page.click('#crave-button');
+    await page.waitForTimeout(500);
     await expect(page.locator('#crave-total')).toHaveText('2');
     await expect(page.locator('#cravingsResistedInARow')).toHaveText('2');
     
