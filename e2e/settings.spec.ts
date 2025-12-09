@@ -31,7 +31,8 @@ async function setupUserWithBaseline(page) {
       specificSubject: true,
       decreaseHabit: true,
       valuesTime: true,
-      valuesMoney: true
+      valuesMoney: true,
+      userSubmitted: true
     },
     option: {
       activeTab: 'statistics-content',
@@ -159,12 +160,13 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.click('button.settings-tab-toggler');
     await expect(page.locator('#settings-content')).toBeVisible();
     
-    // Expand the "Displayed Statistics" section first
-    await page.click('button.displayed-statistics-heading');
-    await page.waitForTimeout(500);
+    // With userSubmitted: true, the displayed-statistics section should already be expanded
+    // Wait for the section to be visible
+    await expect(page.locator('.displayed-statistics')).toBeVisible();
     
     // Find and uncheck a display option (e.g., "Did It" button)
     const usedButtonCheckbox = page.locator('#usedButtonDisplayed');
+    await expect(usedButtonCheckbox).toBeVisible();
     await expect(usedButtonCheckbox).toBeChecked();
     await usedButtonCheckbox.uncheck();
     
@@ -280,11 +282,11 @@ test.describe('Better Later - Settings & Preferences', () => {
     // Go to settings and change a preference
     await page.click('button.settings-tab-toggler');
     
-    // Expand the settings section
-    await page.click('button.displayed-statistics-heading');
-    await page.waitForTimeout(500);
+    // With userSubmitted: true, the displayed-statistics section should already be expanded
+    await expect(page.locator('.displayed-statistics')).toBeVisible();
     
     const checkbox = page.locator('#cravedButtonDisplayed');
+    await expect(checkbox).toBeVisible();
     await checkbox.uncheck();
     await page.waitForTimeout(500);
     
@@ -294,6 +296,9 @@ test.describe('Better Later - Settings & Preferences', () => {
     
     // Go back to settings
     await page.click('button.settings-tab-toggler');
+    
+    // With userSubmitted persisted, section should still be expanded
+    await expect(page.locator('.displayed-statistics')).toBeVisible();
     
     // Setting should still be unchecked
     await expect(checkbox).not.toBeChecked();

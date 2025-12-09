@@ -20,7 +20,8 @@ async function setupUserWithBaseline(page) {
       decreaseHabit: true,
       amountSpentPerWeek: 50,
       goalSpentPerWeek: 20,
-      valuesMoney: true
+      valuesMoney: true,
+      userSubmitted: true
     },
     option: {
       activeTab: 'statistics-content',

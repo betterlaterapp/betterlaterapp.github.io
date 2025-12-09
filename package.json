@@ -12,7 +12,6 @@
     "test:first": "playwright test e2e/first-action.spec.ts --headed",
     "test:resist": "playwright test e2e/resist-action.spec.ts --headed",
     "test:spending": "playwright test e2e/spending.spec.ts --headed",
-    "test:persistence": "playwright test e2e/persistence.spec.ts --headed",
     "test:goals": "playwright test e2e/goals.spec.ts --headed",
     "test:statistics": "playwright test e2e/statistics.spec.ts --headed",
     "test:settings": "playwright test e2e/settings.spec.ts --headed",

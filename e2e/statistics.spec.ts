@@ -18,7 +18,8 @@ async function setupUserWithBaseline(page) {
       specificSubject: true,
       decreaseHabit: true,
       valuesTime: true,
-      valuesMoney: true
+      valuesMoney: true,
+      userSubmitted: true
     },
     option: {
       activeTab: 'statistics-content',
@@ -237,6 +238,11 @@ test.describe('Better Later - Statistics & Reports', () => {
   });
 
   test('undo last action removes entry', async ({ page }) => {
+
+    page.on('dialog', async (dialog) => {
+        await dialog.accept();
+      });
+
     // Perform an action
     await page.click('#use-button');
     await page.click('.use.log-more-info button.submit');
@@ -248,7 +254,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     await expect(page.locator('#habit-log .item.used-record')).toBeVisible();
     
     // Check if undo button exists
-    const undoButton = page.locator('#undo-button');
+    const undoButton = page.locator('#undoActionButton');
     const undoCount = await undoButton.count();
     if (undoCount === 0) {
       console.log('⚠️  Undo button not found - skipping test');
@@ -256,7 +262,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     }
     
     // Click undo button
-    await page.click('#undo-button', { timeout: 5000 });
+    await page.click('#undoActionButton', { timeout: 5000 });
     
     // Wait for undo to process
     await page.waitForTimeout(500);
