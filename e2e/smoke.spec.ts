@@ -42,8 +42,8 @@ test.describe('Smoke Test - App Loads', () => {
     const header = page.locator('#header');
     await expect(header).toBeVisible();
     
-    // Check for button bar
-    const buttonBar = page.locator('.button-bar');
+    // Check for main action button bar (not undo button bar)
+    const buttonBar = page.locator('.button-bar.bg-white');
     await expect(buttonBar).toBeVisible();
     
     // Check that action buttons exist (don't need to be visible yet)

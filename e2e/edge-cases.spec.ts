@@ -11,6 +11,14 @@ import { test, expect } from '@playwright/test';
  * - Timer edge cases
  */
 
+// Helper to navigate to settings via hamburger menu
+async function navigateToSettings(page) {
+  await page.click('.hamburger-toggle');
+  await page.waitForSelector('.hamburger-menu.show');
+  await page.click('.hamburger-menu .settings-tab-toggler');
+  await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
@@ -193,7 +201,7 @@ test.describe('Better Later - Edge Cases', () => {
     await expect(page.locator('#statistics-content')).toBeVisible();
     
     // Navigate to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await page.waitForTimeout(500);
     await expect(page.locator('#settings-content')).toBeVisible();
     
