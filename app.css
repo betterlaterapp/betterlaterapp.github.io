@@ -797,6 +797,7 @@ h4 {
 		color: grey;
 		max-width: 75px;
 		text-align: center;
+        appearance: textfield;
 		-moz-appearance: textfield;
 	}
 
@@ -814,6 +815,7 @@ h4 {
         }
         
         input[type="number"] {
+            appearance: textfield;
             -moz-appearance: textfield;
         }
 
