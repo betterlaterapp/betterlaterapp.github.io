@@ -72,8 +72,6 @@ test.describe('Better Later - Resist Action', () => {
     await expect(logEntry).toBeVisible();
     await expect(logEntry).toContainText('You resisted it');
     
-    // Wait for throttle period (1 second)
-    await page.waitForTimeout(1100);
     
     // Click resist again
     await page.click('#crave-button');

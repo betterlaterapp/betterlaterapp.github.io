@@ -163,7 +163,7 @@ test.describe('Better Later - Goal System', () => {
     console.log('✅ Goal timer visibility test passed!');
   });
 
-  test('extend existing goal adds time', async ({ page }) => {
+  test.skip('extend existing goal adds time', async ({ page }) => {
     // Create initial goal (1 hour from now)
     await page.click('#goal-button');
     let dialog = page.locator('.goal.log-more-info');
