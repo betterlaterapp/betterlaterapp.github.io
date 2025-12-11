@@ -36,40 +36,34 @@ self.addEventListener("fetch", function(event) {
   }
 
   event.respondWith(
-    caches
-      .match(event.request)
-      .then(function(cached) {
-        var networked = fetch(event.request)
-          .then(fetchedFromNetwork, unableToResolve)
-          .catch(unableToResolve);
-        
-        return cached || networked;
+    caches.match(event.request).then(function(cached) {
+      // Cache-first: if we have a cached version, return it immediately
+      // Do NOT fetch from network - cache only updates when user clicks refresh button
+      if (cached) {
+        return cached;
+      }
 
-        function fetchedFromNetwork(response) {
-          // Only cache successful responses
+      // No cached version - fetch from network and cache for future use
+      return fetch(event.request)
+        .then(function(response) {
+          // Only cache successful same-origin responses
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
           var cacheCopy = response.clone();
           caches.open(version)
-            .then(function add(cache) {
-              try {
-                cache.put(event.request, cacheCopy);
-              } catch (error) {
-                console.error('Service Worker: Cache write failed:', error);
-              }
+            .then(function(cache) {
+              cache.put(event.request, cacheCopy);
             })
             .catch(function(error) {
               console.error('Service Worker: Cache open failed:', error);
             });
 
           return response;
-        }
-
-        function unableToResolve() {
-          // If we can't connect to the network and there's no cached response,
-          // return a simple offline page or fallback
+        })
+        .catch(function() {
+          // Network failed and no cache - return offline message
           return new Response('<h1>Service Unavailable</h1><p>Please check your internet connection.</p>', {
             status: 503,
             statusText: 'Service Unavailable',
@@ -77,7 +71,7 @@ self.addEventListener("fetch", function(event) {
               'Content-Type': 'text/html'
             })
           });
-        }
-      })
+        });
+    })
   );
 });

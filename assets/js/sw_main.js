@@ -15,15 +15,24 @@ if('serviceWorker' in navigator){
                 }
             });
         } else {
-            // Production mode: Register service worker for offline support
-            navigator.serviceWorker
-                .register('sw_cached_pages.js')
-                .then(function(registered){
-                    console.log('Service worker registered: ' + registered);
-                })
-                .catch(function(err){
-                    console.log('Service worker error: ' + err);
-                })
+            // Production mode: Register service worker ONLY if not already registered
+            // This prevents automatic update checks on every page load
+            navigator.serviceWorker.getRegistration().then(function(existingReg) {
+                if (existingReg) {
+                    console.log('Service worker already registered, skipping registration');
+                    return;
+                }
+                
+                // No existing registration, register now
+                navigator.serviceWorker
+                    .register('sw_cached_pages.js')
+                    .then(function(registered){
+                        console.log('Service worker registered: ' + registered);
+                    })
+                    .catch(function(err){
+                        console.log('Service worker error: ' + err);
+                    });
+            });
         }
     })
 }
