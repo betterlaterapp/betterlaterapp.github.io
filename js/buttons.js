@@ -2,11 +2,12 @@ var ButtonsModule = (function() {
     // Private variables
     var json;
 
-    function handleCraveButtonClick(timestampSeconds) {
+    function handleCraveButtonClick() {
 
+        var timestampSeconds = Math.round(new Date() / 1000);
         
-        // Don't allow clicks more recent than 10 seconds
-        if (timestampSeconds - json.statistics.use.lastClickStampCrave > 1) {
+        // Don't allow clicks more recent than 1 seconds
+        if (timestampSeconds - json.statistics.use.lastClickStampCrave >= 0) {
             // Return user to stats page
             $(".statistics-tab-toggler").click();
 
@@ -300,11 +301,8 @@ var ButtonsModule = (function() {
 
     function setupButtonHandlers() {
         $("#bought-button, #crave-button, #use-button, #goal-button").click(function() {
-            // Detect section
-            var timestampSeconds = Math.round(new Date() / 1000);
-
             if (this.id == "crave-button") {
-                handleCraveButtonClick(timestampSeconds);
+                handleCraveButtonClick();
             } else if (this.id == "use-button") {
                 handleUseButtonClick();
             } else if (this.id == "bought-button") {

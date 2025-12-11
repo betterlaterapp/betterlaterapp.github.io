@@ -28,3 +28,42 @@ if('serviceWorker' in navigator){
     })
 }
 
+// Global function to manually refresh the service worker
+// Can be called from UI button or console
+window.refreshServiceWorker = function() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            if (registrations.length === 0) {
+                console.log('No service worker to refresh');
+                alert('No service worker is currently registered.');
+                return;
+            }
+            
+            // Unregister all service workers
+            Promise.all(registrations.map(reg => reg.unregister()))
+                .then(function() {
+                    console.log('Service workers unregistered');
+                    
+                    // Re-register the service worker
+                    return navigator.serviceWorker.register('sw_cached_pages.js');
+                })
+                .then(function(registration) {
+                    console.log('Service worker re-registered:', registration);
+                    
+                    // Force update
+                    return registration.update();
+                })
+                .then(function() {
+                    console.log('Service worker updated');
+                    alert('Service worker refreshed! Reload the page to use the updated version.');
+                })
+                .catch(function(err) {
+                    console.error('Error refreshing service worker:', err);
+                    alert('Error refreshing service worker. Check console for details.');
+                });
+        });
+    } else {
+        alert('Service workers are not supported in this browser.');
+    }
+};
+
