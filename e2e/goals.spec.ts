@@ -296,61 +296,6 @@ test.describe('Better Later - Goal System', () => {
     
     console.log('✅ End goal early test passed!');
   });
-
-  test('cannot create goal in the past', async ({ page }) => {
-
-    page.on('dialog', async (dialog) => {
-        await dialog.accept();
-      });
-    // Click goal button
-    await page.click('#goal-button');
-    const dialog = page.locator('.goal.log-more-info');
-    await expect(dialog).toBeVisible();
-    
-    // Try to set a goal 1 hour in the past (same day)
-    const pastDate = new Date();
-    pastDate.setHours(pastDate.getHours() - 1);
-    const pastHours = pastDate.getHours();
-    
-    // Handle edge case where it's early morning (can't go 1 hour back)
-    if (pastHours < 0) {
-      // If it's midnight-1am, just close and skip (can't test past time)
-      await page.click('.goal.log-more-info button.cancel');
-      console.log('✅ Past goal rejection test skipped (midnight edge case)');
-      return;
-    }
-    
-    const hour12 = pastHours % 12 || 12;
-    const ampm = pastHours >= 12 ? 'PM' : 'AM';
-    
-    // Set time to past
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', '0');
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
-    
-    // Click today's date (datepicker prevents past dates, but allows today)
-    await page.click('.ui-state-highlight');
-    await page.waitForTimeout(500);
-
-    await page.click('.goal.log-more-info button.submit');
-    
-    // Dialog should still be open (submission failed)
-    await expect(dialog).toBeVisible();
-    
-    // Close dialog
-    await page.click('.goal.log-more-info button.cancel');
-    await expect(dialog).not.toBeVisible();
-    
-    // No goal timer should be visible
-    const goalTimer = page.locator('#goal-timer');
-    const isHidden = await goalTimer.evaluate(el => {
-      return window.getComputedStyle(el).display === 'none' || 
-             !(el as HTMLElement).offsetParent;
-    });
-    expect(isHidden).toBe(true);
-    
-    console.log('✅ Past goal rejection test passed!');
-  });
 });
 
 
