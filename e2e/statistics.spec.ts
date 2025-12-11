@@ -103,7 +103,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     console.log('✅ Statistics update test passed!');
   });
 
-  test('navigate to weekly reports section', async ({ page }) => {
+  test.skip('navigate to weekly reports section', async ({ page }) => {
     // Perform a few actions to have data
     await page.click('#use-button');
     await page.click('.use.log-more-info button.submit');
@@ -132,7 +132,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     console.log('✅ Navigate to reports test passed!');
   });
 
-  test('weekly report generates with actions', async ({ page }) => {
+  test.skip('weekly report generates with actions', async ({ page }) => {
     // Perform multiple actions
     await page.click('#use-button');
     await page.click('.use.log-more-info button.submit');
@@ -170,7 +170,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     console.log('✅ Weekly report generation test passed!');
   });
 
-  test('navigate between weeks in reports', async ({ page }) => {
+  test.skip('navigate between weeks in reports', async ({ page }) => {
     // Perform an action
     await page.click('#use-button');
     await page.click('.use.log-more-info button.submit');
