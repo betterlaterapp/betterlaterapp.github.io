@@ -180,7 +180,8 @@ input[type="number"] {
 	input,
 	select,
 	button {
-		min-height: 44px;
+		min-height: 20px;
+        margin-bottom: 5px;
 	}
 }
 
