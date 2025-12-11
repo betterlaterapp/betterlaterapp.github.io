@@ -48,6 +48,24 @@ var NotificationsModule = (function () {
         }
     }
 
+    function storeUserResponse(id, responseType, responseData) {
+        if (!isStorageReady()) return;
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (jsonObject.notifications) {
+            var notification = jsonObject.notifications.find(function(n) { return n.id === id; });
+            if (notification) {
+                notification.userResponse = {
+                    type: responseType,
+                    data: responseData || null,
+                    timestamp: Date.now()
+                };
+                notification.read = true;
+                StorageModule.setStorageObject(jsonObject);
+                updateBadgeCount();
+            }
+        }
+    }
+
     function markAllAsRead() {
         if (!isStorageReady()) return;
         var jsonObject = StorageModule.retrieveStorageObject();
@@ -124,6 +142,20 @@ var NotificationsModule = (function () {
         return classes[type] || 'type-default';
     }
 
+    function formatUserResponse(response) {
+        var labels = {
+            'goal-ended-on-time': 'Completed goal successfully',
+            'goal-ended-early': 'Goal ended early',
+            'submit-goal-end-time': 'Submitted goal end time',
+            'extend-goal': 'Extended goal',
+            'end-goal': 'Ended goal'
+        };
+        var label = labels[response.type] || 'Responded';
+        var date = new Date(response.timestamp);
+        var timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        return label + ' at ' + timeStr;
+    }
+
     function clearOverlayNotification($notification) {
         $notification.addClass('notification-exit');
         setTimeout(function() { $notification.remove(); }, NOTIFICATION_FADE_DURATION);
@@ -140,11 +172,16 @@ var NotificationsModule = (function () {
             return null;
         }
         
-        var template = '<div class="notification notification-overlay" data-id="' + notificationId + '">' +
+        var responseHint = hasResponseTools 
+            ? '<p class="notification-response-hint"><i class="fas fa-hand-pointer"></i> Tap to respond on notifications page</p>' 
+            : '';
+        var responseClass = hasResponseTools ? ' has-response-tools' : '';
+        
+        var template = '<div class="notification notification-overlay' + responseClass + '" data-id="' + notificationId + '">' +
             '<div class="notification-message">' +
             '<p class="notification-text">' + message + '</p>' +
             '<a class="notification-close" href="#">X</a>' +
-            '</div></div>';
+            '</div>' + responseHint + '</div>';
 
         var $notification = $(template);
         $('#notification-overlay').append($notification);
@@ -210,6 +247,11 @@ var NotificationsModule = (function () {
                 html += '<div class="notification-log-response-tools">' + notif.responseToolsHtml + '</div>';
             }
             
+            if (notif.userResponse) {
+                html += '<div class="notification-user-response"><i class="fas fa-check-circle"></i>' + 
+                    formatUserResponse(notif.userResponse) + '</div>';
+            }
+            
             html += '</div><div class="notification-log-actions">' +
                 (!notif.read ? '<button class="btn btn-sm btn-outline-primary mark-read-btn" title="Mark as read"><i class="fas fa-check"></i></button>' : '') +
                 '<button class="btn btn-sm btn-outline-danger delete-notification-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>' +
@@ -242,14 +284,14 @@ var NotificationsModule = (function () {
 
         $('#notifications-log').on('click', '.extend-goal', function () {
             var id = $(this).closest('.notification-log-item').data('id');
-            markAsRead(id);
+            storeUserResponse(id, 'extend-goal', null);
             renderNotificationsLog();
             GoalsModule.extendActiveGoal(json);
         });
 
         $('#notifications-log').on('click', '.end-goal', function () {
             var id = $(this).closest('.notification-log-item').data('id');
-            markAsRead(id);
+            storeUserResponse(id, 'end-goal', null);
             renderNotificationsLog();
             GoalsModule.endActiveGoal(json);
         });
@@ -297,7 +339,7 @@ var NotificationsModule = (function () {
         var goalType = mostRecentGoal.goalType;
 
         if ($this.hasClass("goal-ended-on-time")) {
-            if (id) markAsRead(id);
+            if (id) storeUserResponse(id, 'goal-ended-on-time', { goalType: goalType });
             renderNotificationsLog();
             
             ActionLogModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
@@ -310,7 +352,7 @@ var NotificationsModule = (function () {
             json.statistics.goal.activeGoalBought = 0;
         }
         else if ($this.hasClass("goal-ended-early")) {
-            if (id) markAsRead(id);
+            if (id) storeUserResponse(id, 'goal-ended-early', { goalType: goalType });
             renderNotificationsLog();
             
             var now = Math.round(new Date() / 1000);
@@ -343,7 +385,10 @@ var NotificationsModule = (function () {
             var tempEndStamp = Math.round(selectedDate.getTime() / 1000);
 
             if (tempEndStamp - startStamp > 0 || endStamp - tempEndStamp < 0) {
-                if (id) markAsRead(id);
+                if (id) storeUserResponse(id, 'submit-goal-end-time', { 
+                    goalType: goalType, 
+                    endTimestamp: tempEndStamp 
+                });
                 StorageModule.changeGoalStatus(2, goalType, tempEndStamp);
                 ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
                 renderNotificationsLog();

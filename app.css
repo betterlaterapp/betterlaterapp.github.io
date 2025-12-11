@@ -1335,6 +1335,46 @@ input[type="number"] {
 	font-size: 0.85rem;
 }
 
+/* Overlay notifications that require a response */
+.notification-overlay.has-response-tools {
+	border: 2px solid #ffc107;
+	box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+	animation: response-pulse 2s ease-in-out infinite;
+}
+
+@keyframes response-pulse {
+	0%, 100% { box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4); }
+	50% { box-shadow: 0 4px 20px rgba(255, 193, 7, 0.7); }
+}
+
+.notification-response-hint {
+	margin: 8px 0 0 0;
+	padding-top: 8px;
+	border-top: 1px dashed rgba(0,0,0,0.2);
+	font-size: 0.85rem;
+	color: #555;
+	text-align: center;
+}
+
+.notification-response-hint i {
+	margin-right: 5px;
+	color: #ffc107;
+}
+
+/* User response display in notification log */
+.notification-user-response {
+	margin-top: 8px;
+	padding: 6px 10px;
+	background: #e8f5e9;
+	border-radius: 4px;
+	font-size: 0.8rem;
+	color: #2e7d32;
+}
+
+.notification-user-response i {
+	margin-right: 5px;
+}
+
 /* smiley response  */
 #mood-tracker-area .smileys {
     display: flex;
