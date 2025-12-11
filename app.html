@@ -62,7 +62,7 @@
                     </button>
                 </div>
                 <div class="hamburger-menu-items">
-                    <a class="hamburger-menu-item statistics-tab-toggler" href="#">
+                    <a class="d-none hamburger-menu-item statistics-tab-toggler" href="#">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
@@ -74,11 +74,12 @@
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
-                    <a class="hamburger-menu-item baseline-tab-toggler" href="#">
+
+                    <a class="d-none hamburger-menu-item baseline-tab-toggler" href="#">
                         <i class="fas fa-clipboard-list"></i>
                         <span>Baseline</span>
                     </a>
-                    <a class="hamburger-menu-item goals-tab-toggler" href="#">
+                    <a class="d-none hamburger-menu-item goals-tab-toggler" href="#">
                         <i class="fas fa-bullseye"></i>
                         <span>Goals</span>
                     </a>
@@ -1326,12 +1327,12 @@
                     class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
 
             <br />
-            <button id="refreshServiceWorkerButton" class="btn btn-outline-warning" href="#" 
+            <button id="refreshServiceWorkerButton" class="btn btn-outline-info" href="#" 
                     onclick="window.refreshServiceWorker(); return false;"><i
                     class="fas fa-sync-alt"></i>&nbsp;Update app</button>
 
-            <p>Your version: <b><span id="appVersion">Loading...</span></b></p>
-            <p>available version: <b><span id="availableAppVersion">Loading...</span></b></p>
+            <p class="mb-0">current version:&nbsp;&nbsp;&nbsp; <em><span id="appVersion">Loading...</span></em></p>
+            <p class="mt-0">available version: <em><span id="availableAppVersion">Loading...</span></em></p>
 
             <p>Better Later does not update automatically. You can review the source code and update the app manually on <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank">GitHub</a>.</p>
 
