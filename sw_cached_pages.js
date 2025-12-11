@@ -1,4 +1,4 @@
-var version = "v3.14.10::pages";
+var version = "v3.14.11::pages";
 
 self.addEventListener('install', function(event) {
   // No need for empty function, but we can use it for precaching if needed

@@ -52,6 +52,138 @@ h4 {
 
 }
 
+
+
+/* ==========================================
+   iOS / Safari Form Input Fixes
+   ========================================== */
+
+/* Prevent iOS zoom on input focus (requires 16px+ font-size) */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select,
+textarea {
+	font-size: 16px;
+}
+
+/* Reset native select styling for iOS/Safari */
+select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	background-color: #fff;
+	border: 1px solid #ced4da;
+	border-radius: 4px;
+	padding: 6px 28px 6px 10px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	background-size: 12px;
+}
+
+/* Time picker selects - larger size with proper styling */
+select.time-picker-hour,
+select.time-picker-minute,
+select.time-picker-am-pm {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	font-size: 2.4rem;
+	padding: 8px 36px 8px 12px;
+	background-color: #fff;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 16px;
+	margin: 0 4px;
+	min-height: 44px; /* iOS touch target */
+}
+
+/* Checkbox and radio iOS fixes */
+input[type="checkbox"],
+input[type="radio"] {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 20px;
+	height: 20px;
+	border: 2px solid #6c757d;
+	background-color: #fff;
+	cursor: pointer;
+	vertical-align: middle;
+	position: relative;
+	flex-shrink: 0;
+}
+
+input[type="checkbox"] {
+	border-radius: 4px;
+}
+
+input[type="radio"] {
+	border-radius: 50%;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+	background-color: var(--color-primary, #2b922b);
+	border-color: var(--color-primary, #2b922b);
+}
+
+input[type="checkbox"]:checked::after {
+	content: '';
+	position: absolute;
+	left: 5px;
+	top: 1px;
+	width: 6px;
+	height: 12px;
+	border: solid #fff;
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+
+input[type="radio"]:checked::after {
+	content: '';
+	position: absolute;
+	left: 4px;
+	top: 4px;
+	width: 8px;
+	height: 8px;
+	background-color: #fff;
+	border-radius: 50%;
+}
+
+/* Bootstrap form-check-input override for iOS */
+.form-check-input {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+}
+
+/* Number input iOS fixes */
+input[type="number"] {
+	-webkit-appearance: none;
+	-moz-appearance: textfield;
+	appearance: textfield;
+	padding: 6px 10px;
+	border: 1px solid #ced4da;
+	border-radius: 4px;
+	min-height: 44px; /* iOS touch target */
+}
+
+/* Ensure touch targets are large enough on iOS */
+@media (pointer: coarse) {
+	input,
+	select,
+	button {
+		min-height: 44px;
+	}
+}
+
 .container {
 	max-width: 480px;
 }
@@ -813,11 +945,7 @@ h4 {
             -webkit-appearance: none;
             margin: 0;
         }
-        
-        input[type="number"] {
-            appearance: textfield;
-            -moz-appearance: textfield;
-        }
+        /* Note: Additional number input styling in iOS/Safari section below */
 
 
 	.cost.log-more-info label {
@@ -839,9 +967,6 @@ h4 {
 		text-align: center;
 	}
 
-	select.time-picker-hour,
-	select.time-picker-minute,
-	select.time-picker-am-pm,
 	.time-picker-container span.label {
 		font-size: 2.4rem;
 	}
@@ -1287,5 +1412,3 @@ h4 {
 #habit-log-show-more p {
 	margin-bottom: 0px;
 }
-
-

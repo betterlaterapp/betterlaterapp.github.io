@@ -4,6 +4,9 @@
   "description": "Better Later is an anonymous habit tracking web app which creates statistics from your inputs to put your habit into your own hands. The app can helps users get and keep control of their guilty pleasure.",
   "main": "app.js",
   "scripts": {
+    "version:patch": "node build-scripts/bump-version.js patch",
+    "version:minor": "node build-scripts/bump-version.js minor",
+    "version:major": "node build-scripts/bump-version.js major",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
