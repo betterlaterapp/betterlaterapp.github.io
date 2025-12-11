@@ -1,106 +1,150 @@
 var TabsModule = (function () {
-    // Private variables
     var json;
+
+    // Hamburger menu functions
+    function openHamburgerMenu() {
+        $('.hamburger-toggle').addClass('active');
+        $('.hamburger-menu, .hamburger-overlay').addClass('show');
+        $('body').css('overflow', 'hidden');
+    }
+
+    function closeHamburgerMenu() {
+        $('.hamburger-toggle').removeClass('active');
+        $('.hamburger-menu, .hamburger-overlay').removeClass('show');
+        $('body').css('overflow', '');
+    }
+
+    function setupHamburgerMenu() {
+        $(document).on('click', '.hamburger-toggle', function(e) {
+            e.stopPropagation();
+            if ($('.hamburger-menu').hasClass('show')) {
+                closeHamburgerMenu();
+            } else {
+                openHamburgerMenu();
+            }
+        });
+
+        $(document).on('click', '.hamburger-close, .hamburger-overlay, .hamburger-menu-item', function() {
+            closeHamburgerMenu();
+        });
+    }
+
+    /**
+     * Switch to a tab pane and update active states
+     */
+    function switchToTab(tabId, callback) {
+        // Hide all tab panes, show target
+        $('.tab-pane').removeClass('active show');
+        $('#' + tabId).addClass('active show');
+
+        // Update toggler active states
+        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler, .goals-tab-toggler, .reports-tab-toggler')
+            .removeClass('active');
+
+        // Save to storage
+        json.option.activeTab = tabId;
+        if (StorageModule.hasStorageData()) {
+            var jsonObject = StorageModule.retrieveStorageObject();
+            jsonObject.option.activeTab = tabId;
+            StorageModule.setStorageObject(jsonObject);
+        }
+
+        if (callback) callback();
+    }
 
     function returnToActiveTab() {
         if (json.option.activeTab) {
             var tabName = json.option.activeTab.split("-")[0];
             $("." + tabName + "-tab-toggler").click();
         } else {
-            $("." + "statistics" + "-tab-toggler").click();
+            $(".statistics-tab-toggler").click();
         }
     }
 
-    function saveActiveTab() {
-        //update instance json
-        json.option.activeTab = $(".tab-pane.active").attr('id');
-
-        //update in option table
-        var jsonObject = StorageModule.retrieveStorageObject();
-        jsonObject.option.activeTab = $(".tab-pane.active").attr('id');
-        StorageModule.setStorageObject(jsonObject);
-    }
-
     function setupStatisticsTabHandler(userWasInactive) {
-        $(document).delegate(".statistics-tab-toggler", 'click', function (e) {
-            saveActiveTab();
-
-            setTimeout(function () {
-                UIModule.toggleActiveStatGroups(json);
-                UIModule.hideInactiveStatistics(json);
-
-                TimersModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
-                TimersModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
-                TimersModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
-
-            }, 0);
-
-            $(".baseline-tab-toggler").removeClass("active");
-            $(".settings-tab-toggler").removeClass("active");
-            $(".reports-tab-toggler").removeClass("active");
-
-            if ($('#settings-content').hasClass("active")) {
-                $('#settings-content').removeClass("active")
-                $('#settings-content').attr("aria-expanded", false)
-            }
-
-            $(".statistics-tab-toggler").addClass("active");
-
-            //close dropdown nav
-            if ($("#options-collapse-menu").hasClass("show")) {
-                $(".navbar-toggler").click();
-            }
-
-            //get them notifcations for useful reports
-            StatisticsModule.initiateReport(json);
+        $(document).on('click', '.statistics-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('statistics-content', function() {
+                setTimeout(function () {
+                    UIModule.toggleActiveStatGroups(json);
+                    UIModule.hideInactiveStatistics(json);
+                    TimersModule.adjustFibonacciTimerToBoxes("goal-timer", userWasInactive);
+                    TimersModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
+                    TimersModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
+                }, 0);
+                StatisticsModule.initiateReport(json);
+            });
+            $('.statistics-tab-toggler').addClass('active');
         });
     }
 
     function setupSettingsTabHandler() {
-        $(document).delegate(".settings-tab-toggler", 'click', function (e) {
-
-            saveActiveTab();
-            $(".baseline-tab-toggler").removeClass("active");
-            $(".reports-tab-toggler").removeClass("active");
-            $(".statistics-tab-toggler").removeClass("active");
-
-            $(this).addClass('active')
-
-            //close dropdown nav
-            if ($("#options-collapse-menu").hasClass("show")) {
-                $(".navbar-toggler").click();
-            }
-
+        $(document).on('click', '.settings-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('settings-content');
+            $('.settings-tab-toggler').addClass('active');
         });
     }
 
-    /**
-     * Initialize the tabs module
-     * @param {Object} appJson - The application JSON object
-     * @param {boolean} userWasInactive - Whether user was inactive
-     */
-    function init(appJson, userWasInactive) {
-        json = appJson;
-
-        setupStatisticsTabHandler(userWasInactive);
-        setupSettingsTabHandler();
+    function setupNotificationsTabHandler() {
+        $(document).on('click', '.notifications-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('notifications-content', function() {
+                NotificationsModule.renderNotificationsLog();
+            });
+            $('.notifications-tab-toggler').addClass('active');
+        });
     }
 
-    // Public API
+    function setupBaselineTabHandler() {
+        $(document).on('click', '.baseline-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('settings-content', function() {
+                setTimeout(function() {
+                    var $baseline = $('.baseline-questionnaire-heading');
+                    if ($baseline.length) {
+                        $('html, body').animate({ scrollTop: $baseline.offset().top - 100 }, 200);
+                    }
+                }, 50);
+            });
+            $('.baseline-tab-toggler').addClass('active');
+        });
+    }
+
+    function setupGoalsTabHandler() {
+        $(document).on('click', '.goals-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('statistics-content', function() {
+                setTimeout(function() {
+                    var $goal = $('#goal-content');
+                    if ($goal.length) {
+                        $('html, body').animate({ scrollTop: $goal.offset().top - 100 }, 200);
+                    }
+                }, 50);
+            });
+            $('.goals-tab-toggler').addClass('active');
+        });
+    }
+
+    function init(appJson, userWasInactive) {
+        json = appJson;
+        setupHamburgerMenu();
+        setupStatisticsTabHandler(userWasInactive);
+        setupSettingsTabHandler();
+        setupNotificationsTabHandler();
+        setupBaselineTabHandler();
+        setupGoalsTabHandler();
+    }
+
     return {
         returnToActiveTab: returnToActiveTab,
-        saveActiveTab: saveActiveTab,
-        setupStatisticsTabHandler: setupStatisticsTabHandler,
-        setupSettingsTabHandler: setupSettingsTabHandler,
+        switchToTab: switchToTab,
         init: init
     };
 })();
 
-// Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = TabsModule;
 } else {
     window.TabsModule = TabsModule;
 }
-
-

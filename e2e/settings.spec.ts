@@ -10,6 +10,21 @@ import { test, expect } from '@playwright/test';
  * - Settings persistence
  */
 
+// Helper to navigate to settings via hamburger menu
+async function navigateToSettings(page) {
+  await page.click('.hamburger-toggle');
+  await page.waitForSelector('.hamburger-menu.show');
+  await page.click('.hamburger-menu .settings-tab-toggler');
+  await page.waitForTimeout(300);
+}
+
+async function navigateToStatistics(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .statistics-tab-toggler');
+    await page.waitForTimeout(300);
+  }
+
 async function setupUserWithoutBaseline(page) {
   // Setup user with NO baseline completed
   const testData = {
@@ -72,7 +87,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Navigate to settings tab
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await page.waitForTimeout(500);
     await expect(page.locator('#settings-content')).toBeVisible();
     
@@ -92,7 +107,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Navigate to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await page.waitForTimeout(500);
     
     const baselineSection = page.locator('.baseline-questionnaire');
@@ -139,7 +154,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Click settings tab
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     
     // Verify settings content is visible
     await expect(page.locator('#settings-content')).toBeVisible();
@@ -157,7 +172,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Go to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // With userSubmitted: true, the displayed-statistics section should already be expanded
@@ -182,7 +197,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     expect(settings.option.liveStatsToDisplay.usedButton).toBe(false);
     
     // Navigate back to statistics
-    await page.click('a[href="#statistics-content"]');
+    await navigateToStatistics(page);
     
     // The "Did It" button should now be hidden
     const useButtonContainer = page.locator('#use-button').locator('..');
@@ -212,7 +227,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await expect(page.locator('#crave-total')).toHaveText('1');
     
     // Go to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // Set up confirm dialog handler (clear data shows a confirmation)
@@ -228,7 +243,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForTimeout(1000);
     
     // Navigate back to statistics
-    await page.click('a[href="#statistics-content"]');
+    await navigateToStatistics(page);
     
     // All counters should be reset to 0
     await expect(page.locator('#use-total')).toHaveText('0');
@@ -247,7 +262,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Go to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // Verify refresh service worker button exists
@@ -262,7 +277,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Go to settings
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // Verify key display options are checked by default
@@ -280,7 +295,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await page.waitForLoadState('networkidle');
     
     // Go to settings and change a preference
-    await page.click('button.settings-tab-toggler');
+    await navigateToSettings(page);
     
     // With userSubmitted: true, the displayed-statistics section should already be expanded
     await expect(page.locator('.displayed-statistics')).toBeVisible();

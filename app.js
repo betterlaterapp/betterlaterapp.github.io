@@ -687,14 +687,14 @@ $(document).ready(function () {
 
 
             //NEEEWWWWW USERRR
-            if ((useCount == 0 && craveCount == 0 && costCount == 0 && moodCount == 0 && goalCount == 0)
+            if ((useCount == 0 && craveCount == 0 && costCount == 0 && moodCount == 0)
                 && json.baseline.specificSubject == false
                 && json.option.activeTab == "settings-content") {
                 var introMessage = "<b>Welcome back!</b> Start tracking your habit now by clicking any of the buttons on the right.";
                 var responseTools = '<button class="btn btn-md btn-outline-info clear-notification" onClick="$(\'.statistics-tab-toggler\').click();">' +
                     "Statistics Panel</button>";
 
-                NotificationsModule.createNotification(introMessage, responseTools);
+                NotificationsModule.createNotification(introMessage, responseTools, { type: 'welcome' });
 
             } else {
 
@@ -702,7 +702,7 @@ $(document).ready(function () {
             }
         }
 
-        NotificationsModule.init(json);
+        // Initialize modules that don't require storage
         TabsModule.init(json, userWasInactive);
         SettingsModule.init(json);
         BaselineModule.init(json);
@@ -779,9 +779,11 @@ $(document).ready(function () {
 
             //ABSOLUTE NEW USER
             var introMessage = "<b>Welcome to Better Later</b> - the anonymous habit tracking app that shows you statistics about your habit as you go!";
-            NotificationsModule.createNotification(introMessage);
+            NotificationsModule.createNotification(introMessage, null, { type: 'welcome' });
         }
 
+        // Initialize NotificationsModule after storage is guaranteed to exist
+        NotificationsModule.init(json);
 
         //Restrict possible dates chosen in goal tab datepicker
         //restrictGoalRange();

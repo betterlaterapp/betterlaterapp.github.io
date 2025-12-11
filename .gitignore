@@ -29,6 +29,7 @@ yarn-error.log*
 # Build artifacts
 dist/
 build/
+build-scripts/
 
 # Environment
 .env
