@@ -65,8 +65,9 @@ h4 {
     position: relative;
     right: 5px;
     width: calc(100% + 10px);
-    padding-left: 10px;
+    padding-left: 15px;
     padding-right: 5px;
+    padding-bottom: 5px;
 }
 
 .app-background {
@@ -120,67 +121,234 @@ h4 {
 	font-size: 18px;
 }
 
-/* Options hamburger and menu */
+/* Header navigation */
 
-.hamburger {
-	float: right;
-	width: 70px;
+.header-nav {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0;
 }
 
-.hamburger .navbar-toggler {
-	background: white;
+.nav-icon-btn {
+	background: transparent;
+	border: none;
 	cursor: pointer;
-	margin-top: 8px;
-    width: 70px;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-
-}
-.navbar-toggler {
-    display: inherit;
-}
-.navbar-toggler.active{
-	display: none;
+	width: 40px;
+	height: 40px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 0;
+	color: white;
+	position: relative;
+	border-radius: 4px;
+	transition: background 0.15s ease;
 }
 
-.navbar {
-    padding: 0px;
-    padding-top: 5px;
+.nav-icon-btn:hover {
+	background: rgba(255, 255, 255, 0.15);
 }
-#options-navbar {
-    width: 100%;
-	z-index: 1000;
-	padding: 5px 0px; 
-    border-radius: 5px;
+
+.nav-icon-btn:focus {
+	outline: none;
 }
-#options-navbar .container {
+
+/* Hamburger toggle button */
+.hamburger-toggle {
 	background: white;
+	border: none;
+	cursor: pointer;
+	width: 70px;
+	height: 50px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 4px;
+	margin-left: 8px;
+	transition: background 0.15s ease;
+}
 
+.hamburger-toggle:hover {
+	background: #f0f0f0;
 }
-#options-collapse-menu {
-	padding: 7px;
-	padding-top: .5rem;
+
+.hamburger-toggle:focus {
+	outline: none;
 }
-#options-collapse-menu {
-	margin-top: 0px;
+
+/* Animated hamburger icon */
+.hamburger-icon {
+	width: 22px;
+	height: 16px;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
 }
-#options-collapse-menu a {
+
+.hamburger-icon span {
+	display: block;
+	width: 100%;
+	height: 2px;
+	background: #333;
+	border-radius: 2px;
+	transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+/* Hamburger to X animation */
+.hamburger-toggle.active .hamburger-icon span:nth-child(1) {
+	transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger-toggle.active .hamburger-icon span:nth-child(2) {
+	opacity: 0;
+}
+
+.hamburger-toggle.active .hamburger-icon span:nth-child(3) {
+	transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Full-height slide-out menu overlay */
+.hamburger-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 1100;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.hamburger-overlay.show {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* Full-height slide-out menu */
+.hamburger-menu {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 280px;
+	max-width: 80vw;
+	height: 100%;
+	background: white;
+	z-index: 1200;
+	transform: translateX(-100%);
+	transition: transform 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.hamburger-menu.show {
+	transform: translateX(0);
+}
+
+/* Menu header */
+.hamburger-menu-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 16px 20px;
+	border-bottom: 1px solid #eee;
+	background: #f8f9fa;
+}
+
+.hamburger-menu-header .menu-title {
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: #333;
+}
+
+.hamburger-close {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	width: 36px;
+	height: 36px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: #666;
+	border-radius: 4px;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hamburger-close:hover {
+	background: #eee;
+	color: #333;
+}
+
+.hamburger-close:focus {
+	outline: none;
+}
+
+/* Menu items container */
+.hamburger-menu-items {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 0;
+}
+
+/* Menu items */
+.hamburger-menu-item {
+	display: flex;
+	align-items: center;
+	padding: 16px 20px;
+	color: #444;
+	text-decoration: none;
+	font-size: 1.1rem;
+	font-weight: 500;
+	transition: background 0.1s ease, color 0.1s ease;
+	border-left: 3px solid transparent;
+}
+
+.hamburger-menu-item:hover {
+	background: #f5f5f5;
+	color: #333;
+	text-decoration: none;
+}
+
+.hamburger-menu-item.active {
+	color: #2b922b;
+	background: #f0fff0;
+	border-left-color: #2b922b;
+}
+
+.hamburger-menu-item i {
+	font-size: 1.25rem;
+	width: 28px;
+	margin-right: 14px;
+	text-align: center;
+	color: #666;
+}
+
+.hamburger-menu-item:hover i,
+.hamburger-menu-item.active i {
+	color: #2b922b;
+}
+
+/* Undo button container - below action buttons */
+.undo-button-container {
     text-align: center;
-    display: inherit;
-    color: grey;
-}
-#options-collapse-menu a.active {
-    color: black;
+    padding: 10px 0;
+    margin-top: 5px;
 }
 
-.undo-button {
-    float: right;
-    margin: 15px 20px;
+.undo-button-container #undoActionButton {
+    background: transparent;
+    border-color: rgba(255, 193, 7, 0.6);
+    color: #856404;
+    font-size: 0.85rem;
 }
-/* cellphone bottom padding fix */
-#undoActionButton {
-    background: rgba(0,0,0,.2) ;
+
+.undo-button-container #undoActionButton:hover {
+    background: rgba(255, 193, 7, 0.2);
 }
 
 
@@ -212,35 +380,15 @@ h4 {
 	margin-bottom: 20px;
 }
 
-/* tabs up top for page redirection */
-.navbar-header {
-    display: inline-flex;
-    max-height: 85px;
-    padding-top: 5px;
-}
-.navbar-header .button-group {
-    display: inline-block;
-    min-width: 65px;
-    padding-top: 10px;
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
 
+.button-bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
-.navbar-header .button-group .button-text {
-    font-size: .8rem;
-}
-
-.navbar-header .button-group a {
-    color: grey;
-}
-.navbar-header .button-group a.active {
-    color: white;
-}
-
-
 /* app main tab menu - Cost, Use, Goals */
 .button-bar {
-    background: white;
     width: 70px;
     margin-left: 5px;
 
@@ -611,7 +759,7 @@ h4 {
 }
 
 .clickCounter {
-	background: red;
+	background: #2b922bb7;
 	color: white;
 	border-radius: 15px;
 	position: absolute;
@@ -836,6 +984,75 @@ h4 {
 /* TEMPLATE STYLES */
 /* Notifications styles */
 
+/* Notification overlay container - fixed position, no layout shift */
+#notification-overlay {
+	position: fixed;
+	top: 70px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1100;
+	width: 100%;
+	max-width: 460px;
+	padding: 0 10px;
+	pointer-events: none;
+}
+
+#notification-overlay .notification {
+	pointer-events: auto;
+}
+
+/* Notification badge on bell icon */
+.notification-badge {
+	position: absolute;
+	top: -2px;
+	right: -2px;
+	background: #dc3545;
+	color: white;
+	font-size: 0.65rem;
+	font-weight: 700;
+	padding: 1px 5px;
+	border-radius: 10px;
+	min-width: 16px;
+	text-align: center;
+}
+
+/* Bell animation when new notification arrives */
+.notification-bell-animate {
+	animation: bell-ring 0.6s ease-in-out;
+}
+
+@keyframes bell-ring {
+	0% { transform: rotate(0); }
+	15% { transform: rotate(15deg); }
+	30% { transform: rotate(-15deg); }
+	45% { transform: rotate(10deg); }
+	60% { transform: rotate(-10deg); }
+	75% { transform: rotate(5deg); }
+	90% { transform: rotate(-5deg); }
+	100% { transform: rotate(0); }
+}
+
+/* Overlay notification animations */
+.notification-overlay {
+	opacity: 0;
+	transform: translateY(-20px);
+	transition: opacity 0.3s ease, transform 0.3s ease;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+	cursor: pointer;
+}
+
+.notification-overlay.notification-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.notification-overlay.notification-exit {
+	opacity: 0;
+	transform: translateY(-20px);
+	transition: opacity 3s ease, transform 3s ease;
+	pointer-events: none;
+}
+
 .notification {
 	position: relative;
 	background: rgb(211, 190, 251);
@@ -878,6 +1095,117 @@ h4 {
 .notification-response-tools button {
 	padding: 0px 15px;
 	margin: 0px 5px 10px 5px;
+}
+
+/* Notifications tab styles */
+#notifications-content .notifications-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-bottom: 15px;
+}
+
+#notifications-content h2 {
+	margin-bottom: 20px;
+}
+
+/* Notification log items */
+.notification-log-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding: 12px;
+	margin-bottom: 8px;
+	border-radius: 6px;
+	background: #f8f9fa;
+	border-left: 4px solid transparent;
+	transition: all 0.2s ease;
+}
+
+.notification-log-item.notification-unread {
+	background: #e8f4fd;
+	border-left-color: #007bff;
+}
+
+.notification-log-item.notification-read {
+	opacity: 0.7;
+}
+
+.notification-log-item:hover {
+	background: #e9ecef;
+}
+
+.notification-log-item.notification-unread:hover {
+	background: #d4ebfc;
+}
+
+.notification-log-content {
+	flex: 1;
+	padding-right: 10px;
+}
+
+.notification-log-message {
+	margin: 0 0 5px 0;
+	font-size: 0.95rem;
+	line-height: 1.4;
+}
+
+.notification-log-date {
+	font-size: 0.8rem;
+	color: #6c757d;
+}
+
+.notification-log-actions {
+	display: flex;
+	gap: 5px;
+	flex-shrink: 0;
+}
+
+.notification-log-actions .btn {
+	padding: 4px 8px;
+	margin-bottom: 0;
+}
+
+/* Notification type label */
+.notification-log-type {
+	display: inline-block;
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 2px 8px;
+	border-radius: 3px;
+	margin-bottom: 6px;
+	background: #e9ecef;
+	color: #495057;
+}
+
+.notification-log-item.type-success .notification-log-type {
+	background: #d4edda;
+	color: #155724;
+}
+
+.notification-log-item.type-warning .notification-log-type {
+	background: #fff3cd;
+	color: #856404;
+}
+
+.notification-log-item.type-info .notification-log-type {
+	background: #d1ecf1;
+	color: #0c5460;
+}
+
+/* Response tools in notification log */
+.notification-log-response-tools {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #dee2e6;
+}
+
+.notification-log-response-tools button {
+	padding: 4px 12px;
+	margin: 0 5px 5px 0;
+	font-size: 0.85rem;
 }
 
 /* smiley response  */

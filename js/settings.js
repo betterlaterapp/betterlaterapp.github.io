@@ -96,8 +96,6 @@ var SettingsModule = (function () {
                 StatisticsModule.createReportForEndStamp(reportEndStamp, json);
             } else {
                 $('.previous-report').prop("disabled", true)
-                NotificationsModule.createNotification("Looks like there isn't enough data to make that report!");
-
                 $('html').animate({ scrollTop: 0 })
             }
         });
@@ -109,8 +107,6 @@ var SettingsModule = (function () {
                 StatisticsModule.createReportForEndStamp(reportEndStamp, json);
             } else {
                 $('.next-report').prop("disabled", true)
-                NotificationsModule.createNotification("The next report is for a week that has not happened yet!");
-
                 $('html').animate({ scrollTop: 0 })
             }
         });

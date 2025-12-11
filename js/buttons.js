@@ -140,7 +140,7 @@ var ButtonsModule = (function() {
         json.statistics.goal.activeGoalBoth = 0;
 
         StorageModule.changeGoalStatus(2, goalType, requestedTimestamp);
-        NotificationsModule.createNotification(message);
+        NotificationsModule.createNotification(message, null, { type: 'goal_ended_early' });
 
         $("#goal-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);
@@ -232,7 +232,7 @@ var ButtonsModule = (function() {
         json.statistics.goal.activeGoalBoth = 0;
 
         StorageModule.changeGoalStatus(2, goalType, timestampSeconds);
-        NotificationsModule.createNotification(message);
+        NotificationsModule.createNotification(message, null, { type: 'goal_ended_early' });
 
         $("#goal-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);

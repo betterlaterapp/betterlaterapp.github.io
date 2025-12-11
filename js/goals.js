@@ -40,7 +40,7 @@ var GoalsModule = (function () {
         var message = 'Any progress is good progress! ' + affirmation;
 
         StorageModule.changeGoalStatus(2, goalType, timestampSeconds);
-        NotificationsModule.createNotification(message);
+        NotificationsModule.createNotification(message, null, { type: 'goal_ended_early' });
 
         var startStamp = json.statistics.goal.lastClickStamp;
         var actualEnd = timestampSeconds;
@@ -153,7 +153,7 @@ var GoalsModule = (function () {
 
         // Notify user that goal ended
         var message = "Congrats! You made it :) . " + affirmation;
-        NotificationsModule.createNotification(message);
+        NotificationsModule.createNotification(message, null, { type: 'goal_completed' });
 
         // Disappear the entire timer section including the "Until goal ends" text
         $(timerSection + " .timer-recepticle").hide();
@@ -221,7 +221,7 @@ var GoalsModule = (function () {
                     '<button class="notification-response-tool end-goal" href="#">' +
                     'No</button>';
 
-                NotificationsModule.createNotification(message, responseTools);
+                NotificationsModule.createNotification(message, responseTools, { type: 'goal_extend_prompt' });
             } else {
                 // Keep lastClickStamp up to date while using app
                 json.statistics.goal.lastClickStamp = timestampSeconds;
