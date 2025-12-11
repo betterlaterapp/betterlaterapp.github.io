@@ -71,10 +71,10 @@ export default defineConfig({
     // },
   ],
 
-  // Uncomment to run your local dev server before starting the tests
-  // webServer: {
-  //   command: 'python3 -m http.server 8000',
-  //   url: 'http://localhost:8000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  // Run local dev server before starting the tests
+  webServer: {
+    command: 'python3 -m http.server 8080',
+    url: 'http://127.0.0.1:8080',
+    reuseExistingServer: !process.env.CI,
+  },
 });
