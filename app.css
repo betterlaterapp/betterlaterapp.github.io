@@ -52,7 +52,46 @@ h4 {
 
 }
 
+/* ==========================================
+   jQuery UI Datepicker Icon Fixes
+   (Replaces missing image icons with CSS)
+   ========================================== */
 
+/* Hide the missing image-based icons */
+.ui-icon {
+	background-image: none !important;
+}
+
+/* Datepicker prev/next arrows using CSS */
+.ui-datepicker .ui-datepicker-prev span,
+.ui-datepicker .ui-datepicker-next span {
+	background-image: none !important;
+	text-indent: 0 !important;
+	font-size: 0;
+}
+
+.ui-datepicker .ui-datepicker-prev span::after,
+.ui-datepicker .ui-datepicker-next span::after {
+	font-size: 16px;
+	color: #444;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.ui-datepicker .ui-datepicker-prev span::after {
+	content: '◀';
+}
+
+.ui-datepicker .ui-datepicker-next span::after {
+	content: '▶';
+}
+
+.ui-datepicker .ui-datepicker-prev:hover span::after,
+.ui-datepicker .ui-datepicker-next:hover span::after {
+	color: #000;
+}
 
 /* ==========================================
    iOS / Safari Form Input Fixes
