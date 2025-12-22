@@ -52,7 +52,46 @@ h4 {
 
 }
 
+/* ==========================================
+   jQuery UI Datepicker Icon Fixes
+   (Replaces missing image icons with CSS)
+   ========================================== */
 
+/* Hide the missing image-based icons */
+.ui-icon {
+	background-image: none !important;
+}
+
+/* Datepicker prev/next arrows using CSS */
+.ui-datepicker .ui-datepicker-prev span,
+.ui-datepicker .ui-datepicker-next span {
+	background-image: none !important;
+	text-indent: 0 !important;
+	font-size: 0;
+}
+
+.ui-datepicker .ui-datepicker-prev span::after,
+.ui-datepicker .ui-datepicker-next span::after {
+	font-size: 16px;
+	color: #444;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.ui-datepicker .ui-datepicker-prev span::after {
+	content: '◀';
+}
+
+.ui-datepicker .ui-datepicker-next span::after {
+	content: '▶';
+}
+
+.ui-datepicker .ui-datepicker-prev:hover span::after,
+.ui-datepicker .ui-datepicker-next:hover span::after {
+	color: #000;
+}
 
 /* ==========================================
    iOS / Safari Form Input Fixes
@@ -91,17 +130,16 @@ select.time-picker-am-pm {
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
-	font-size: 2.4rem;
-	padding: 8px 36px 8px 12px;
+	font-size: 1.8rem;
+	padding: 6px 28px 6px 8px;
 	background-color: #fff;
 	border: 1px solid #ced4da;
 	border-radius: 6px;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right 10px center;
-	background-size: 16px;
-	margin: 0 4px;
-	min-height: 44px; /* iOS touch target */
+	background-position: right 6px center;
+	background-size: 14px;
+	margin: 0 2px;
 }
 
 /* Checkbox and radio iOS fixes */
@@ -164,7 +202,7 @@ input[type="radio"]:checked::after {
 	appearance: none;
 }
 
-/* Number input iOS fixes */
+/* Number input styling */
 input[type="number"] {
 	-webkit-appearance: none;
 	-moz-appearance: textfield;
@@ -172,7 +210,6 @@ input[type="number"] {
 	padding: 6px 10px;
 	border: 1px solid #ced4da;
 	border-radius: 4px;
-	min-height: 44px; /* iOS touch target */
 }
 
 /* Ensure touch targets are large enough on iOS */
@@ -969,7 +1006,7 @@ input[type="number"] {
 	}
 
 	.time-picker-container span.label {
-		font-size: 2.4rem;
+		font-size: 1.8rem;
 	}
 
     .use.log-more-info .time-picker-container .form-check-input {
@@ -981,7 +1018,7 @@ input[type="number"] {
     .use.log-more-info .time-picker-container .time-picker-now,
     .use.log-more-info .time-picker-container .time-picker-before {
         padding-left: 10px;
-        font-size: 2.6rem;
+        font-size: 1.8rem;
         display: flex;
         align-items: center;
     }
