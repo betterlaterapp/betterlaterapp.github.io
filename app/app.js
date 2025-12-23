@@ -673,6 +673,11 @@ $(document).ready(function () {
             UIModule.closeClickDialog(".goal");
         });
 
+        // App loaded successfully - cancel the fallback error screen
+        if (typeof window.cancelAppFallback === 'function') {
+            window.cancelAppFallback();
+        }
+
     } else {
         //NO LOCAL STORAGE
         alert("This app uses your local storage to store your data." +

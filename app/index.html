@@ -31,6 +31,148 @@
 </head>
 
 <body class="app-background">
+    <!-- 
+        FAILSAFE FALLBACK UI
+        This is completely self-contained with inline styles/script.
+        It fades in after 5 seconds unless app.js successfully completes.
+        Also triggered by uncaught JavaScript errors.
+    -->
+    <div id="app-fallback" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.5s ease-in;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 20px;
+        box-sizing: border-box;
+    ">
+        <div style="
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 400px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        ">
+            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+            <h1 style="color: #fff; font-size: 24px; margin: 0 0 16px 0; font-weight: 600;">
+                Something went wrong
+            </h1>
+            <p style="color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1.5; margin: 0 0 24px 0;">
+                Could've been your mistake, could've been ours.
+            </p>
+            <p id="fallback-version-msg" style="color: rgba(255,255,255,0.9); font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; display: none;">
+                <!-- Populated by script below -->
+            </p>
+            <button onclick="window.location.reload();" style="
+                background: #4d83b5;
+                color: white;
+                border: none;
+                padding: 12px 32px;
+                border-radius: 8px;
+                font-size: 16px;
+                cursor: pointer;
+                margin-right: 8px;
+            ">Reload App</button>
+            <button id="fallback-update-btn" onclick="window.refreshServiceWorker && window.refreshServiceWorker();" style="
+                background: #28a745;
+                color: white;
+                border: none;
+                padding: 12px 32px;
+                border-radius: 8px;
+                font-size: 16px;
+                cursor: pointer;
+                display: none;
+            ">Update App</button>
+        </div>
+    </div>
+    <script>
+        (function() {
+            var fallbackEl = document.getElementById('app-fallback');
+            var fadeInTimer = null;
+            var appLoadedSuccessfully = false;
+
+            function showFallback() {
+                if (appLoadedSuccessfully) return;
+                fallbackEl.style.visibility = 'visible';
+                fallbackEl.style.opacity = '1';
+                checkVersionAndUpdateMessage();
+            }
+
+            window.cancelAppFallback = function() {
+                appLoadedSuccessfully = true;
+                if (fadeInTimer) clearTimeout(fadeInTimer);
+                fallbackEl.style.display = 'none';
+            };
+
+            // Start timer - if not cancelled in 5 seconds, show fallback
+            fadeInTimer = setTimeout(showFallback, 5000);
+
+            // Show fallback if a script fails to load (404, network error, etc.), not runtime errors
+            window.addEventListener('error', function(event) {
+                if (event.target && event.target.tagName === 'SCRIPT') {
+                    showFallback();
+                }
+            }, true);
+
+            async function checkVersionAndUpdateMessage() {
+                var msgEl = document.getElementById('fallback-version-msg');
+                var updateBtn = document.getElementById('fallback-update-btn');
+                
+                try {
+                    var currentVersion = null;
+                    if ('caches' in window) {
+                        var cacheNames = await caches.keys();
+                        var versionCache = cacheNames.find(function(name) {
+                            return name.match(/^v\d+(\.\d+)+::pages$/);
+                        });
+                        if (versionCache) {
+                            var match = versionCache.match(/v([\d.]+)/);
+                            if (match) currentVersion = match[1];
+                        }
+                    }
+
+                    var latestVersion = null;
+                    try {
+                        var response = await fetch('https://raw.githubusercontent.com/betterlaterapp/betterlaterapp.github.io/refs/heads/main/sw_cached_pages.js');
+                        if (response.ok) {
+                            var content = await response.text();
+                            var verMatch = content.match(/var\s+version\s*=\s*["']v([\d.]+)::pages["']/);
+                            if (verMatch) latestVersion = verMatch[1];
+                        }
+                    } catch(e) { /* Network error, can't check */ }
+
+                    // Update UI based on version comparison
+                    if (currentVersion && latestVersion && currentVersion !== latestVersion) {
+                        msgEl.innerHTML = 'You\'re on version ' + currentVersion + ', but ' + latestVersion + ' is available.<br><strong>Updating will likely fix this issue.</strong>';
+                        msgEl.style.display = 'block';
+                        updateBtn.style.display = 'inline-block';
+                    } else if (currentVersion && latestVersion && currentVersion === latestVersion) {
+                        msgEl.innerHTML = 'You have the latest version (' + currentVersion + ').<br>Please <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/issues" target="_blank" style="color: #7cb3ff;">let me know about this issue</a>!';
+                        msgEl.style.display = 'block';
+                    } else {
+                        msgEl.innerHTML = 'Unable to check version (you may be offline or unable to reach <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank" style="color: #7cb3ff;">GitHub</a>).<br>Try reloading, or <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/issues" target="_blank" style="color: #7cb3ff;">report this issue</a>.';
+                        msgEl.style.display = 'block';
+                    }
+                } catch(e) {
+                    msgEl.innerHTML = 'Unable to check version (you may be offline or unable to reach <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank" style="color: #7cb3ff;">GitHub</a>).<br>Try reloading, or <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/issues" target="_blank" style="color: #7cb3ff;">report this issue</a>.';
+                    msgEl.style.display = 'block';
+                }
+            }
+        })();
+    </script>
+
     <div id="greyed-out-div"></div>
     <div class="container app-overlay">
         <div id="header">
@@ -1500,7 +1642,8 @@
         <script type="application/javascript" src="js/actionLog.js"></script>
         <script type="application/javascript" src="js/goals.js"></script>
         <script type="application/javascript" src="js/ui.js"></script>
-        <script type="application/javascript" src="js/statistics.js"></script>
+        <script type="application/javascript" src="js/statsCalculations.js"></script>
+        <script type="application/javascript" src="js/statsDisplay.js"></script>
         <script type="application/javascript" src="js/baseline.js"></script>
         <script type="application/javascript" src="js/tabs.js"></script>
         <script type="application/javascript" src="js/settings.js"></script>
