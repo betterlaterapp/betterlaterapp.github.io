@@ -47,7 +47,7 @@ var ActionLogModule = (function () {
             //target = "#use-log";
         } else if (clickType == "mood") {
             var scrubbedComment = comment.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-            titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
+            titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="../assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
         }
 
         var template = '<div class="item ' + clickType + '-record">' +

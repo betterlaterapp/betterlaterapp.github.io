@@ -80,7 +80,7 @@ test.describe('Better Later - First Action', () => {
     await setupUserWithBaseline(page);
     
     // Navigate to app (baseURL is set in playwright.config.ts)
-    await page.goto('/app.html');
+    await page.goto('/app/app.html');
     
     // Wait for app to load
     await page.waitForLoadState('networkidle');

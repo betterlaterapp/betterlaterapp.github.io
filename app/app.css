@@ -241,17 +241,17 @@ input[type="number"] {
 }
 
 .app-background {
-	background: url('assets/images/lake-reflect-background.jpg');
-    background-position: 0px 60px;
-    animation: animatedBackground 40s ease-in-out infinite alternate;
+	background: url('../assets/images/lake-reflect-background.jpg');
+    background-position: 0px -147px;
+    animation: animatedBackground 30s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
     from {
-        background-position: 0px 60px;
+        background-position: 0px -147px;
     }
     to {
-        background-position: 300px 60px;
+        background-position: 300px -147px;
     }
   }
 
@@ -835,7 +835,7 @@ input[type="number"] {
 }
 .stat-group .stat-recepticle {
     position: relative;
-    background-image: url("assets/images/mayan-ruin-background-timers.jpg");
+    background-image: url("../assets/images/mayan-ruin-background-timers.jpg");
     width: 33.3333%;
     flex: 1 0 33.3333%;    
     display: flex;
@@ -1043,7 +1043,7 @@ input[type="number"] {
 
 	.fibonacci-timer {
 		display: inline-block;
-		background-image: url("assets/images/mayan-ruin-background-timers.jpg");
+		background-image: url("../assets/images/mayan-ruin-background-timers.jpg");
 		padding: 1px;
 		overflow: hidden;
 		max-width: 100%;
@@ -1221,7 +1221,7 @@ input[type="number"] {
 .notification {
 	position: relative;
 	background: rgb(211, 190, 251);
-	background: url("assets/images/mayan-notification-background.jpg"); 
+	background: url("../assets/images/mayan-notification-background.jpg"); 
 	background-size: cover;
 	border: 1px solid #d6d6d6; 
 	border-radius: 4px; 

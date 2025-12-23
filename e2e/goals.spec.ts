@@ -63,7 +63,7 @@ async function setupUserWithBaseline(page) {
 test.describe('Better Later - Goal System', () => {
   test.beforeEach(async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app.html');
+    await page.goto('/app/app.html');
     await page.waitForLoadState('networkidle');
   });
 
