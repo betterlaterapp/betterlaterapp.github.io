@@ -159,13 +159,13 @@ var StatisticsModule = (function () {
         var didLastWeek = jsonObject.action.filter(function (e) {
             return (e.clickType == "used" || e.clickType == "craved")
                 && e.timestamp >= lastWeekStartStamp
-                && e.timestamp <= reportStartStamp;
+                && e.timestamp < reportStartStamp;  // Use < to avoid double-counting at boundary
         });
 
         var boughtLastWeek = jsonObject.action.filter(function (e) {
             return (e.clickType == "bought")
                 && e.timestamp >= lastWeekStartStamp
-                && e.timestamp <= reportStartStamp;
+                && e.timestamp < reportStartStamp;  // Use < to avoid double-counting at boundary
         });
 
         for (var dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -253,24 +253,31 @@ var StatisticsModule = (function () {
 
     /**
      * Calculate percent change between two values
-     * @param {number} first - First value
-     * @param {number} second - Second value
-     * @returns {number} - Percent change
+     * @param {number} first - First value (baseline/last week)
+     * @param {number} second - Second value (this week)
+     * @returns {number|string} - Percent change or "N/A"
      */
     function percentChangedBetween(first, second) {
-        var percentChanged = -1;
+        // Parse to numbers to handle string values from baseline
+        first = parseFloat(first) || 0;
+        second = parseFloat(second) || 0;
 
-        if (!(first === 0 && second === 0)) {
-            // Handle normal cases
-            percentChanged = Math.round(((first - second) / first) * 100);
-        }
+        // Both zero = no change
         if (first === 0 && second === 0) {
-            // Handle NaN case
-            percentChanged = 0;
+            return 0;
         }
+
+        // Baseline is zero but we have activity = can't calculate meaningful %
         if (first === 0 && second !== 0) {
-            // Handle -infinity cases
-            percentChanged = -100;
+            return "N/A";
+        }
+
+        // Normal calculation
+        var percentChanged = Math.round(((first - second) / first) * 100);
+        
+        // Safety check for any edge cases
+        if (!isFinite(percentChanged) || isNaN(percentChanged)) {
+            return "N/A";
         }
 
         return percentChanged;
@@ -542,8 +549,12 @@ var StatisticsModule = (function () {
         // Set uses vs last week
         if (json.option.reportItemsToDisplay.useChangeVsLastWeek) {
             var percentChanged = percentChangedBetween(usesLastWeek, totalUsesThisWeek);
-            var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
-            $("#useChangeVsLastWeek").html(finishedStat);
+            if (percentChanged === "N/A") {
+                $("#useChangeVsLastWeek").html("N/A");
+            } else {
+                var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
+                $("#useChangeVsLastWeek").html(finishedStat);
+            }
         } else {
             $("#useChangeVsLastWeek").parent().parent().hide();
         }
@@ -556,12 +567,11 @@ var StatisticsModule = (function () {
         // Set uses vs baseline
         if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek) {
             var percentChanged = percentChangedBetween(json.baseline.amountDonePerWeek, totalUsesThisWeek);
-            var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
-
-            if (isFinite(percentChanged)) {
-                $("#useChangeVsBaseline").html(finishedStat);
-            } else {
+            if (percentChanged === "N/A") {
                 $("#useChangeVsBaseline").html("N/A");
+            } else {
+                var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
+                $("#useChangeVsBaseline").html(finishedStat);
             }
         } else {
             $("#useChangeVsBaseline").parent().parent().hide();
@@ -570,8 +580,12 @@ var StatisticsModule = (function () {
         // Set spent vs last week
         if (json.option.reportItemsToDisplay.costChangeVsLastWeek) {
             var percentChanged = percentChangedBetween(costLastWeek, totalCostThisWeek);
-            var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
-            $("#costChangeVsLastWeek").html(finishedStat);
+            if (percentChanged === "N/A") {
+                $("#costChangeVsLastWeek").html("N/A");
+            } else {
+                var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
+                $("#costChangeVsLastWeek").html(finishedStat);
+            }
         } else {
             $("#costChangeVsLastWeek").parent().parent().hide();
         }
@@ -579,8 +593,12 @@ var StatisticsModule = (function () {
         // Set spent vs baseline
         if (json.option.reportItemsToDisplay.costChangeVsBaseline) {
             var percentChanged = percentChangedBetween(json.baseline.amountSpentPerWeek, totalCostThisWeek);
-            var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
-            $("#costChangeVsBaseline").html(finishedStat);
+            if (percentChanged === "N/A") {
+                $("#costChangeVsBaseline").html("N/A");
+            } else {
+                var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
+                $("#costChangeVsBaseline").html(finishedStat);
+            }
         } else {
             $("#costChangeVsBaseline").parent().parent().hide();
         }
