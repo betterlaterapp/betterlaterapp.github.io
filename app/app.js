@@ -29,7 +29,7 @@ $(document).ready(function () {
     if (typeof (Storage) !== "undefined") {
         // Initialize user activity tracking variable early
         var userWasInactive = false;
-        
+
         //local working data to use in app
         var json = {
             "statistics": {
@@ -230,128 +230,9 @@ $(document).ready(function () {
             // Checkbox handling moved to BaselineModule.loadBaselineValues()
         }
 
-    /* HELPER FUNCTIONS FOR STATISTICS CALCULATION */
-    
-    /**
-     * Calculate resist streak from actions (craved vs used)
-     * @param {Array} actions - Array of use/crave actions
-     * @returns {number} - The longest resist streak
-     */
-    function calculateResistStreak(actions) {
-                var runningTotal = 0;
-                var streak = 0;
-
-        for (const [i, action] of actions.entries()) {
-            // Last action found
-            if (actions.length == i + 1) {
-                        if (action.clickType == "craved") { streak++; }
-                        if (streak > runningTotal) { runningTotal = streak; }
-                        break;
-                    }
-
-                    if (action.clickType == "craved") {
-                        streak++;
-                        continue;
-                    }
-
-                    if (action.clickType == "used") {
-                        if (streak > runningTotal) { runningTotal = streak; }
-                        streak = 0;
-            }
-        }
-
-        return runningTotal;
-    }
-
-    /**
-     * Calculate average time between actions
-     * @param {Array} counts - Array of action records with timestamps
-     * @param {Array} countsWeek - Week filtered actions
-     * @param {Array} countsMonth - Month filtered actions
-     * @param {Array} countsYear - Year filtered actions
-     * @returns {Object} - Object with total, week, month, year averages
-     */
-    function calculateAverageTimeBetween(counts, countsWeek, countsMonth, countsYear) {
-        var totalTimeBetween = {};
-        var avgTimeBetween = {};
-
-        totalTimeBetween.total = counts[counts.length - 1].timestamp - counts[0].timestamp;
-        
-        if (counts.length > 1) {
-            avgTimeBetween.total = Math.round(totalTimeBetween.total / (counts.length - 1));
-        } else {
-            avgTimeBetween.total = Math.round(totalTimeBetween.total);
-        }
-
-        // Week calculation
-        if (countsWeek.length > 1) {
-            if (countsMonth.length == countsWeek.length) {
-                totalTimeBetween.week = countsWeek[countsWeek.length - 1].timestamp - countsWeek[0].timestamp;
-                avgTimeBetween.week = Math.round(totalTimeBetween.week / (countsWeek.length - 1));
-            } else {
-                totalTimeBetween.week = 7 * 24 * 60 * 60;
-                avgTimeBetween.week = Math.round(totalTimeBetween.week / (countsWeek.length - 1));
-            }
-        } else {
-            totalTimeBetween.week = 7 * 24 * 60 * 60;
-            avgTimeBetween.week = 7 * 24 * 60 * 60;
-        }
-
-        // Month calculation
-        if (countsMonth.length > 1) {
-            if (countsYear.length == countsMonth.length) {
-                totalTimeBetween.month = countsMonth[countsMonth.length - 1].timestamp - countsMonth[0].timestamp;
-                avgTimeBetween.month = Math.round(totalTimeBetween.month / (countsMonth.length - 1));
-            } else {
-                totalTimeBetween.month = 30 * 24 * 60 * 60;
-                avgTimeBetween.month = Math.round(totalTimeBetween.month / (countsMonth.length - 1));
-            }
-        } else {
-            totalTimeBetween.month = 30 * 24 * 60 * 60;
-            avgTimeBetween.month = 30 * 24 * 60 * 60;
-        }
-
-        // Year calculation
-        if (countsYear.length > 1) {
-            if (countsYear.length == counts.length) {
-                totalTimeBetween.year = countsYear[countsYear.length - 1].timestamp - countsYear[0].timestamp;
-                avgTimeBetween.year = Math.round(totalTimeBetween.year / (countsYear.length - 1));
-            } else {
-                totalTimeBetween.year = 365 * 24 * 60 * 60;
-                avgTimeBetween.year = Math.round(totalTimeBetween.year / (countsYear.length - 1));
-            }
-        } else {
-            totalTimeBetween.year = 365 * 24 * 60 * 60;
-            avgTimeBetween.year = 365 * 24 * 60 * 60;
-        }
-
-        return avgTimeBetween;
-    }
-
-    /**
-     * Calculate longest goal from a set of goals
-     * @param {Array} goals - Array of goal records
-     * @returns {number} - Duration of longest goal in seconds
-     */
-    function calculateLongestGoalFromSet(goals) {
-        var largestDiff = 0;
-
-        for (var i = 0; i < goals.length; i++) {
-            var currStartStamp = goals[i].timestamp;
-            var currEndStamp = goals[i].goalStopped;
-            var currDiff = currEndStamp - currStartStamp;
-            
-            if (largestDiff < currDiff) {
-                largestDiff = currDiff;
-            }
-        }
-
-        return largestDiff;
-    }
-
-    //SET STATS FROM STORAGE
-    //set initial values in app			 
-    function setStatsFromRecords() {
+        //SET STATS FROM STORAGE
+        //set initial values in app			 
+        function setStatsFromRecords() {
             var jsonObject = StorageModule.retrieveStorageObject();
             var timeNow = Math.round(new Date() / 1000);
             var oneWeekAgoTimeStamp = timeNow - (60 * 60 * 24 * 7);
@@ -379,18 +260,18 @@ $(document).ready(function () {
                 return e.timestamp >= oneYearAgoTimeStamp;
             });
 
-            // Calculate resist streaks using helper function (eliminates ~120 lines of duplication)
+            // Calculate resist streaks using StatsCalculationsModule
             if (useTabActions.length > 0) {
-                json.statistics.use.resistStreak.total = calculateResistStreak(useTabActions);
+                json.statistics.use.resistStreak.total = StatsCalculationsModule.calculateResistStreak(useTabActions);
             }
             if (useTabActionsWeek.length > 0) {
-                json.statistics.use.resistStreak.week = calculateResistStreak(useTabActionsWeek);
+                json.statistics.use.resistStreak.week = StatsCalculationsModule.calculateResistStreak(useTabActionsWeek);
             }
             if (useTabActionsMonth.length > 0) {
-                json.statistics.use.resistStreak.month = calculateResistStreak(useTabActionsMonth);
+                json.statistics.use.resistStreak.month = StatsCalculationsModule.calculateResistStreak(useTabActionsMonth);
             }
             if (useTabActionsYear.length > 0) {
-                json.statistics.use.resistStreak.year = calculateResistStreak(useTabActionsYear);
+                json.statistics.use.resistStreak.year = StatsCalculationsModule.calculateResistStreak(useTabActionsYear);
             }
 
             var resistStreak = json.statistics.use.resistStreak;
@@ -433,12 +314,12 @@ $(document).ready(function () {
                 //timestamp of most recent click - to limit clicks in a row
                 json.statistics.use.lastClickStamp = useCount[useCount.length - 1].timestamp;
 
-                //average time between uses - using helper function
-                var avgTimeBetween = calculateAverageTimeBetween(useCount, useCountWeek, useCountMonth, useCountYear);
+                //average time between uses - using StatsCalculationsModule
+                var avgTimeBetween = StatsCalculationsModule.calculateAverageTimeBetween(useCount, useCountWeek, useCountMonth, useCountYear);
 
                 if (useCount.length > 1) {
                     for (const [key, value] of Object.entries(avgTimeBetween)) {
-                        $(".betweenClicks.use.statistic" + "." + key).html(StatisticsModule.convertSecondsToDateFormat(value, true))
+                        $(".betweenClicks.use.statistic" + "." + key).html(StatsCalculationsModule.convertSecondsToDateFormat(value, true))
                     }
 
                     if ($.isNumeric(avgTimeBetween.total)) {
@@ -452,7 +333,7 @@ $(document).ready(function () {
                 }
             }
 
-            var doneStatistic = StatisticsModule.segregatedTimeRange(timeNow, useCount);
+            var doneStatistic = StatsCalculationsModule.segregatedTimeRange(timeNow, useCount);
 
             //update json
             json.statistics.use.totals = doneStatistic;
@@ -548,11 +429,11 @@ $(document).ready(function () {
                 json.statistics.cost.firstClickStamp = costCount[0].timestamp;
                 json.statistics.cost.lastClickStamp = costCount[costCount.length - 1].timestamp;
 
-                //average time between costs - using helper function
-                var avgTimeBetween = calculateAverageTimeBetween(costCount, costCountWeek, costCountMonth, costCountYear);
+                //average time between costs - using StatsCalculationsModule
+                var avgTimeBetween = StatsCalculationsModule.calculateAverageTimeBetween(costCount, costCountWeek, costCountMonth, costCountYear);
 
                 for (const [key, value] of Object.entries(avgTimeBetween)) {
-                    $(".betweenClicks.cost.statistic" + "." + key).html(StatisticsModule.convertSecondsToDateFormat(value, true))
+                    $(".betweenClicks.cost.statistic" + "." + key).html(StatsCalculationsModule.convertSecondsToDateFormat(value, true))
                 }
 
                 if ($.isNumeric(avgTimeBetween.total)) {
@@ -565,7 +446,7 @@ $(document).ready(function () {
                 }
             }
 
-            var spentStatistic = StatisticsModule.segregatedTimeRange(timeNow, costCount, "spent");
+            var spentStatistic = StatsCalculationsModule.segregatedTimeRange(timeNow, costCount, "spent");
 
             //update json
             json.statistics.cost.totals = spentStatistic;
@@ -652,32 +533,32 @@ $(document).ready(function () {
                     json.statistics.goal.completedGoals = inactiveGoals.length;
                     $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
 
-                    // Calculate longest goals using helper function (eliminates ~100 lines of duplication)
-                    var longestTotal = calculateLongestGoalFromSet(inactiveGoals);
+                    // Calculate longest goals using StatsCalculationsModule
+                    var longestTotal = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoals);
                     json.statistics.goal.longestGoal["total"] = longestTotal;
-                    $(".statistic.longestGoal.total").html(StatisticsModule.convertSecondsToDateFormat(longestTotal, true));
+                    $(".statistic.longestGoal.total").html(StatsCalculationsModule.convertSecondsToDateFormat(longestTotal, true));
 
                     if (inactiveGoalsWeek.length > 0) {
-                        var longestWeek = calculateLongestGoalFromSet(inactiveGoalsWeek);
+                        var longestWeek = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsWeek);
                         json.statistics.goal.longestGoal["week"] = longestWeek;
-                        $(".statistic.longestGoal.week").html(StatisticsModule.convertSecondsToDateFormat(longestWeek, true));
+                        $(".statistic.longestGoal.week").html(StatsCalculationsModule.convertSecondsToDateFormat(longestWeek, true));
                     } else {
                         json.statistics.goal.longestGoal["week"] = "N/A";
                         $(".statistic.longestGoal.week").html("N/A");
                     }
 
                     if (inactiveGoalsMonth.length > 0) {
-                        var longestMonth = calculateLongestGoalFromSet(inactiveGoalsMonth);
+                        var longestMonth = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsMonth);
                         json.statistics.goal.longestGoal["month"] = longestMonth;
-                        $(".statistic.longestGoal.month").html(StatisticsModule.convertSecondsToDateFormat(longestMonth, true));
+                        $(".statistic.longestGoal.month").html(StatsCalculationsModule.convertSecondsToDateFormat(longestMonth, true));
                     } else {
                         json.statistics.goal.longestGoal["month"] = "N/A";
                     }
 
                     if (inactiveGoalsYear.length > 0) {
-                        var longestYear = calculateLongestGoalFromSet(inactiveGoalsYear);
+                        var longestYear = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsYear);
                         json.statistics.goal.longestGoal["year"] = longestYear;
-                        $(".statistic.longestGoal.year").html(StatisticsModule.convertSecondsToDateFormat(longestYear, true));
+                        $(".statistic.longestGoal.year").html(StatsCalculationsModule.convertSecondsToDateFormat(longestYear, true));
                     } else {
                         json.statistics.goal.longestGoal["year"] = "N/A";
                     }
@@ -723,28 +604,28 @@ $(document).ready(function () {
             $("#bought-total").html(json.statistics.cost.clickCounter);
 
             //Average time between
-            StatisticsModule.displayAverageTimeBetween("use", "total", json);
-            StatisticsModule.displayAverageTimeBetween("use", "week", json);
-            StatisticsModule.displayAverageTimeBetween("use", "month", json);
-            StatisticsModule.displayAverageTimeBetween("cost", "total", json);
-            StatisticsModule.displayAverageTimeBetween("cost", "week", json);
-            StatisticsModule.displayAverageTimeBetween("cost", "month", json);
+            StatsDisplayModule.displayAverageTimeBetween("use", "total", json);
+            StatsDisplayModule.displayAverageTimeBetween("use", "week", json);
+            StatsDisplayModule.displayAverageTimeBetween("use", "month", json);
+            StatsDisplayModule.displayAverageTimeBetween("cost", "total", json);
+            StatsDisplayModule.displayAverageTimeBetween("cost", "week", json);
+            StatsDisplayModule.displayAverageTimeBetween("cost", "month", json);
 
             $(".longestGoal.statistic").parent().hide();
             var bestTime = json.statistics.goal.longestGoal;
             if (bestTime.week !== "N/A") {
                 $(".longestGoal.week.statistic").parent().show();
-                StatisticsModule.displayLongestGoal("week", json);
+                StatsDisplayModule.displayLongestGoal("week", json);
             } else if (bestTime.month !== "N/A" && bestTime.month !== bestTime.week) {
                 $(".longestGoal.month.statistic").parent().show();
-                StatisticsModule.displayLongestGoal("month", json);
+                StatsDisplayModule.displayLongestGoal("month", json);
             }
             if (bestTime.total !== "N/A"
                 && bestTime.total !== bestTime.week
                 && bestTime.total !== bestTime.month) {
 
                 $(".longestGoal.total.statistic").parent().show();
-                StatisticsModule.displayLongestGoal("total", json);
+                StatsDisplayModule.displayLongestGoal("total", json);
             }
 
             TabsModule.returnToActiveTab();
@@ -755,7 +636,7 @@ $(document).ready(function () {
             UIModule.hideInactiveStatistics(json);
 
             //get them notifcations for useful reports
-            StatisticsModule.initiateReport(json);
+            StatsDisplayModule.initiateReport(json);
 
         } else {
             //replace this with 

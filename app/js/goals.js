@@ -65,9 +65,9 @@ var GoalsModule = (function () {
         // Return to relevant screen
         $(".statistics-tab-toggler").click();
 
-        StatisticsModule.recalculateAverageTimeBetween(goalType, "total", json);
-        StatisticsModule.recalculateAverageTimeBetween(goalType, "week", json);
-        StatisticsModule.recalculateAverageTimeBetween(goalType, "month", json);
+        StatsDisplayModule.recalculateAverageTimeBetween(goalType, "total", json);
+        StatsDisplayModule.recalculateAverageTimeBetween(goalType, "week", json);
+        StatsDisplayModule.recalculateAverageTimeBetween(goalType, "month", json);
 
         // Set local json goal type which is active
         var jsonHandle = "activeGoal" + goalType.charAt(0).toUpperCase() + goalType.slice(1);
@@ -112,7 +112,7 @@ var GoalsModule = (function () {
             // If longest goal just happened
             jsonToUse.statistics.goal.longestGoal[timeIncrement] = goalLength;
             $(".statistic.longestGoal." + timeIncrement).html(
-                StatisticsModule.convertSecondsToDateFormat(goalLength, true)
+                StatsCalculationsModule.convertSecondsToDateFormat(goalLength, true)
             );
         }
     }

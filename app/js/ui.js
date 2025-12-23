@@ -223,19 +223,19 @@ var UIModule = (function() {
 
         if (display.avgBetweenSpent && stat.cost.betweenClicks.total !== 0) {
             $("#cost-content .betweenClicks").parent().show();
-            StatisticsModule.recalculateAverageTimeBetween("cost", "total", json);
+            StatsDisplayModule.recalculateAverageTimeBetween("cost", "total", json);
             
             if (stat.cost.betweenClicks.week !== 0) {
                 $("#cost-content .betweenClicks.week.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("cost", "week", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("cost", "week", json);
             }
             if (stat.cost.betweenClicks.month !== 0) {
                 $("#cost-content .betweenClicks.month.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("cost", "month", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("cost", "month", json);
             }
             if (stat.cost.betweenClicks.year !== 0) {
                 $("#cost-content .betweenClicks.year.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("cost", "year", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("cost", "year", json);
             }
         }
 
@@ -252,19 +252,19 @@ var UIModule = (function() {
 
         if (display.avgBetweenDone && stat.use.betweenClicks.total !== 0) {
             $("#use-content .betweenClicks").parent().show();
-            StatisticsModule.recalculateAverageTimeBetween("use", "total", json);
+            StatsDisplayModule.recalculateAverageTimeBetween("use", "total", json);
             
             if (stat.use.betweenClicks.week !== 0) {
                 $("#use-content .betweenClicks.week.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("use", "week", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("use", "week", json);
             }
             if (stat.use.betweenClicks.month !== 0) {
                 $("#use-content .betweenClicks.month.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("use", "month", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("use", "month", json);
             }
             if (stat.use.betweenClicks.year !== 0) {
                 $("#use-content .betweenClicks.year.statistic").show();
-                StatisticsModule.recalculateAverageTimeBetween("use", "year", json);
+                StatsDisplayModule.recalculateAverageTimeBetween("use", "year", json);
             }
         }
         
@@ -294,15 +294,15 @@ var UIModule = (function() {
 
             if (bestTime.week !== "N/A") {
                 $(".longestGoal.week.statistic").show();
-                StatisticsModule.displayLongestGoal("week", json);
+                StatsDisplayModule.displayLongestGoal("week", json);
             }
             if (bestTime.month !== bestTime.week && bestTime.month !== "N/A") {
                 $(".longestGoal.month.statistic").show();
-                StatisticsModule.displayLongestGoal("month", json);
+                StatsDisplayModule.displayLongestGoal("month", json);
             }
             if (bestTime.year !== bestTime.month && bestTime.year !== "N/A") {
                 $(".longestGoal.year.statistic").show();
-                StatisticsModule.displayLongestGoal("year", json);
+                StatsDisplayModule.displayLongestGoal("year", json);
             }
         }
         

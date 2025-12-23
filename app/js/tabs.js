@@ -72,7 +72,7 @@ var TabsModule = (function () {
                     TimersModule.adjustFibonacciTimerToBoxes("smoke-timer", userWasInactive);
                     TimersModule.adjustFibonacciTimerToBoxes("bought-timer", userWasInactive);
                 }, 0);
-                StatisticsModule.initiateReport(json);
+                StatsDisplayModule.initiateReport(json);
             });
             $('.statistics-tab-toggler').addClass('active');
         });

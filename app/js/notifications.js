@@ -342,7 +342,7 @@ var NotificationsModule = (function () {
             if (id) storeUserResponse(id, 'goal-ended-on-time', { goalType: goalType });
             renderNotificationsLog();
             
-            ActionLogModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
+            ActionLogModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
             var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
             createNotification("Congrats on completing your goal! " + affirmation, null, { type: 'goal_completed' });
             StorageModule.changeGoalStatus(3, goalType);
@@ -390,7 +390,7 @@ var NotificationsModule = (function () {
                     endTimestamp: tempEndStamp 
                 });
                 StorageModule.changeGoalStatus(2, goalType, tempEndStamp);
-                ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatisticsModule.convertSecondsToDateFormat);
+                ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
                 renderNotificationsLog();
                 json.statistics.goal.activeGoalBoth = 0;
                 json.statistics.goal.activeGoalUse = 0;

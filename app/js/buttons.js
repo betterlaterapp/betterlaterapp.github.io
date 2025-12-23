@@ -36,7 +36,7 @@ var ButtonsModule = (function() {
             // Keep lastClickStamp up to date while using app
             json.statistics.use.lastClickStampCrave = timestampSeconds;
     
-            StatisticsModule.initiateReport(json, StorageModule.retrieveStorageObject, StatisticsModule.createReport);
+            StatsDisplayModule.initiateReport(json, StorageModule.retrieveStorageObject, StatsDisplayModule.createReport);
         } else {
             alert("You're awesome.");
         }
@@ -67,7 +67,7 @@ var ButtonsModule = (function() {
         $(".use.log-more-info .time-picker-hour").val(currHours);
         $(".use.log-more-info .time-picker-minute").val(currMinutes);
 
-        UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
     }
 
     function calculateRequestedTimestamp() {
@@ -196,8 +196,8 @@ var ButtonsModule = (function() {
         handleUseGoalCompletion(requestedTimestamp);
 
         // Final updates
-        StatisticsModule.initiateReport(json, StorageModule.retrieveStorageObject, StatisticsModule.createReport);
-        UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
+        StatsDisplayModule.initiateReport(json, StorageModule.retrieveStorageObject, StatsDisplayModule.createReport);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
         json.statistics.use.lastClickStamp = timestampSeconds;
         UIModule.closeClickDialog(".use");
     }
@@ -285,7 +285,7 @@ var ButtonsModule = (function() {
         // Final updates
         UIModule.closeClickDialog(".cost");
         TimerStateManager.initiate('bought', undefined, json);
-        UIModule.showActiveStatistics(json, StatisticsModule.recalculateAverageTimeBetween, StatisticsModule.displayLongestGoal);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
         TimersModule.adjustFibonacciTimerToBoxes("bought-timer");

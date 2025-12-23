@@ -93,7 +93,7 @@ var SettingsModule = (function () {
             $('.next-report').prop("disabled", false)
             if (json.report.activeEndStamp - (60 * 60 * 24 * 7) >= json.report.minEndStamp) {
                 var reportEndStamp = json.report.activeEndStamp - (60 * 60 * 24 * 7);
-                StatisticsModule.createReportForEndStamp(reportEndStamp, json);
+                StatsDisplayModule.createReportForEndStamp(reportEndStamp, json);
             } else {
                 $('.previous-report').prop("disabled", true)
                 $('html').animate({ scrollTop: 0 })
@@ -104,7 +104,7 @@ var SettingsModule = (function () {
             $('.previous-report').prop("disabled", false)
             if (json.report.activeEndStamp + (60 * 60 * 24 * 7) < json.report.maxEndStamp) {
                 var reportEndStamp = json.report.activeEndStamp + (60 * 60 * 24 * 7);
-                StatisticsModule.createReportForEndStamp(reportEndStamp, json);
+                StatsDisplayModule.createReportForEndStamp(reportEndStamp, json);
             } else {
                 $('.next-report').prop("disabled", true)
                 $('html').animate({ scrollTop: 0 })

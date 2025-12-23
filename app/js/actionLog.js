@@ -81,7 +81,7 @@ var ActionLogModule = (function () {
     */
     function placeGoalIntoLog(startStamp, endStamp, goalType, placeBelow, json) {
         var endDateObj = new Date(parseInt(endStamp + "000"));
-        var timeElapsed = StatisticsModule.convertSecondsToDateFormat(endStamp - startStamp, false);
+        var timeElapsed = StatsCalculationsModule.convertSecondsToDateFormat(endStamp - startStamp, false);
         var dayOfTheWeek = endDateObj.toString().split(' ')[0];
 
         var shortHandDate = (endDateObj.getMonth() + 1) + "/" +
@@ -155,7 +155,7 @@ var ActionLogModule = (function () {
                     currGoalEndStamp = allActions[i].goalStopped,
                         currGoalType = allActions[i].goalType;
                     //append 10 new goals
-                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatsCalculationsModule.convertSecondsToDateFormat);
                 } else if (currClickType == "mood") {
                     //append curr action
                     comment = allActions[i].comment;
@@ -211,7 +211,7 @@ var ActionLogModule = (function () {
                     currGoalEndStamp = allActions[i].goalStopped,
                         currGoalType = allActions[i].goalType;
                     //append 10 new goals
-                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatisticsModule.convertSecondsToDateFormat);
+                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatsCalculationsModule.convertSecondsToDateFormat);
                 } else if (currClickType == "mood") {
                     //append curr action
                     comment = allActions[i].comment;
