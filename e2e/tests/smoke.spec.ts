@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Smoke Test - App Loads', () => {
   test('app loads and returns HTML', async ({ page }) => {
     // Navigate to the app
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     
     // Wait for page to load
     await page.waitForLoadState('domcontentloaded');
@@ -35,7 +35,7 @@ test.describe('Smoke Test - App Loads', () => {
 
   test('app has basic UI elements', async ({ page }) => {
     // Navigate to the app
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Check for header

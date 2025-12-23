@@ -70,7 +70,7 @@ async function setupUserWithBaseline(page) {
 test.describe('Better Later - Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
   });
 

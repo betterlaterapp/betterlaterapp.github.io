@@ -46,7 +46,7 @@ async function setupUserWithBaseline(page) {
 test.describe('Better Later - Resist Action', () => {
   test.beforeEach(async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
   });
 

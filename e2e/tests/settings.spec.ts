@@ -83,7 +83,7 @@ test.describe('Better Later - Settings & Preferences', () => {
   test('new user sees baseline questionnaire', async ({ page }) => {
     // Setup without baseline
     await setupUserWithoutBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Navigate to settings tab
@@ -103,7 +103,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test.skip('complete baseline questionnaire enables app', async ({ page }) => {
     await setupUserWithoutBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Navigate to settings
@@ -150,7 +150,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('navigate to settings tab', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Click settings tab
@@ -168,7 +168,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('toggle display preferences persist', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Go to settings
@@ -211,7 +211,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('clear all data removes everything', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Perform some actions first
@@ -258,7 +258,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('refresh service worker button exists', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Go to settings
@@ -273,7 +273,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('display preferences show correct initial state', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Go to settings
@@ -291,7 +291,7 @@ test.describe('Better Later - Settings & Preferences', () => {
 
   test('settings persist across page reload', async ({ page }) => {
     await setupUserWithBaseline(page);
-    await page.goto('/app/app.html');
+    await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
     // Go to settings and change a preference
