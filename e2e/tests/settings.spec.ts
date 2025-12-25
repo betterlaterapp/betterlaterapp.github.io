@@ -25,20 +25,6 @@ async function navigateToStatistics(page) {
     await page.waitForTimeout(300);
   }
 
-async function setupUserWithoutBaseline(page) {
-  // Setup user with NO baseline completed
-  const testData = {
-    action: [],
-    option: {
-      activeTab: 'statistics-content'
-    }
-  };
-
-  await page.addInitScript((data) => {
-    localStorage.setItem('esCrave', JSON.stringify(data));
-  }, testData);
-}
-
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
@@ -82,27 +68,17 @@ test.describe('Better Later - Settings & Preferences', () => {
   
   test('new user sees baseline questionnaire', async ({ page }) => {
     // Setup without baseline
-    await setupUserWithoutBaseline(page);
     await page.goto('/app/');
     await page.waitForLoadState('networkidle');
-    
-    // Navigate to settings tab
-    await navigateToSettings(page);
-    await page.waitForTimeout(500);
-    await expect(page.locator('#settings-content')).toBeVisible();
     
     // Baseline questionnaire should be visible in settings
     const baselineSection = page.locator('.baseline-questionnaire');
     await expect(baselineSection).toBeVisible();
     
-    // Verify key questions are present
-    await expect(page.locator('text=Have you picked something specific to track?')).toBeVisible();
-    
     console.log('✅ Baseline questionnaire visibility test passed!');
   });
 
   test.skip('complete baseline questionnaire enables app', async ({ page }) => {
-    await setupUserWithoutBaseline(page);
     await page.goto('/app/');
     await page.waitForLoadState('networkidle');
     
@@ -160,7 +136,6 @@ test.describe('Better Later - Settings & Preferences', () => {
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // Verify key settings sections exist
-    await expect(page.locator('text=Baseline Questions')).toBeVisible();
     await expect(page.locator('#clearTablesButton')).toBeVisible();
     
     console.log('✅ Navigate to settings test passed!');

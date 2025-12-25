@@ -1,7 +1,7 @@
 /****************************************************************************
 
 
-Copyright (c) 2021 Corey Boiko
+Copyright (c) 2026 Corey Boiko
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -116,17 +116,27 @@ $(document).ready(function () {
             },
             "baseline": {
                 "specificSubject": false,
-                "decreaseHabit": true,
+                "increaseHabit": false,
+                "decreaseHabit": false,
+                "neutralHabit": true,
                 "useStatsIrrelevant": false,
                 "costStatsIrrelevant": false,
+                "timeStatsIrrelevant": false,
                 "amountDonePerWeek": 0,
                 "goalDonePerWeek": 0,
+                "usageTimeline": "week",
                 "amountSpentPerWeek": 0,
                 "goalSpentPerWeek": 0,
-                "valuesTime": true,
-                "valuesMoney": true,
-                "valuesHealth": true,
-
+                "spendingTimeline": "week",
+                "currentTimeHours": 0,
+                "currentTimeMinutes": 0,
+                "goalTimeHours": 0,
+                "goalTimeMinutes": 0,
+                "timeTimeline": "week",
+                "valuesTimesDone": false,
+                "valuesTime": false,
+                "valuesMoney": false,
+                "valuesHealth": false,
             },
             "option": {
                 "activeTab": "reports-content",
@@ -225,9 +235,10 @@ $(document).ready(function () {
             // Load baseline values from storage using the module
             BaselineModule.loadBaselineValues();
 
-            // Form population moved to BaselineModule.loadBaselineValues()
-
-            // Checkbox handling moved to BaselineModule.loadBaselineValues()
+            // Add serious-user class on startup only (hides intro content for returning users)
+            if (jsonObject.baseline.specificSubject) {
+                $('body').addClass("serious-user");
+            }
         }
 
         //SET STATS FROM STORAGE
@@ -643,8 +654,8 @@ $(document).ready(function () {
             //empty action table
             //basic stat display settings option table
             var newJsonString = '{ "action": [], ' +
-                '  "baseline": {"userSubmitted": false, "specificSubject": false, "decreaseHabit": true, "useStatsIrrelevant": false, "costStatsIrrelevant": false, "amountDonePerWeek":"0","goalDonePerWeek":"0","amountSpentPerWeek":"0","goalSpentPerWeek":"0", "valuesTime": true, "valuesMoney": true, "valuesHealth": true},' +
-                '  "option": { "activeTab" : "settings-content",' +
+                '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "useStatsIrrelevant": false, "costStatsIrrelevant": false, "timeStatsIrrelevant": false, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
+                '  "option": { "activeTab" : "baseline-content",' +
                 '"liveStatsToDisplay": { "goalButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true },' +
                 '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
@@ -654,11 +665,10 @@ $(document).ready(function () {
             UIModule.toggleActiveStatGroups(json);
             UIModule.hideInactiveStatistics(json);
 
-            $(".settings-tab-toggler").click();
-            $(".displayed-statistics-heading").hide();
+            $(".baseline-tab-toggler").click();
 
             //ABSOLUTE NEW USER
-            var introMessage = "<b>Welcome to Better Later</b> - the anonymous habit tracking app that shows you statistics about your habit as you go!";
+            var introMessage = "Better late, then never.";
             NotificationsModule.createNotification(introMessage);
         }
 

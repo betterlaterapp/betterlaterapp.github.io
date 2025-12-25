@@ -72,7 +72,8 @@
             <p style="color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1.5; margin: 0 0 24px 0;">
                 Could've been your mistake, could've been ours.
             </p>
-            <p id="fallback-version-msg" style="color: rgba(255,255,255,0.9); font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; display: none;">
+            <p id="fallback-version-msg"
+                style="color: rgba(255,255,255,0.9); font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; display: none;">
                 <!-- Populated by script below -->
             </p>
             <button onclick="window.location.reload();" style="
@@ -85,7 +86,8 @@
                 cursor: pointer;
                 margin-right: 8px;
             ">Reload App</button>
-            <button id="fallback-update-btn" onclick="window.refreshServiceWorker && window.refreshServiceWorker();" style="
+            <button id="fallback-update-btn" onclick="window.refreshServiceWorker && window.refreshServiceWorker();"
+                style="
                 background: #28a745;
                 color: white;
                 border: none;
@@ -98,7 +100,7 @@
         </div>
     </div>
     <script>
-        (function() {
+        (function () {
             var fallbackEl = document.getElementById('app-fallback');
             var fadeInTimer = null;
             var appLoadedSuccessfully = false;
@@ -110,17 +112,17 @@
                 checkVersionAndUpdateMessage();
             }
 
-            window.cancelAppFallback = function() {
+            window.cancelAppFallback = function () {
                 appLoadedSuccessfully = true;
                 if (fadeInTimer) clearTimeout(fadeInTimer);
                 fallbackEl.style.display = 'none';
             };
 
-            // Start timer - if not cancelled in 5 seconds, show fallback
-            fadeInTimer = setTimeout(showFallback, 5000);
+            // Start timer - if not cancelled in 10 seconds, show fallback
+            fadeInTimer = setTimeout(showFallback, 6000);
 
             // Show fallback if a script fails to load (404, network error, etc.), not runtime errors
-            window.addEventListener('error', function(event) {
+            window.addEventListener('error', function (event) {
                 if (event.target && event.target.tagName === 'SCRIPT') {
                     showFallback();
                 }
@@ -129,12 +131,12 @@
             async function checkVersionAndUpdateMessage() {
                 var msgEl = document.getElementById('fallback-version-msg');
                 var updateBtn = document.getElementById('fallback-update-btn');
-                
+
                 try {
                     var currentVersion = null;
                     if ('caches' in window) {
                         var cacheNames = await caches.keys();
-                        var versionCache = cacheNames.find(function(name) {
+                        var versionCache = cacheNames.find(function (name) {
                             return name.match(/^v\d+(\.\d+)+::pages$/);
                         });
                         if (versionCache) {
@@ -151,7 +153,7 @@
                             var verMatch = content.match(/var\s+version\s*=\s*["']v([\d.]+)::pages["']/);
                             if (verMatch) latestVersion = verMatch[1];
                         }
-                    } catch(e) { /* Network error, can't check */ }
+                    } catch (e) { /* Network error, can't check */ }
 
                     // Update UI based on version comparison
                     if (currentVersion && latestVersion && currentVersion !== latestVersion) {
@@ -165,7 +167,7 @@
                         msgEl.innerHTML = 'Unable to check version (you may be offline or unable to reach <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank" style="color: #7cb3ff;">GitHub</a>).<br>Try reloading, or <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/issues" target="_blank" style="color: #7cb3ff;">report this issue</a>.';
                         msgEl.style.display = 'block';
                     }
-                } catch(e) {
+                } catch (e) {
                     msgEl.innerHTML = 'Unable to check version (you may be offline or unable to reach <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank" style="color: #7cb3ff;">GitHub</a>).<br>Try reloading, or <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/issues" target="_blank" style="color: #7cb3ff;">report this issue</a>.';
                     msgEl.style.display = 'block';
                 }
@@ -204,10 +206,10 @@
                     </button>
                 </div>
                 <div class="hamburger-menu-items">
-                    <!-- <a class="d-none hamburger-menu-item statistics-tab-toggler" href="#">
-                        <i class="fas fa-home"></i>
-                        <span>Home</span>
-                    </a> -->
+                    <a class="hamburger-menu-item baseline-tab-toggler" href="#">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Baseline</span>
+                    </a>
                     <a class="hamburger-menu-item statistics-tab-toggler" href="#">
                         <i class="fas fa-chart-bar"></i>
                         <span>Statistics</span>
@@ -216,14 +218,9 @@
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
-
-                    <a class="d-none hamburger-menu-item baseline-tab-toggler" href="#">
-                        <i class="fas fa-clipboard-list"></i>
-                        <span>Baseline</span>
-                    </a>
-                    <a class="d-none hamburger-menu-item goals-tab-toggler" href="#">
-                        <i class="fas fa-bullseye"></i>
-                        <span>Goals</span>
+                    <a class="hamburger-menu-item notifications-tab-toggler" href="#">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
                     </a>
                 </div>
             </nav>
@@ -464,7 +461,7 @@
                                     </div>
                                 </div>
 
-                        
+
                             </div>
                         </div>
                     </div>
@@ -756,7 +753,7 @@
                                     </div>
                                 </div>
 
-                                
+
 
                                 <div class="stat-recepticle">
                                     <div class="stat-group resistStreak use">
@@ -914,7 +911,8 @@
                                             alt="feeling very bad">
                                     </div>
                                     <div class="smiley mood-1">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-1.png" alt="feeling bad">
+                                        <img class="img-fluid" src="../assets/images/mood-smiley-1.png"
+                                            alt="feeling bad">
 
                                     </div>
                                     <div class="smiley mood-2 selected">
@@ -923,7 +921,8 @@
 
                                     </div>
                                     <div class="smiley mood-3">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-3.png" alt="feeling good">
+                                        <img class="img-fluid" src="../assets/images/mood-smiley-3.png"
+                                            alt="feeling good">
 
                                     </div>
                                     <div class="smiley mood-4">
@@ -1012,337 +1011,163 @@
                 <div class="tab-pane" id="settings-content">
                     <div class="row">
                         <div class="col-12">
-                            <h2 class="d-none">Settings</h2>
+                            <h2 class="text-left">Settings</h2>
+                            <br />
 
+                            <button id="refreshServiceWorkerButton" class="btn btn-outline-success" href="#"
+                            onclick="window.refreshServiceWorker(); return false;">
+                                <i class="fas fa-sync-alt"></i>&nbsp;Update app</button>
 
-                            <button type="button" class="btn btn-collapse baseline-questionnaire-heading"
-                                data-toggle="collapse" data-target=".baseline-questionnaire" aria-expanded="true">
-
-                                <h3>Baseline Questions</h3><span class="caret"></span>
+                        
+                            <button class="btn btn-outline-info" href="#"
+                                onclick="window.location.href='https://github.com/betterlaterapp/betterlaterapp.github.io'">
+                                <i class="fas fa-eye"></i>&nbsp;View source code
                             </button>
-                            <div class="baseline-questionnaire collapse show">
-                                <div class="form-message">
-                                    <p class="success d-none">
-                                        Thank you! Your responses have saved.
-                                    </p>
-                                    <p class="failure d-none">
-                                        One or more of your responses is <b>invalid</b>.
+                            <p class="mb-0">current version:&nbsp;&nbsp;&nbsp; <em><span id="appVersion" style="font-weight: bold;">Loading...</span></em></p>
+                            <p class="mt-0">available version: <em><span id="availableAppVersion" style="font-weight: bold;">Loading...</span></em>
+                            </p>
 
-                                    </p>
-                                </div>
-                                <div class="question-set">
-                                    <div class="question">
-                                        <label>Have you picked something specific to track?</label>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="radio" class="serious-user form-check-input"
-                                                    name="optradio">&nbsp;Yes
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="radio" class="passerby-user form-check-input"
-                                                    name="optradio">&nbsp;No
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
+                            <br />
+                            <button id="clearTablesButton" class="btn btn-outline-danger" href="#"><i
+                                class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
 
-                                <div class="question-set d-none">
+                            <br />
+                            
 
-                                    <div class="question">
-                                        <label>Would you like to decrease or increase your behaviour?</label>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="radio" class="decreaseHabit form-check-input"
-                                                    name="incdecradio" checked>
-                                                &nbsp;Decrease
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="radio" class="increaseHabit form-check-input"
-                                                    name="incdecradio">
-                                                &nbsp;Increase
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div class="question">
-                                        <label>Which of the following regarding your habit are important to you?</label>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="checkbox" class="valuesTime form-check-input"
-                                                    name="optradio" checked>
-                                                &nbsp;Amount/number of times doing it
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="checkbox" class="valuesMoney form-check-input"
-                                                    name="optradio" checked>
-                                                &nbsp;Amount of money spent on it
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <label class="form-check-label">
-                                                <input type="checkbox" class="valuesHealth form-check-input"
-                                                    name="optradio" checked>
-                                                &nbsp;How it makes you feel
-                                            </label>
-                                        </div>
-                                    </div>
-
-
-                                    <div class="question">
-                                        <label>How much do you currently spend on that thing per week?</label>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-addon">$</span>
-                                                    <input type="number" min="0" max="500"
-                                                        class="form-control amountSpentPerWeek" placeholder="current">
-
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <label class="form-check-label" for="spendingNA"
-                                                        style="color:grey;padding-top:7px;">
-                                                        <input class="form-check-input stat-group-not-applicable"
-                                                            type="checkbox" value="" id="spendingNA">
-                                                        Not Applicable
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="question">
-                                        <label>How much would you prefer to spend on that thing per week?</label>
-
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-addon">$</span>
-                                                    <input type="number" min="0" max="500"
-                                                        class="form-control goalSpentPerWeek" placeholder="Goal">
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <label class="form-check-label" for="goalSpentNA"
-                                                        style="color:grey;padding-top:7px;">
-                                                        <input class="form-check-input stat-group-not-applicable"
-                                                            type="checkbox" value="" id="goalSpentNA">
-                                                        Not Applicable
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    <div class="question">
-                                        <label>How many times do you currently do it per week?</label>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <input type="number" min="0" max="500"
-                                                        class="form-control amountDonePerWeek" placeholder="current">
-
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <label class="form-check-label" for="doneNA"
-                                                        style="color:grey;padding-top:7px;">
-                                                        <input class="form-check-input stat-group-not-applicable"
-                                                            type="checkbox" value="" id="doneNA">
-                                                        Not Applicable
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="question">
-                                        <label>How often would you prefer to do it per week?</label>
-
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <input type="number" min="0" max="500"
-                                                        class="form-control goalDonePerWeek" placeholder="Goal">
-
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="input-group">
-                                                    <label class="form-check-label" for="goalDoneNA"
-                                                        style="color:grey;padding-top:7px;">
-                                                        <input class="form-check-input stat-group-not-applicable"
-                                                            type="checkbox" value="" id="goalDoneNA">
-                                                        Not Applicable
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <button class="btn btn-lg btn-block btn-outline-success submit"
-                                            style="margin-bottom:0px;">
-                                            Save responses
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-collapse displayed-statistics-heading"
-                                data-toggle="collapse" data-target=".displayed-statistics" aria-expanded="false">
-                                <h3>Displayed Statistics</h3><span class="caret"></span>
-                            </button>
-                            <div class="displayed-statistics collapse collapsed">
+                            <div class="displayed-statistics">
+                                <h3>Displayed Statistics</h3>
                                 <div class="statistics-display-options">
-                                    <h4>Live Statistics</h4>
-                                    <!-- <div class="form-check">
-                                                <label class="form-check-label" for="showGoalButton">
-                                                    <input class="form-check-input" type="checkbox" value="" id="goalButtonDisplayed" checked>
-                                                    'Set Goal' Button
-                                                </label>
-                                            </div> -->
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="untilGoalEndDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="untilGoalEndDisplayed" checked>
-
-                                            Time until goal end
-                                        </label>
-                                    </div>
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="longestGoalDisplayed">
-
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="longestGoalDisplayed" checked>
-                                            Longest Goal completed
-                                        </label>
-                                    </div>
-                                    <!-- <h4>Use-related (live)</h4> -->
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="usedButtonDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="usedButtonDisplayed" checked>
-                                            'Did It' Button
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="cravedButtonDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="cravedButtonDisplayed" checked>
-                                            'Resisted' Button
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="timesDoneDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="timesDoneDisplayed" checked>
-                                            Times done
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="sinceLastDoneDisplayed">
-
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="sinceLastDoneDisplayed" checked>
-                                            Since you've done it
-                                        </label>
-                                    </div>
-
-                                    <div class="form-check">
-
-                                        <label class="form-check-label" for="avgBetweenDoneDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="avgBetweenDoneDisplayed" checked>
-                                            Avg time between doing it
-                                        </label>
-                                    </div>
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="didntPerDidDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="didntPerDidDisplayed" checked>
-                                            Ratio of resisted Vs. done it
-                                        </label>
-                                    </div>
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="resistedInARowDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="resistedInARowDisplayed" checked>
-                                            Resisted in a row
-                                        </label>
-                                    </div>
-
-                                    <!-- <h4>Cost-related (live)</h4> -->
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="sinceLastSpentDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="sinceLastSpentDisplayed" checked>
-                                            Since you've bought it
-                                        </label>
-                                    </div>
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="avgBetweenSpentDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="avgBetweenSpentDisplayed" checked>
-                                            Avg time between buying it
-                                        </label>
-                                    </div>
-
-
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="totalSpentDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="totalSpentDisplayed" checked>
-                                            Total spent
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <label class="form-check-label" for="spentButtonDisplayed">
-                                            <input class="form-check-input" type="checkbox" value=""
-                                                id="spentButtonDisplayed" checked>
-                                            'Spent' Button
-                                        </label>
-                                    </div>
-
-
-                                    <!-- <div class="form-check">
-                                                <label class="form-check-label" for="currWeekSpentDisplayed">
-                                                    <input class="form-check-input" type="checkbox" value="" id="currWeekSpentDisplayed" checked>
-                                                    spent this week
+                                    
+                                    <!-- Category: Times Done (valuesTimesDone) -->
+                                    <div class="stats-category" data-category="valuesTimesDone">
+                                        <div class="form-check category-toggle">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input category-checkbox" type="checkbox" 
+                                                    id="valuesTimesDoneCategory" checked>
+                                                <strong>Action oriented stats</strong>
+                                            </label>
+                                        </div>
+                                        <div class="category-options">
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="usedButtonDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="usedButtonDisplayed" checked>
+                                                    'Did It' Button
                                                 </label>
                                             </div>
-
-
                                             <div class="form-check">
-                                                <label class="form-check-label" for="currMonthSpentDisplayed">
-                                                    <input class="form-check-input" type="checkbox" value="" id="currMonthSpentDisplayed" checked>
-                                                    spent this month
+                                                <label class="form-check-label" for="cravedButtonDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="cravedButtonDisplayed" checked>
+                                                    'Resisted' Button
                                                 </label>
                                             </div>
-
-
                                             <div class="form-check">
-                                                <label class="form-check-label" for="currYearSpentDisplayed">
-                                                    <input class="form-check-input" type="checkbox" value="" id="currYearSpentDisplayed" checked>
-                                                    spent this year
+                                                <label class="form-check-label" for="timesDoneDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="timesDoneDisplayed" checked>
+                                                    Times done
                                                 </label>
-                                            </div> -->
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="didntPerDidDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="didntPerDidDisplayed" checked>
+                                                    Ratio of resisted Vs. done it
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="resistedInARowDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="resistedInARowDisplayed" checked>
+                                                    Resisted in a row
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Category: Time (valuesTime) -->
+                                    <div class="stats-category" data-category="valuesTime">
+                                        <div class="form-check category-toggle">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input category-checkbox" type="checkbox" 
+                                                    id="valuesTimeCategory" checked>
+                                                <strong>Time oriented stats</strong>
+                                            </label>
+                                        </div>
+                                        <div class="category-options">
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="untilGoalEndDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="untilGoalEndDisplayed" checked>
+                                                    Time until goal end
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="longestGoalDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="longestGoalDisplayed" checked>
+                                                    Longest Goal completed
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="sinceLastDoneDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="sinceLastDoneDisplayed" checked>
+                                                    Since you've done it
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="avgBetweenDoneDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="avgBetweenDoneDisplayed" checked>
+                                                    Avg time between doing it
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Category: Money (valuesMoney) -->
+                                    <div class="stats-category" data-category="valuesMoney">
+                                        <div class="form-check category-toggle">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input category-checkbox" type="checkbox" 
+                                                    id="valuesMoneyCategory" checked>
+                                                <strong>Money oriented stats</strong>
+                                            </label>
+                                        </div>
+                                        <div class="category-options">
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="spentButtonDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="spentButtonDisplayed" checked>
+                                                    'Spent' Button
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="sinceLastSpentDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="sinceLastSpentDisplayed" checked>
+                                                    Since you've bought it
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="avgBetweenSpentDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="avgBetweenSpentDisplayed" checked>
+                                                    Avg time between buying it
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label" for="totalSpentDisplayed">
+                                                    <input class="form-check-input" type="checkbox" value=""
+                                                        id="totalSpentDisplayed" checked>
+                                                    Total spent
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <div class="habit-log-display-options">
 
@@ -1461,29 +1286,6 @@
                                 </div>
 
                             </div>
-
-            <hr />
-            <h3>App Controls</h3>
-
-            <button id="clearTablesButton" class="btn btn-outline-danger" href="#"><i
-                    class="fas fa-trash-alt"></i>&nbsp;Clear all app data</button>
-
-            <br />
-            <button id="refreshServiceWorkerButton" class="btn btn-outline-info" href="#" 
-                    onclick="window.refreshServiceWorker(); return false;"><i
-                    class="fas fa-sync-alt"></i>&nbsp;Update app</button>
-
-            <p class="mb-0">current version:&nbsp;&nbsp;&nbsp; <em><span id="appVersion">Loading...</span></em></p>
-            <p class="mt-0">available version: <em><span id="availableAppVersion">Loading...</span></em></p>
-
-            <p>Better Later does not update automatically. You can review the source code and update the app manually on <a href="https://github.com/betterlaterapp/betterlaterapp.github.io" target="_blank">GitHub</a>.</p>
-
-            <h3>Additional Information</h3>
-
-                            <a href="about/index.html" class="btn btn-outline-info">
-                                <i class="fas fa-question"></i>
-                                &nbsp;About Better Later
-                            </a>
                         </div>
                     </div>
 
@@ -1494,7 +1296,7 @@
                     <div class="row">
                         <div class="col-12">
                             <h2>Notifications</h2>
-                            
+
                             <div class="notifications-actions">
                                 <button id="markAllReadBtn" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-check-double"></i> Mark all read
@@ -1503,11 +1305,269 @@
                                     <i class="fas fa-trash-alt"></i> Clear all
                                 </button>
                             </div>
-                            
+
                             <div id="notifications-log">
                                 <p class="empty-state text-center" style="color: #999; padding: 30px 0;">
                                     No notifications yet
                                 </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--start baseline tab area-->
+                <div class="tab-pane" id="baseline-content">
+                    <div class="row">
+                        <div class="col-12">
+
+                            <div class="baseline-intro">
+                                <h2 class="text-left">Better Later App</h2>
+                                <p>
+                                    The anonymous Habit Tracking app with data transparency verifiable by you!
+                                </p>
+                            </div>
+
+                            <div class="baseline-info-buttons">
+                                <a href="../about/index.html" class="btn btn-outline-info">
+                                    <i class="fas fa-question"></i>
+                                    &nbsp;About Better Later
+                                </a>
+
+                                <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/blob/main/README.md"
+                                    target="_blank" class="btn btn-outline-success">
+                                    <i class="fas fa-shield-alt"></i>
+                                    &nbsp;Data Privacy
+                                </a>
+                            </div>
+
+
+                            <div class="baseline-intro">
+                                <h4 class="mt-0"><span style="font-weight: bold">Answer some questions to get started</span> (or just start clicking)</h4>
+                            </div>
+
+                            <div class="baseline-questionnaire show">
+                                <div class="form-message">
+                                    <p class="success d-none">
+                                        Thank you! Your responses have saved.
+                                    </p>
+                                    <p class="failure d-none">
+                                        One or more of your responses is <b>invalid</b>.
+
+                                    </p>
+                                </div>
+                                <!-- question 1: specific habit in mind -->
+                                <div class="question-set">
+                                    <div class="question">
+                                        <h4 class="mt-0"><span>1. Do you have a specific habit in mind to track?</span></h4>
+                                        <div class="big-choice-container">
+                                            <div class="big-choice-option">
+                                                <label class="big-choice-label">
+                                                    <input type="radio" class="serious-user form-check-input" name="optradio">
+                                                    <span class="big-choice-text">Yes</span>
+                                                </label>
+                                            </div>
+                                            <div class="big-choice-option">
+                                                <label class="big-choice-label">
+                                                    <input type="radio" class="passerby-user form-check-input" name="optradio">
+                                                    <span class="big-choice-text">No</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- question 2: desire direction -->
+                                <div class="question-set serious">
+                                    <h4 class="mt-0 pt-4"><span>2. Would you rather...</span></h4>
+                                    <div class="question behavior-direction-question pt-0">
+                                        <div class="behavior-direction-options">
+                                            <div class="form-check behavior-option">
+                                                <label class="form-check-label p-0">
+                                                    <input type="radio" class="decreaseHabit form-check-input"
+                                                        name="incdecradio">
+                                                    <i class="fas fa-arrow-down behavior-arrow decrease-arrow"></i>
+                                                    <span>Do it less</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-check behavior-option">
+                                                <label class="form-check-label p-0">
+                                                    <input type="radio" class="increaseHabit form-check-input"
+                                                        name="incdecradio">
+                                                    <i class="fas fa-arrow-up behavior-arrow increase-arrow"></i>
+                                                    <span>Do it more</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="form-check behavior-option">
+                                            <label class="form-check-label p-0">
+                                                <input type="radio" class="neutralHabit form-check-input"
+                                                    name="incdecradio">
+                                                <span>I don't know yet</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- question 3: importance of metrics -->
+                                <div class="question-set serious">
+                                    <div class="question importance-question">
+                                        <h4 class="mt-0"><span>3. Which of these matter to you?</span></h4>
+                                        <div class="importance-grid">
+                                            <label class="importance-option" data-toggles="usage-goal-questions">
+                                                <input type="checkbox" class="valuesTimesDone">
+                                                <div class="importance-card">
+                                                    <div class="importance-icon">
+                                                        <div class="icon-mask icon-tally"></div>
+                                                    </div>
+                                                    <span class="importance-label">Times done</span>
+                                                </div>
+                                            </label>
+                                            <label class="importance-option" data-toggles="time-goal-questions">
+                                                <input type="checkbox" class="valuesTime">
+                                                <div class="importance-card">
+                                                    <div class="importance-icon">
+                                                        <div class="icon-mask icon-clock"></div>
+                                                    </div>
+                                                    <span class="importance-label">Time spent</span>
+                                                </div>
+                                            </label>
+                                            <label class="importance-option" data-toggles="spending-goal-questions">
+                                                <input type="checkbox" class="valuesMoney">
+                                                <div class="importance-card">
+                                                    <div class="importance-icon">
+                                                        <div class="icon-mask icon-dollar"></div>
+                                                    </div>
+                                                    <span class="importance-label">Money spent</span>
+                                                </div>
+                                            </label>
+                                            <label class="importance-option">
+                                                <input type="checkbox" class="valuesHealth">
+                                                <div class="importance-card">
+                                                    <div class="importance-icon">
+                                                        <div class="icon-mask icon-heart"></div>
+                                                    </div>
+                                                    <span class="importance-label">How it feels</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- USAGE GOAL Question Set -->
+                                <div class="question-set serious goal-question-set usage-goal-questions" style="display: none;">
+                                    <h4 class="mt-0">Create a <span style="font-weight:bold">usage goal</span></h4>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Measure usage</label>
+                                        <select class="timeline-select usage-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                            <option value="forever">total</option>
+                                        </select>
+                                    </div>
+                                    <hr/>
+                                    <div class="goal-input-row">
+                                        <label>Current amount</label>
+                                        <input type="number" min="0" max="500" class="goal-input amountDonePerWeek" placeholder="0">
+                                    </div>
+                                    
+                                    <div class="goal-input-row">
+                                        <label>Goal amount</label>
+                                        <input type="number" min="0" max="500" class="goal-input goalDonePerWeek" placeholder="0">
+                                    </div>
+                                    <!-- <hr/>
+                                    <div class="goal-input-row flex-row">
+                                        <input class="measure-usage-custom" type="checkbox" id="customMeasurement">
+                                        <label>Custom Measurement</label>
+                                    </div> -->
+
+                                    <button class="btn btn-lg btn-block btn-outline-success submit"
+                                            style="margin-bottom:0px;">
+                                        Create goal
+                                    </button>
+
+                                </div>
+
+                                <!-- TIME GOAL Question Set -->
+                                <div class="question-set serious goal-question-set time-goal-questions" style="display: none;">
+                                    <h4 class="mt-0">Create a <span style="font-weight:bold">time goal</span></h4>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label class="text-muted">Measure time</label>
+                                        <select class="timeline-select time-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                            <option value="forever">total</option>
+                                        </select>
+                                    </div>
+                                    <hr/>
+                                    
+                                    <div class="goal-input-row">
+                                        <label>Current average</label>
+                                        <div class="time-picker-inline">
+                                            <input type="number" min="0" max="23" class="goal-input time-input currentTimeHours" placeholder="0">
+                                            <span class="time-unit">h</span>
+                                            <input type="number" min="0" max="59" class="goal-input time-input currentTimeMinutes" placeholder="0">
+                                            <span class="time-unit">m</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="goal-input-row">
+                                        <label>Goal average</label>
+                                        <div class="time-picker-inline">
+                                            <input type="number" min="0" max="23" class="goal-input time-input goalTimeHours" placeholder="0">
+                                            <span class="time-unit">h</span>
+                                            <input type="number" min="0" max="59" class="goal-input time-input goalTimeMinutes" placeholder="0">
+                                            <span class="time-unit">m</span>
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-lg btn-block btn-outline-success submit"
+                                            style="margin-bottom:0px;">
+                                        Create goal
+                                    </button>
+                                    
+                                </div>
+
+                                <!-- SPENDING GOAL Question Set -->
+                                <div class="question-set serious goal-question-set spending-goal-questions" style="display: none;">
+                                    <h4 class="mt-0">Create a <span style="font-weight:bold">spending goal</span></h4>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Measure cost</label>
+                                        <select class="timeline-select spending-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                            <option value="forever">total</option>
+                                        </select>
+                                    </div>
+                                    <hr/>
+                                    <div class="goal-input-row">
+                                        <label>Current spending</label>
+                                        <div class="money-input-wrapper">
+                                            <span class="currency-symbol">$</span>
+                                            <input type="number" min="0" max="10000" class="goal-input money-input amountSpentPerWeek" placeholder="0">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="goal-input-row">
+                                        <label>Goal spending</label>
+                                        <div class="money-input-wrapper">
+                                            <span class="currency-symbol">$</span>
+                                            <input type="number" min="0" max="10000" class="goal-input money-input goalSpentPerWeek" placeholder="0">
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-lg btn-block btn-outline-success submit"
+                                            style="margin-bottom:0px;">
+                                        Create goal
+                                    </button>
+                                    
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -1526,7 +1586,8 @@
 
                                 <div class="icon">
                                     <span class="desires-decrease">
-                                        <img src="../assets/images/bl-logo-small.jpg" class="img-fluid p-2" style="opacity: .7" />
+                                        <img src="../assets/images/bl-logo-small.jpg" class="img-fluid p-2"
+                                            style="opacity: .7" />
                                     </span>
                                     <span class="desires-increase d-none">
                                         <i class="far fa-calendar-plus fa-3x"></i>
@@ -1605,7 +1666,7 @@
 
                 <div class="button-bar">
                     <div class="undo-button-container">
-                        <div class="button-group mb-0"> 
+                        <div class="button-group mb-0">
                             <button id="undoActionButton" class="btn btn-outline-warning btn-sm mb-0" href="#">
                                 <div class="icon">
                                     <i class="fas fa-undo-alt fa-3x"></i>
@@ -1655,7 +1716,7 @@
         <script>
             document.addEventListener('DOMContentLoaded', async () => {
 
-                const yourVersion      = await window.retrieveAppVersion();
+                const yourVersion = await window.retrieveAppVersion();
                 const availableVersion = await window.retrieveAvailableVersion();
                 document.querySelector('#appVersion').textContent = yourVersion;
                 document.querySelector('#availableAppVersion').textContent = availableVersion;

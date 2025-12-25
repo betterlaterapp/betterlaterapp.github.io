@@ -38,7 +38,7 @@ var TabsModule = (function () {
         $('#' + tabId).addClass('active show');
 
         // Update toggler active states
-        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler, .goals-tab-toggler, .reports-tab-toggler')
+        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler')
             .removeClass('active');
 
         // Save to storage
@@ -99,30 +99,8 @@ var TabsModule = (function () {
     function setupBaselineTabHandler() {
         $(document).on('click', '.baseline-tab-toggler', function (e) {
             e.preventDefault();
-            switchToTab('settings-content', function() {
-                setTimeout(function() {
-                    var $baseline = $('.baseline-questionnaire-heading');
-                    if ($baseline.length) {
-                        $('html, body').animate({ scrollTop: $baseline.offset().top - 100 }, 200);
-                    }
-                }, 50);
-            });
+            switchToTab('baseline-content');
             $('.baseline-tab-toggler').addClass('active');
-        });
-    }
-
-    function setupGoalsTabHandler() {
-        $(document).on('click', '.goals-tab-toggler', function (e) {
-            e.preventDefault();
-            switchToTab('statistics-content', function() {
-                setTimeout(function() {
-                    var $goal = $('#goal-content');
-                    if ($goal.length) {
-                        $('html, body').animate({ scrollTop: $goal.offset().top - 100 }, 200);
-                    }
-                }, 50);
-            });
-            $('.goals-tab-toggler').addClass('active');
         });
     }
 
@@ -133,7 +111,6 @@ var TabsModule = (function () {
         setupSettingsTabHandler();
         setupNotificationsTabHandler();
         setupBaselineTabHandler();
-        setupGoalsTabHandler();
     }
 
     return {

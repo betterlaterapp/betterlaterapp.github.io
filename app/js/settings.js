@@ -3,7 +3,8 @@ var SettingsModule = (function () {
     var json;
 
     function setupLiveStatsDisplayHandlers() {
-        $(".statistics-display-options .form-check-input").on('change', function () {
+        // Handle individual stat checkboxes (exclude category checkboxes)
+        $(".statistics-display-options .form-check-input:not(.category-checkbox)").on('change', function () {
             //detect specific id
             var itemHandle = this.id;
             var displayCorrespondingStat = false;
@@ -25,6 +26,78 @@ var SettingsModule = (function () {
             UIModule.toggleActiveStatGroups(json);
             UIModule.hideInactiveStatistics(json);
         });
+    }
+
+    function setupCategoryToggleHandlers() {
+        // Handle category toggle checkboxes
+        $(".category-checkbox").on('change', function () {
+            var $category = $(this).closest('.stats-category');
+            var categoryName = $category.data('category');
+            var isChecked = $(this).is(':checked');
+            
+            if (isChecked) {
+                $category.removeClass('category-disabled');
+                // Enable all child checkboxes
+                $category.find('.category-options .form-check-input').prop('disabled', false);
+            } else {
+                $category.addClass('category-disabled');
+                // Disable all child checkboxes
+                $category.find('.category-options .form-check-input').prop('disabled', true);
+            }
+
+            // Update baseline value in storage
+            var jsonObject = StorageModule.retrieveStorageObject();
+            if (categoryName && jsonObject.baseline.hasOwnProperty(categoryName)) {
+                jsonObject.baseline[categoryName] = isChecked;
+                json.baseline[categoryName] = isChecked;
+                StorageModule.setStorageObject(jsonObject);
+                
+                // Sync with baseline questionnaire checkbox
+                $("input." + categoryName).prop('checked', isChecked);
+                
+                // Show/hide related goal question-set
+                var togglesMap = {
+                    'valuesTimesDone': '.usage-goal-questions',
+                    'valuesTime': '.time-goal-questions',
+                    'valuesMoney': '.spending-goal-questions'
+                };
+                if (togglesMap[categoryName]) {
+                    isChecked ? $(togglesMap[categoryName]).show() : $(togglesMap[categoryName]).hide();
+                }
+            }
+
+            UIModule.showActiveStatistics(json);
+            UIModule.toggleActiveStatGroups(json);
+            UIModule.hideInactiveStatistics(json);
+        });
+    }
+
+    function initializeCategoryStates() {
+        // Set initial category states based on baseline values
+        if (StorageModule.hasStorageData()) {
+            var jsonObject = StorageModule.retrieveStorageObject();
+            
+            // valuesTimesDone category
+            if (jsonObject.baseline.valuesTimesDone === false) {
+                $('#valuesTimesDoneCategory').prop('checked', false);
+                $('[data-category="valuesTimesDone"]').addClass('category-disabled');
+                $('[data-category="valuesTimesDone"] .category-options .form-check-input').prop('disabled', true);
+            }
+            
+            // valuesTime category
+            if (jsonObject.baseline.valuesTime === false) {
+                $('#valuesTimeCategory').prop('checked', false);
+                $('[data-category="valuesTime"]').addClass('category-disabled');
+                $('[data-category="valuesTime"] .category-options .form-check-input').prop('disabled', true);
+            }
+            
+            // valuesMoney category
+            if (jsonObject.baseline.valuesMoney === false) {
+                $('#valuesMoneyCategory').prop('checked', false);
+                $('[data-category="valuesMoney"]').addClass('category-disabled');
+                $('[data-category="valuesMoney"] .category-options .form-check-input').prop('disabled', true);
+            }
+        }
     }
 
     function setupHabitLogDisplayHandlers() {
@@ -164,6 +237,8 @@ var SettingsModule = (function () {
         json = appJson;
 
         setupLiveStatsDisplayHandlers();
+        setupCategoryToggleHandlers();
+        initializeCategoryStates();
         setupHabitLogDisplayHandlers();
         setupReportDisplayHandlers();
         setupReportNavigationHandlers();
@@ -173,6 +248,8 @@ var SettingsModule = (function () {
     // Public API
     return {
         setupLiveStatsDisplayHandlers: setupLiveStatsDisplayHandlers,
+        setupCategoryToggleHandlers: setupCategoryToggleHandlers,
+        initializeCategoryStates: initializeCategoryStates,
         setupHabitLogDisplayHandlers: setupHabitLogDisplayHandlers,
         setupReportDisplayHandlers: setupReportDisplayHandlers,
         setupReportNavigationHandlers: setupReportNavigationHandlers,

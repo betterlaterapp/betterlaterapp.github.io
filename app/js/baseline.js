@@ -3,263 +3,153 @@ var BaselineModule = (function() {
     var json;
     
     function setupEventListeners() {
-        // User doesn't know what to track, send them to 'what to track' help docs
+        // User doesn't know what to track
         $(".baseline-questionnaire .passerby-user").on('change', function () {
-            $($(".baseline-questionnaire .question-set:hidden")[0]).removeClass("d-none");
-
-            var message = "Feel free to poke around, you can reset the entire app (in settings) if you decide to track something specific.";
-            var responseTools = "<a class='btn btn-md btn-outline-info' href='https://betterlaterapp.github.io/about/index.html#habits'>Some Suggestions</a>";
-            NotificationsModule.createNotification(message, responseTools);
-        });
-
-        // User declared they have chosen something to track - display further baseline questions
-        $(".baseline-questionnaire .serious-user").on('change', function () {
-            $($(".baseline-questionnaire .question-set:hidden")[0]).removeClass("d-none");
-            // Save user response
-            json.baseline.specificSubject = true;
-            var jsonObject = StorageModule.retrieveStorageObject();
-            jsonObject.baseline.specificSubject = true;
-            StorageModule.setStorageObject(jsonObject);
-        });
-        
-        // Check both relevant N/A checkboxes when one is clicked
-        $(".baseline-questionnaire input.stat-group-not-applicable").on('change', function () {
-            // Check if checkbox was checked
-            if ($(this).is(":checked")) {
-                // On either click of a spent related N/A click, select both
-                $("#" + this.id).prop('checked', true);
-            } else {
-                $("#" + this.id).prop('checked', false);
-            }
-        });
-
-        // Follow-up questions submitted
-        $(".baseline-questionnaire .submit").on("click", function () {
-            // Required to update local storage
-            var jsonObject = StorageModule.retrieveStorageObject();
-
-            if ($(".decreaseHabit").is(":checked")) {
-                // console.log("desires decrease")
-                jsonObject.baseline.decreaseHabit = true;
-                jsonObject.option.liveStatsToDisplay.resistedInARow = true;
-
-                $('body').addClass("desires-decrease");
-                $('body').removeClass("desires-increase");
-
-                /*
-                    CUSTOM SETTINGS
-                */
-
-            } else if ($(".increaseHabit").is(":checked")) {
-                // console.log("desires increase")
-                jsonObject.baseline.decreaseHabit = false;
-                jsonObject.option.liveStatsToDisplay.resistedInARow = false;
-                
-                $('body').addClass("desires-increase");
-                $('body').removeClass("desires-decrease");
-
-                /*
-                    CUSTOM SETTINGS
-                */
-            }
-            
-            if ($($(".valuesTime")[0]).is(":checked")) {
-                // console.log("valuesTime")
-                jsonObject.baseline.valuesTime = true;
-                jsonObject.baseline.useStatsIrrelevant = false;
-                jsonObject.option.liveStatsToDisplay.usedButton = true;
-                jsonObject.option.liveStatsToDisplay.cravedButton = true;
-            } else {
-                jsonObject.baseline.valuesTime = false;
-
-                // Toggle spent statistics (likely they are not useful)
-                jsonObject.baseline.useStatsIrrelevant = true;
-                jsonObject.baseline.amountDonePerWeek = false;
-                jsonObject.option.reportItemsToDisplay.useVsResistsGraph = false;
-
-                jsonObject.option.liveStatsToDisplay.usedButton = false;
-                jsonObject.option.liveStatsToDisplay.cravedButton = false;
-                jsonObject.option.liveStatsToDisplay.timesDone = false;
-                jsonObject.option.liveStatsToDisplay.sinceLastDone = false;
-                jsonObject.option.liveStatsToDisplay.avgBetweenDone = false;
-                jsonObject.option.liveStatsToDisplay.didntPerDid = false;
-                jsonObject.option.liveStatsToDisplay.resistedInARow = false;
-            }
-            
-            if ($(".valuesMoney").is(":checked")) {
-                // console.log("valuesMoney")
-                jsonObject.baseline.valuesMoney = true;
-                jsonObject.baseline.costStatsIrrelevant = false;
-                jsonObject.option.liveStatsToDisplay.spentButton = true;
-            } else {
-                jsonObject.baseline.valuesMoney = false;
-                jsonObject.baseline.costStatsIrrelevant = true;
-                jsonObject.baseline.amountSpentPerWeek = false;
-
-                // Uncheck visibility of spent related stats
-                jsonObject.option.liveStatsToDisplay.spentButton = false;
-                jsonObject.option.liveStatsToDisplay.boughtGoalButton = false;
-                jsonObject.option.liveStatsToDisplay.sinceLastSpent = false;
-                jsonObject.option.liveStatsToDisplay.avgBetweenSpent = false;
-                jsonObject.option.liveStatsToDisplay.totalSpent = false;
-            }
-
-            if ($(".valuesHealth").is(":checked")) {
-                // console.log("valuesHealth")
-                jsonObject.baseline.valuesHealth = true;
-            } else {
-                jsonObject.baseline.valuesHealth = false;
-                jsonObject.option.logItemsToDisplay.mood = false;
-            }
-            
-            if ($("#spendingNA").is(":checked") || $($("input.amountSpentPerWeek")[0]).val() == "") {
-                jsonObject.option.reportItemsToDisplay.costChangeVsBaseline = false;
-                jsonObject.option.reportItemsToDisplay.costChangeVsLastWeek = false;
-            } else {
-                if (!$.isNumeric($("input.amountSpentPerWeek").val())) {
-                    alert("Please enter in a number into your current spending!");
-                } else {
-                    jsonObject.baseline.amountSpentPerWeek = $("input.amountSpentPerWeek").val();
-                    jsonObject.option.reportItemsToDisplay.costChangeVsBaseline = true;
-                }
-            }
-
-            if ($("#goalSpentNA").is(":checked") || $($("input.goalSpentPerWeek")[0]).val() == "") {
-                jsonObject.baseline.goalSpentPerWeek = false;
-                jsonObject.option.reportItemsToDisplay.costGoalVsThisWeek = false;
-            } else {
-                if (!$.isNumeric($("input.goalSpentPerWeek").val())) {
-                    alert("Please enter in a number into your spending goal!");
-                } else {
-                    jsonObject.baseline.goalSpentPerWeek = $("input.goalSpentPerWeek").val();
-                    jsonObject.option.reportItemsToDisplay.costGoalVsThisWeek = true;
-                }
-            }
-
-            if ($("#doneNA").is(":checked") || $($("input.amountDonePerWeek")[0]).val() == "") {
-                jsonObject.option.reportItemsToDisplay.useChangeVsBaseline = false;
-                jsonObject.option.reportItemsToDisplay.useChangeVsLastWeek = false;
-            } else {
-                if (!$.isNumeric($("input.amountDonePerWeek").val())) {
-                    alert("Please enter in a number for your current usage!");
-                } else {
-                    jsonObject.baseline.amountDonePerWeek = $("input.amountDonePerWeek").val();
-                    jsonObject.option.reportItemsToDisplay.useChangeVsBaseline = true;
-                }
-            }
-
-            if ($("#goalDoneNA").is(":checked") || $($(".goalDonePerWeek")[0]).val() == "") {
-                jsonObject.baseline.goalDonePerWeek = false;
-                jsonObject.option.reportItemsToDisplay.useGoalVsThisWeek = false;
-            } else {
-                if (!$.isNumeric($("input.goalDonePerWeek").val())) {
-                    alert("Please enter in a number into your usage goal!");
-                } else {
-                    jsonObject.baseline.goalDonePerWeek = $("input.goalDonePerWeek").val();
-                    jsonObject.option.reportItemsToDisplay.useGoalVsThisWeek = true;
-                }
-            }
-
-            // Sync local running copy
-            json.baseline = jsonObject.baseline;
-            json.option = jsonObject.option;
-
-            // Track if any submission has been made
-            jsonObject.baseline.userSubmitted = true;
-            StorageModule.setStorageObject(jsonObject);
-            
-            // SETTINGS PAGE INITIAL DISPLAY
-            // LIVE STATS
-            for (var key in jsonObject.option.liveStatsToDisplay) {
-                $("#" + key + "Displayed").prop('checked', jsonObject.option.liveStatsToDisplay[key]);
-            }
-            // HABIT LOG
-            for (var key in jsonObject.option.logItemsToDisplay) {
-                $("#" + key + "RecordDisplayed").prop('checked', jsonObject.option.logItemsToDisplay[key]);
-            }
-            // WEEKLY REPORT
-            for (var key in jsonObject.option.reportItemsToDisplay) {
-                $("#" + key + "Displayed").prop('checked', jsonObject.option.reportItemsToDisplay[key]);
-            }
-
-            $(".statistics-tab-toggler").click();
-            $(".baseline-questionnaire .intro.question").addClass("d-none");
-            $(".baseline-questionnaire").removeClass("show");
-            $(".displayed-statistics").addClass("show");
-            $(".displayed-statistics-heading").show();
-
-            $('html, body').animate({
-                scrollTop: $("#header").offset().top
-            }, 700);
-
-            var message = "Thank you for answering those questions! Let's get going";
+            var message = "Feel free to poke around, you can reset the entire app (in settings) whenever you like.";
             NotificationsModule.createNotification(message);
+            $(".serious.question-set").slideUp();
         });
+
+        // User has a specific habit - show follow-up questions
+        $(".baseline-questionnaire .serious-user").on('change', function () {
+            if ($(this).is(":checked")) {
+                $(".serious.question-set").slideDown();
+            }
+        });
+
+        // Importance card toggles - show/hide related question-sets
+        $(".importance-option input[type='checkbox']").on('change', function () {
+            var togglesClass = $(this).closest('.importance-option').data('toggles');
+            if (togglesClass) {
+                var relatedQuestionSet = $('.' + togglesClass);
+                if ($(this).is(":checked")) {
+                    relatedQuestionSet.slideDown();
+                } else {
+                    relatedQuestionSet.slideUp();
+                }
+            }
+        });
+
+        // Goal question-set submit buttons (placeholder for future goal-specific logic)
+        $(".baseline-questionnaire .goal-question-set .submit").on("click", function (e) {
+            console.log('submitted a goal', e);
+        });
+
+        // Save baseline values on any input change (excluding goal question-sets)
+        $(".baseline-questionnaire input:not(.goal-question-set input)").on("change", function () {
+            saveBaselineValues();
+        });
+    }
+
+    function saveBaselineValues() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+
+        // --- Collect all form values ---
+        var isDecrease = $(".decreaseHabit").is(":checked");
+        var isIncrease = $(".increaseHabit").is(":checked");
+        var isNeutral = $(".neutralHabit").is(":checked");
+        var valuesTimesDone = $(".valuesTimesDone").is(":checked");
+        var valuesTime = $(".valuesTime").is(":checked");
+        var valuesMoney = $(".valuesMoney").is(":checked");
+        var valuesHealth = $(".valuesHealth").is(":checked");
+        var isSerious = $(".serious-user").is(":checked");
+
+        // --- Update baseline object ---
+        jsonObject.baseline.specificSubject = isSerious;
+        jsonObject.baseline.decreaseHabit = isDecrease;
+        jsonObject.baseline.increaseHabit = isIncrease;
+        jsonObject.baseline.neutralHabit = isNeutral;
+        jsonObject.baseline.valuesTimesDone = valuesTimesDone;
+        jsonObject.baseline.valuesTime = valuesTime;
+        jsonObject.baseline.valuesMoney = valuesMoney;
+        jsonObject.baseline.valuesHealth = valuesHealth;
+        jsonObject.baseline.userSubmitted = true;
+
+        // --- Update display options based on importance selections ---
+        // Times done stats
+        jsonObject.option.liveStatsToDisplay.timesDone = valuesTimesDone;
+        jsonObject.option.liveStatsToDisplay.didntPerDid = valuesTimesDone;
+        jsonObject.option.liveStatsToDisplay.resistedInARow = valuesTimesDone || isDecrease || isNeutral;
+        
+        // Time stats
+        jsonObject.option.liveStatsToDisplay.sinceLastDone = valuesTime;
+        jsonObject.option.liveStatsToDisplay.avgBetweenDone = valuesTime;
+        
+        // Money stats
+        jsonObject.option.liveStatsToDisplay.spentButton = valuesMoney;
+        jsonObject.option.liveStatsToDisplay.boughtGoalButton = valuesMoney;
+        jsonObject.option.liveStatsToDisplay.sinceLastSpent = valuesMoney;
+        jsonObject.option.liveStatsToDisplay.avgBetweenSpent = valuesMoney;
+        jsonObject.option.liveStatsToDisplay.totalSpent = valuesMoney;
+        
+        // Health/mood
+        jsonObject.option.logItemsToDisplay.mood = valuesHealth;
+
+        // --- Save to storage ---
+        json.baseline = jsonObject.baseline;
+        json.option = jsonObject.option;
+        StorageModule.setStorageObject(jsonObject);
+
+        // --- Update DOM (all in one block) ---
+        updateBodyClasses(isDecrease, isIncrease, isNeutral);
+        syncSettingsPage(jsonObject);
+    }
+
+    function updateBodyClasses(isDecrease, isIncrease, isNeutral) {
+        $('body').removeClass("desires-decrease desires-increase desires-neutral");
+        
+        if (isDecrease) {
+            $('body').addClass("desires-decrease");
+        } else if (isIncrease) {
+            $('body').addClass("desires-increase");
+        } else {
+            $('body').addClass("desires-neutral");
+        }
+    }
+
+    function syncSettingsPage(jsonObject) {
+        // Sync settings page checkboxes with current options
+        for (var key in jsonObject.option.liveStatsToDisplay) {
+            $("#" + key + "Displayed").prop('checked', jsonObject.option.liveStatsToDisplay[key]);
+        }
+        for (var key in jsonObject.option.logItemsToDisplay) {
+            $("#" + key + "RecordDisplayed").prop('checked', jsonObject.option.logItemsToDisplay[key]);
+        }
+        for (var key in jsonObject.option.reportItemsToDisplay) {
+            $("#" + key + "Displayed").prop('checked', jsonObject.option.reportItemsToDisplay[key]);
+        }
     }
 
     function loadBaselineValues() {
         var jsonObject = StorageModule.retrieveStorageObject();
-        
-        if (jsonObject.baseline.userSubmitted) {
-            $(".baseline-questionnaire").removeClass("show");
-            $(".baseline-questionnaire-heading").attr("aria-expanded", "false");
-            $(".displayed-statistics").addClass("show");
-            $(".displayed-statistics-heading").attr("aria-expanded", "true");
-            $(".displayed-statistics-heading").show();
-        } else {
-            $(".displayed-statistics-heading").hide();
-        }
+        var baseline = jsonObject.baseline;
 
-        // Populate fields on form with existing values
-        if (jsonObject.baseline.userSubmitted && jsonObject.baseline.decreaseHabit) {
-            $("input.decreaseHabit").prop('checked', true);
-            $("input.increaseHabit").prop('checked', false);
-            $('body').addClass("desires-decrease");
-            $('body').removeClass("desires-increase");
-        } else if (jsonObject.baseline.userSubmitted && !jsonObject.baseline.decreaseHabit) {
-            $("input.decreaseHabit").prop('checked', false);
-            $("input.increaseHabit").prop('checked', true);
-            $('body').addClass("desires-increase");
-            $('body').removeClass("desires-decrease");
-        }
+        // --- Restore body classes ---
+        updateBodyClasses(baseline.decreaseHabit, baseline.increaseHabit, baseline.neutralHabit);
         
-        if (jsonObject.baseline.userSubmitted && jsonObject.baseline.valuesTime) {
-            $("input.valuesTime").prop('checked', true);
-        }
-        if (jsonObject.baseline.userSubmitted && jsonObject.baseline.valuesMoney) {
-            $("input.valuesMoney").prop('checked', true);
-        }
-        if (jsonObject.baseline.userSubmitted && jsonObject.baseline.valuesHealth) {
-            $("input.valuesHealth").prop('checked', true);
-        }
+
+        // --- Restore Question Set 1: specific subject ---
+        $("input.serious-user").prop('checked', baseline.specificSubject);
+        $("input.passerby-user").prop('checked', !baseline.specificSubject);
         
-        if (jsonObject.baseline.useStatsIrrelevant == true) {
-            $("#doneNA").prop('checked', true);
-            $("#goalDoneNA").prop('checked', true);
-        }
-        if (jsonObject.baseline.costStatsIrrelevant === true) {
-            $("#spendingNA").prop('checked', true);
-            $("#goalSpentNA").prop('checked', true);
-        }
+        // Show/hide serious question-sets based on saved selection
+        baseline.specificSubject ? $(".serious.question-set").show() : $(".serious.question-set").hide();
+
+        // --- Restore Question Set 2: desire direction ---
+        $("input.decreaseHabit").prop('checked', baseline.decreaseHabit);
+        $("input.increaseHabit").prop('checked', baseline.increaseHabit);
+        $("input.neutralHabit").prop('checked', baseline.neutralHabit);
         
-        if (JSON.parse(jsonObject.baseline.specificSubject)) {
-            $($(".baseline-questionnaire .question-set")[0]).addClass("d-none");
-            $($(".baseline-questionnaire .question-set")[1]).removeClass("d-none");
-        }
+        // --- Restore Question Set 3: importance checkboxes ---
+        $("input.valuesTimesDone").prop('checked', baseline.valuesTimesDone);
+        $("input.valuesTime").prop('checked', baseline.valuesTime);
+        $("input.valuesMoney").prop('checked', baseline.valuesMoney);
+        $("input.valuesHealth").prop('checked', baseline.valuesHealth);
         
-        // Set form field values
-        if ($.isNumeric(jsonObject.baseline.amountSpentPerWeek) && jsonObject.baseline.amountSpentPerWeek != 0) {
-            $("input.amountSpentPerWeek").val(parseInt(jsonObject.baseline.amountSpentPerWeek, 10));
-        }
-        if ($.isNumeric(jsonObject.baseline.goalSpentPerWeek) && jsonObject.baseline.goalSpentPerWeek != 0) {
-            $("input.goalSpentPerWeek").val(parseInt(jsonObject.baseline.goalSpentPerWeek, 10));
-        }
-        if ($.isNumeric(jsonObject.baseline.amountDonePerWeek) && jsonObject.baseline.amountDonePerWeek != 0) {
-            $("input.amountDonePerWeek").val(parseInt(jsonObject.baseline.amountDonePerWeek, 10));
-        }
-        if ($.isNumeric(jsonObject.baseline.goalDonePerWeek) && jsonObject.baseline.goalDonePerWeek != 0) {
-            $("input.goalDonePerWeek").val(parseInt(jsonObject.baseline.goalDonePerWeek, 10));
-        }
+        // --- Show/hide goal question-sets based on importance ---
+        baseline.valuesTimesDone ? $(".usage-goal-questions").show() : $(".usage-goal-questions").hide();
+        baseline.valuesTime ? $(".time-goal-questions").show() : $(".time-goal-questions").hide();
+        baseline.valuesMoney ? $(".spending-goal-questions").show() : $(".spending-goal-questions").hide();
     }
     
     function init(appJson) {
@@ -270,7 +160,8 @@ var BaselineModule = (function() {
     // Public API
     return {
         init: init,
-        loadBaselineValues: loadBaselineValues
+        loadBaselineValues: loadBaselineValues,
+        saveBaselineValues: saveBaselineValues  // Expose for settings page sync
     };
 })();
 
