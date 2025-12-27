@@ -210,6 +210,10 @@
                         <i class="fas fa-clipboard-list"></i>
                         <span>Baseline</span>
                     </a>
+                    <a class="hamburger-menu-item goals-tab-toggler" href="#">
+                        <i class="fas fa-bullseye"></i>
+                        <span>Goals</span>
+                    </a>
                     <a class="hamburger-menu-item statistics-tab-toggler" href="#">
                         <i class="fas fa-chart-bar"></i>
                         <span>Statistics</span>
@@ -278,8 +282,6 @@
 
             <!-- DATE PICKER -->
             <div id="goalEndPicker"></div>
-
-
             <div style="display:block;text-align:center;">
                 <div>
                     <label for="boughtInput">
@@ -1320,13 +1322,6 @@
                     <div class="row">
                         <div class="col-12">
 
-                            <div class="baseline-intro">
-                                <h2 class="text-left">Better Later App</h2>
-                                <p>
-                                    The anonymous Habit Tracking app with data transparency verifiable by you!
-                                </p>
-                            </div>
-
                             <div class="baseline-info-buttons">
                                 <a href="../about/index.html" class="btn btn-outline-info">
                                     <i class="fas fa-question"></i>
@@ -1339,21 +1334,18 @@
                                     &nbsp;Data Privacy
                                 </a>
                             </div>
-
-
                             <div class="baseline-intro">
-                                <h4 class="mt-0"><span style="font-weight: bold">Answer some questions to get started</span> (or just start clicking)</h4>
+                                <h2 class="text-left">Better Later</h2>
+                                    <h4 class="mt-0">The verifiably private Habit Tracking app</h4>
+                                
                             </div>
 
-                            <div class="baseline-questionnaire show">
-                                <div class="form-message">
-                                    <p class="success d-none">
-                                        Thank you! Your responses have saved.
-                                    </p>
-                                    <p class="failure d-none">
-                                        One or more of your responses is <b>invalid</b>.
 
-                                    </p>
+                            <div class="baseline-questionnaire show">
+                                <div class="baseline-intro baseline-heading mb-0">
+                                    <h2 class="text-muted mb-0">
+                                        Baseline Questionnaire
+                                    </h2>
                                 </div>
                                 <!-- question 1: specific habit in mind -->
                                 <div class="question-set">
@@ -1440,7 +1432,7 @@
                                                     <span class="importance-label">Money spent</span>
                                                 </div>
                                             </label>
-                                            <label class="importance-option">
+                                            <label class="importance-option" data-toggles="health-goal-questions">
                                                 <input type="checkbox" class="valuesHealth">
                                                 <div class="importance-card">
                                                     <div class="importance-icon">
@@ -1463,7 +1455,6 @@
                                             <option value="day">per day</option>
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
-                                            <option value="forever">total</option>
                                         </select>
                                     </div>
                                     <hr/>
@@ -1476,11 +1467,12 @@
                                         <label>Goal amount</label>
                                         <input type="number" min="0" max="500" class="goal-input goalDonePerWeek" placeholder="0">
                                     </div>
-                                    <!-- <hr/>
-                                    <div class="goal-input-row flex-row">
-                                        <input class="measure-usage-custom" type="checkbox" id="customMeasurement">
-                                        <label>Custom Measurement</label>
-                                    </div> -->
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Achieve in</label>
+                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
+                                        <span class="timeline-unit">days</span>
+                                    </div>
 
                                     <button class="btn btn-lg btn-block btn-outline-success submit"
                                             style="margin-bottom:0px;">
@@ -1499,7 +1491,6 @@
                                             <option value="day">per day</option>
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
-                                            <option value="forever">total</option>
                                         </select>
                                     </div>
                                     <hr/>
@@ -1523,6 +1514,12 @@
                                             <span class="time-unit">m</span>
                                         </div>
                                     </div>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Achieve in</label>
+                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
+                                        <span class="timeline-unit">days</span>
+                                    </div>
 
                                     <button class="btn btn-lg btn-block btn-outline-success submit"
                                             style="margin-bottom:0px;">
@@ -1541,7 +1538,6 @@
                                             <option value="day">per day</option>
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
-                                            <option value="forever">total</option>
                                         </select>
                                     </div>
                                     <hr/>
@@ -1560,6 +1556,58 @@
                                             <input type="number" min="0" max="10000" class="goal-input money-input goalSpentPerWeek" placeholder="0">
                                         </div>
                                     </div>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Achieve in</label>
+                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
+                                        <span class="timeline-unit">days</span>
+                                    </div>
+
+                                    <button class="btn btn-lg btn-block btn-outline-success submit"
+                                            style="margin-bottom:0px;">
+                                        Create goal
+                                    </button>
+                                </div>
+
+                                <!-- WELLNESS / HEALTH GOAL Question Set -->
+                                <div class="question-set serious goal-question-set health-goal-questions" style="display: none;">
+                                    <h4 class="mt-0">Create a <span style="font-weight:bold">wellbeing goal</span></h4>
+                                    <hr/>
+                                    <div class="goal-input-row-textarea d-flex flex-column">
+                                        <textarea class="text tenet-text" rows="4" placeholder="Type your goal here. i.e., lose 20 pounds, run a marathon, stop smoking, etc."></textarea>    
+                                    </div>
+                                    <hr/>
+
+                                    <div class="goal-input-row-textarea d-flex flex-column">
+                                        <label>How do you currently feel about your progress?</label>
+                                       
+                                        <div class="health-mood-tracker">
+                                            <div class="smileys">
+                                                <div class="smiley mood-0">
+                                                    <img class="img-fluid" src="../assets/images/mood-smiley-0.png" alt="feeling very bad">
+                                                </div>
+                                                <div class="smiley mood-1">
+                                                    <img class="img-fluid" src="../assets/images/mood-smiley-1.png" alt="feeling bad">
+                                                </div>
+                                                <div class="smiley mood-2 selected">
+                                                    <img class="img-fluid" src="../assets/images/mood-smiley-2.png" alt="feeling neutral">
+                                                </div>
+                                                <div class="smiley mood-3">
+                                                    <img class="img-fluid" src="../assets/images/mood-smiley-3.png" alt="feeling good">
+                                                </div>
+                                                <div class="smiley mood-4">
+                                                    <img class="img-fluid" src="../assets/images/mood-smiley-4.png" alt="feeling very good">
+                                                </div>
+                                            </div>
+                                            <textarea class="text mood-comment-text" rows="2" placeholder="Any thoughts on how you're doing? (optional)"></textarea>
+                                        </div>
+                                    </div>
+                                    <hr/>
+                                    <div class="goal-timeline-row">
+                                        <label>Achieve in</label>
+                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
+                                        <span class="timeline-unit">days</span>
+                                    </div>
 
                                     <button class="btn btn-lg btn-block btn-outline-success submit"
                                             style="margin-bottom:0px;">
@@ -1568,6 +1616,18 @@
                                     
                                 </div>
 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Behavioral Goals tab area -->
+                <div class="tab-pane" id="goals-content">
+                    <div class="row">
+                        <div class="col-12">
+                            <h3 class="text-center mt-4 mb-4">Your Behavioral Goals</h3>
+                            <div id="behavioral-goals-list" class="behavioral-goals-container">
+                                <p class="text-center text-muted">No behavioral goals created yet. Create your first goal in the Baseline tab.</p>
                             </div>
                         </div>
                     </div>
@@ -1706,6 +1766,8 @@
         <script type="application/javascript" src="js/statsCalculations.js"></script>
         <script type="application/javascript" src="js/statsDisplay.js"></script>
         <script type="application/javascript" src="js/baseline.js"></script>
+        <script type="application/javascript" src="js/goals.js"></script>
+        <script type="application/javascript" src="js/behavioralGoals.js"></script>
         <script type="application/javascript" src="js/tabs.js"></script>
         <script type="application/javascript" src="js/settings.js"></script>
         <script type="application/javascript" src="js/buttons.js"></script>

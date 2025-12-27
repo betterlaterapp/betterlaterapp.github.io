@@ -13,7 +13,7 @@ var BaselineModule = (function() {
         // User has a specific habit - show follow-up questions
         $(".baseline-questionnaire .serious-user").on('change', function () {
             if ($(this).is(":checked")) {
-                $(".serious.question-set").slideDown();
+                $(".serious.question-set:not(.goal-question-set)").slideDown();
             }
         });
 
@@ -150,6 +150,7 @@ var BaselineModule = (function() {
         baseline.valuesTimesDone ? $(".usage-goal-questions").show() : $(".usage-goal-questions").hide();
         baseline.valuesTime ? $(".time-goal-questions").show() : $(".time-goal-questions").hide();
         baseline.valuesMoney ? $(".spending-goal-questions").show() : $(".spending-goal-questions").hide();
+        baseline.valuesHealth ? $(".health-goal-questions").show() : $(".health-goal-questions").hide();
     }
     
     function init(appJson) {

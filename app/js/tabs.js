@@ -38,7 +38,7 @@ var TabsModule = (function () {
         $('#' + tabId).addClass('active show');
 
         // Update toggler active states
-        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler')
+        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler, .goals-tab-toggler')
             .removeClass('active');
 
         // Save to storage
@@ -104,6 +104,18 @@ var TabsModule = (function () {
         });
     }
 
+    function setupGoalsTabHandler() {
+        $(document).on('click', '.goals-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('goals-content', function() {
+                if (typeof BehavioralGoalsModule !== 'undefined') {
+                    BehavioralGoalsModule.renderBehavioralGoalsList();
+                }
+            });
+            $('.goals-tab-toggler').addClass('active');
+        });
+    }
+
     function init(appJson, userWasInactive) {
         json = appJson;
         setupHamburgerMenu();
@@ -111,6 +123,7 @@ var TabsModule = (function () {
         setupSettingsTabHandler();
         setupNotificationsTabHandler();
         setupBaselineTabHandler();
+        setupGoalsTabHandler();
     }
 
     return {

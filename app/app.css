@@ -595,7 +595,9 @@ input[type="number"] {
         color: #666;
         margin-bottom: 20px;
         font-style: italic;
-        margin-bottom: 30px;
+    }
+    .baseline-heading {
+        margin-top: 40px;
     }
     .serious-user .baseline-intro {
         display: none;
@@ -2023,4 +2025,222 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 #habit-log-show-more button.btn,
 #habit-log-show-more p {
 	margin-bottom: 0px;
+}
+
+/* ================================
+   BEHAVIORAL GOALS TAB STYLES
+   ================================ */
+
+.behavioral-goals-container {
+    padding: 10px 0;
+}
+
+.behavioral-goal-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.behavioral-goal-card.behavioral-goal-active {
+    border-left: 4px solid #28a745;
+}
+
+.behavioral-goal-card.behavioral-goal-completed {
+    border-left: 4px solid #6c757d;
+    opacity: 0.8;
+}
+
+.behavioral-goal-card.behavioral-goal-abandoned {
+    border-left: 4px solid #dc3545;
+    opacity: 0.6;
+}
+
+.behavioral-goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.behavioral-goal-type-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.behavioral-goal-type-badge.quantitative {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.behavioral-goal-type-badge.qualitative {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.behavioral-goal-status {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: capitalize;
+}
+
+.behavioral-goal-body {
+    margin-bottom: 12px;
+}
+
+.behavioral-goal-metric, .behavioral-goal-tenet {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.behavioral-goal-tenet {
+    font-style: italic;
+    color: #555;
+}
+
+.behavioral-goal-timeline {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.behavioral-goal-footer {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.behavioral-goal-created {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* Behavioral Goal Success Overlay */
+.behavioral-goal-success-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    z-index: 10;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.behavioral-goal-success-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #888;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.behavioral-goal-success-close:hover {
+    color: #333;
+}
+
+.behavioral-goal-success-content {
+    text-align: center;
+}
+
+.behavioral-goal-success-content i {
+    color: #28a745;
+    margin-bottom: 15px;
+}
+
+.behavioral-goal-success-content p {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.view-behavioral-goals-btn {
+    min-width: 140px;
+}
+
+/* Health Goal Mood Tracker */
+.health-mood-tracker {
+    margin-top: 10px;
+}
+
+.health-mood-tracker .smileys {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.health-mood-tracker .smiley {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.health-mood-tracker .smiley:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.health-mood-tracker .smiley.selected {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.health-mood-tracker .smiley img {
+    width: 100%;
+    height: 100%;
+}
+
+.health-mood-tracker .mood-comment-text {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.9rem;
+    resize: none;
+}
+
+/* Completion Timeline Row */
+.goal-timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.goal-timeline-row label {
+    margin: 0;
+    color: #666;
+}
+
+.goal-timeline-row .completion-timeline-input {
+    width: 80px;
+    text-align: center;
+}
+
+.goal-timeline-row .timeline-unit {
+    color: #666;
+    font-size: 0.9rem;
 }

@@ -600,6 +600,7 @@ $(document).ready(function () {
         UIModule.init(json);
         ActionLogModule.init(json);
         GoalsModule.init(json);
+        BehavioralGoalsModule.init(json);
         ButtonsModule.init(json);
 
         /* CALL INITIAL STATE OF APP */
@@ -653,7 +654,7 @@ $(document).ready(function () {
             //replace this with 
             //empty action table
             //basic stat display settings option table
-            var newJsonString = '{ "action": [], ' +
+            var newJsonString = '{ "action": [], "behavioralGoals": [], ' +
                 '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "useStatsIrrelevant": false, "costStatsIrrelevant": false, "timeStatsIrrelevant": false, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '  "option": { "activeTab" : "baseline-content",' +
                 '"liveStatsToDisplay": { "goalButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true },' +
@@ -667,9 +668,6 @@ $(document).ready(function () {
 
             $(".baseline-tab-toggler").click();
 
-            //ABSOLUTE NEW USER
-            var introMessage = "Better late, then never.";
-            NotificationsModule.createNotification(introMessage);
         }
 
 
