@@ -13,30 +13,41 @@ var BaselineModule = (function() {
         // User has a specific habit - show follow-up questions
         $(".baseline-questionnaire .serious-user").on('change', function () {
             if ($(this).is(":checked")) {
-                $(".serious.question-set:not(.goal-question-set)").slideDown();
+                $(".serious.question-set:not(.current-status-question)").slideDown();
             }
         });
 
-        // Importance card toggles - show/hide related question-sets
+        // Importance card toggles - update question 4 visibility and dropdown
         $(".importance-option input[type='checkbox']").on('change', function () {
-            var togglesClass = $(this).closest('.importance-option').data('toggles');
-            if (togglesClass) {
-                var relatedQuestionSet = $('.' + togglesClass);
-                if ($(this).is(":checked")) {
-                    relatedQuestionSet.slideDown();
-                } else {
-                    relatedQuestionSet.slideUp();
-                }
-            }
+            // Update question 4 visibility and dropdown
+            updateCurrentStatusQuestion();
+        });
+        
+        // Status type dropdown change in question 4
+        $('#current-status-type-select').on('change', function() {
+            handleStatusTypeChange($(this).val());
+        });
+        
+        // Baseline mood tracker smiley selection
+        $(document).on('click', '.baseline-mood-tracker .smiley', function() {
+            $(this).closest('.smileys').find('.smiley').removeClass('selected');
+            $(this).addClass('selected');
+        });
+        
+        // Wellness status submit (creates habit log entry)
+        $(document).on('click', '.baseline-wellness-submit', function(e) {
+            e.preventDefault();
+            submitWellnessStatusToLog();
+        });
+        
+        // Save baseline status button
+        $(document).on('click', '.baseline-status-save', function(e) {
+            e.preventDefault();
+            saveCurrentStatus();
         });
 
-        // Goal question-set submit buttons (placeholder for future goal-specific logic)
-        $(".baseline-questionnaire .goal-question-set .submit").on("click", function (e) {
-            console.log('submitted a goal', e);
-        });
-
-        // Save baseline values on any input change (excluding goal question-sets)
-        $(".baseline-questionnaire input:not(.goal-question-set input)").on("change", function () {
+        // Save baseline values on any input change
+        $(".baseline-questionnaire input").on("change", function () {
             saveBaselineValues();
         });
     }
@@ -146,11 +157,173 @@ var BaselineModule = (function() {
         $("input.valuesMoney").prop('checked', baseline.valuesMoney);
         $("input.valuesHealth").prop('checked', baseline.valuesHealth);
         
-        // --- Show/hide goal question-sets based on importance ---
-        baseline.valuesTimesDone ? $(".usage-goal-questions").show() : $(".usage-goal-questions").hide();
-        baseline.valuesTime ? $(".time-goal-questions").show() : $(".time-goal-questions").hide();
-        baseline.valuesMoney ? $(".spending-goal-questions").show() : $(".spending-goal-questions").hide();
-        baseline.valuesHealth ? $(".health-goal-questions").show() : $(".health-goal-questions").hide();
+        // --- Restore Question 4: current status ---
+        // Show question 4 if any importance option is selected
+        if (baseline.valuesTimesDone || baseline.valuesTime || baseline.valuesMoney || baseline.valuesHealth) {
+            $(".current-status-question").show();
+            populateStatusTypeDropdown();
+        }
+        
+        // Restore saved baseline values for question 4
+        if (baseline.amountDonePerWeek) {
+            $('.baseline-amountDonePerWeek').val(baseline.amountDonePerWeek);
+        }
+        if (baseline.usageTimeline) {
+            $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
+        }
+        if (baseline.currentTimeHours) {
+            $('.baseline-currentTimeHours').val(baseline.currentTimeHours);
+        }
+        if (baseline.currentTimeMinutes) {
+            $('.baseline-currentTimeMinutes').val(baseline.currentTimeMinutes);
+        }
+        if (baseline.timeTimeline) {
+            $('.baseline-time-timeline-select').val(baseline.timeTimeline);
+        }
+        if (baseline.amountSpentPerWeek) {
+            $('.baseline-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+        }
+        if (baseline.spendingTimeline) {
+            $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);
+        }
+    }
+    
+    /**
+     * Update question 4 visibility and populate dropdown
+     */
+    function updateCurrentStatusQuestion() {
+        var valuesTimesDone = $(".valuesTimesDone").is(":checked");
+        var valuesTime = $(".valuesTime").is(":checked");
+        var valuesMoney = $(".valuesMoney").is(":checked");
+        var valuesHealth = $(".valuesHealth").is(":checked");
+        
+        // Show question 4 if any importance option is selected
+        if (valuesTimesDone || valuesTime || valuesMoney || valuesHealth) {
+            $(".current-status-question").slideDown();
+            populateStatusTypeDropdown();
+        } else {
+            $(".current-status-question").slideUp();
+        }
+    }
+    
+    /**
+     * Populate status type dropdown based on selected importance options
+     * Returns the first available option value
+     */
+    function populateStatusTypeDropdown() {
+        var dropdown = $('#current-status-type-select');
+        var currentVal = dropdown.val();
+        var firstOptionValue = null;
+        
+        // Clear all options
+        dropdown.empty();
+        
+        // Add options based on checked importance values
+        if ($(".valuesTimesDone").is(":checked")) {
+            dropdown.append('<option value="usage">Times done</option>');
+            if (!firstOptionValue) firstOptionValue = 'usage';
+        }
+        if ($(".valuesTime").is(":checked")) {
+            dropdown.append('<option value="time">Time spent</option>');
+            if (!firstOptionValue) firstOptionValue = 'time';
+        }
+        if ($(".valuesMoney").is(":checked")) {
+            dropdown.append('<option value="spending">Money spent</option>');
+            if (!firstOptionValue) firstOptionValue = 'spending';
+        }
+        if ($(".valuesHealth").is(":checked")) {
+            dropdown.append('<option value="wellness">How I feel</option>');
+            if (!firstOptionValue) firstOptionValue = 'wellness';
+        }
+        
+        // Restore previous selection if still valid, otherwise select first option
+        if (currentVal && dropdown.find('option[value="' + currentVal + '"]').length) {
+            dropdown.val(currentVal);
+            handleStatusTypeChange(currentVal);
+        } else if (firstOptionValue) {
+            dropdown.val(firstOptionValue);
+            handleStatusTypeChange(firstOptionValue);
+        } else {
+            // Reset inputs if no options
+            $('.status-type-inputs').hide();
+            $('.baseline-status-save-row').hide();
+        }
+        
+        return firstOptionValue;
+    }
+    
+    /**
+     * Handle status type selection change
+     */
+    function handleStatusTypeChange(selectedType) {
+        // Hide all input sections
+        $('.status-type-inputs').hide();
+        $('.baseline-status-save-row').hide();
+        
+        // Show relevant input section
+        if (selectedType === 'usage') {
+            $('.usage-status-inputs').show();
+            $('.baseline-status-save-row').show();
+        } else if (selectedType === 'time') {
+            $('.time-status-inputs').show();
+            $('.baseline-status-save-row').show();
+        } else if (selectedType === 'spending') {
+            $('.spending-status-inputs').show();
+            $('.baseline-status-save-row').show();
+        } else if (selectedType === 'wellness') {
+            $('.wellness-status-inputs').show();
+            // Wellness has its own submit button
+        }
+    }
+    
+    /**
+     * Submit wellness status to habit log
+     */
+    function submitWellnessStatusToLog() {
+        var comment = $('.baseline-wellness-text').val();
+        var selectedMood = $('.baseline-mood-tracker .smiley.selected').data('mood');
+        
+        if (selectedMood === undefined) selectedMood = 2;
+        
+        if (!comment || comment.trim() === '') {
+            comment = 'Baseline wellness check-in';
+        }
+        
+        // Create habit log entry using ActionLogModule and StorageModule
+        var now = Math.round(Date.now() / 1000);
+        StorageModule.updateActionTable(now, 'mood', null, null, null, comment, selectedMood);
+        ActionLogModule.placeActionIntoLog(now, 'mood', null, comment, selectedMood, false);
+        
+        // Clear inputs
+        $('.baseline-wellness-text').val('');
+        $('.baseline-mood-tracker .smiley').removeClass('selected');
+        $('.baseline-mood-tracker .smiley.mood-2').addClass('selected');
+        
+        // Notify user
+        NotificationsModule.createNotification('Added to Habit Log!', null, { type: 'mood_added' });
+    }
+    
+    /**
+     * Save current status to baseline
+     */
+    function saveCurrentStatus() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var selectedType = $('#current-status-type-select').val();
+        
+        if (selectedType === 'usage') {
+            jsonObject.baseline.amountDonePerWeek = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
+            jsonObject.baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
+        } else if (selectedType === 'time') {
+            jsonObject.baseline.currentTimeHours = parseInt($('.baseline-currentTimeHours').val()) || 0;
+            jsonObject.baseline.currentTimeMinutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
+            jsonObject.baseline.timeTimeline = $('.baseline-time-timeline-select').val();
+        } else if (selectedType === 'spending') {
+            jsonObject.baseline.amountSpentPerWeek = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
+            jsonObject.baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
+        }
+        
+        StorageModule.setStorageObject(jsonObject);
+        NotificationsModule.createNotification('Baseline status saved!', null, { type: 'baseline_saved' });
     }
     
     function init(appJson) {

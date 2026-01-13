@@ -38,7 +38,7 @@ var TabsModule = (function () {
         $('#' + tabId).addClass('active show');
 
         // Update toggler active states
-        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler, .goals-tab-toggler')
+        $('.statistics-tab-toggler, .settings-tab-toggler, .notifications-tab-toggler, .baseline-tab-toggler, .goals-tab-toggler, .journal-tab-toggler')
             .removeClass('active');
 
         // Save to storage
@@ -116,6 +116,14 @@ var TabsModule = (function () {
         });
     }
 
+    function setupJournalTabHandler() {
+        $(document).on('click', '.journal-tab-toggler', function (e) {
+            e.preventDefault();
+            switchToTab('journal-content');
+            $('.journal-tab-toggler').addClass('active');
+        });
+    }
+
     function init(appJson, userWasInactive) {
         json = appJson;
         setupHamburgerMenu();
@@ -124,6 +132,7 @@ var TabsModule = (function () {
         setupNotificationsTabHandler();
         setupBaselineTabHandler();
         setupGoalsTabHandler();
+        setupJournalTabHandler();
     }
 
     return {

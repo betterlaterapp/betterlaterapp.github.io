@@ -279,14 +279,6 @@ var GoalsModule = (function () {
         $(".goal.log-more-info .time-picker-hour").val(currHours);
     }
 
-    function replaceLongestGoalPublic(start, end, appJson) {
-        // Update module json reference if different
-        if (appJson && appJson !== json) {
-            json = appJson;
-        }
-        return replaceLongestGoal(start, end);
-    }
-
     function init(appJson) {
         json = appJson;
 
@@ -301,7 +293,7 @@ var GoalsModule = (function () {
         handleGoalCompletion: handleGoalCompletion,
         extendActiveGoal: extendActiveGoal,
         endActiveGoal: endActiveGoal,
-        replaceLongestGoal: replaceLongestGoalPublic,
+        replaceLongestGoal: replaceLongestGoal,
         setupGoalDialog: setupGoalDialog,
         handleGoalDialogSubmit: handleGoalDialogSubmit,
         init: init

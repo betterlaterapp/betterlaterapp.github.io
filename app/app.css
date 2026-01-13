@@ -2026,7 +2026,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 #habit-log-show-more p {
 	margin-bottom: 0px;
 }
-
+    
 /* ================================
    BEHAVIORAL GOALS TAB STYLES
    ================================ */
@@ -2206,6 +2206,8 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 .health-mood-tracker .smiley.selected {
     opacity: 1;
     transform: scale(1.15);
+    border-radius: 50%;
+    overflow: hidden;
 }
 
 .health-mood-tracker .smiley img {
@@ -2243,4 +2245,895 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 .goal-timeline-row .timeline-unit {
     color: #666;
     font-size: 0.9rem;
+}
+
+/* ================================
+   WELLBEING GOALS ACCORDION STYLES
+   ================================ */
+
+.wellbeing-goals-container {
+    padding: 10px 0;
+}
+
+.wellbeing-goals-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wellbeing-goal-item {
+    background: linear-gradient(135deg, #fef9f3 0%, #fff 100%);
+    border: 1px solid #e8ddd4;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* .wellbeing-goal-item.wellbeing-goal-active {
+    border-left: 4px solid #e57373;
+} */
+
+.wellbeing-goal-item.wellbeing-goal-completed {
+    border-left: 4px solid #81c784;
+    opacity: 0.85;
+}
+
+.wellbeing-goal-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 14px 16px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.6);
+    transition: background 0.2s ease;
+}
+
+.wellbeing-goal-header:hover {
+    background: rgba(255,255,255,0.9);
+}
+
+.wellbeing-goal-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex: 1;
+    opacity: 0.8;
+    width: 100%;
+}
+
+.wellbeing-goal-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e57373;
+    flex-shrink: 0;
+}
+
+.wellbeing-goal-active .wellbeing-goal-status-indicator {
+    background: #e57373;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.wellbeing-goal-completed .wellbeing-goal-status-indicator {
+    background: #81c784;
+}
+
+.wellbeing-goal-title {
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: #4a4a4a;
+    flex: 1;
+}
+
+.wellbeing-goal-avg-mood {
+    font-size: 1.2rem;
+    margin-left: auto;
+}
+
+.wellbeing-goal-expand-icon {
+    display: flex;
+    align-items: center;
+    color: #999;
+    transition: transform 0.2s ease;
+}
+
+.wellbeing-goal-expand-icon i {
+    transition: transform 0.2s ease;
+}
+
+.wellbeing-goal-collapse {
+    display: none;
+}
+
+.wellbeing-goal-content {
+    padding: 0 16px 16px;
+}
+
+/* Meta section */
+.wellbeing-goal-meta {
+    padding: 16px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.wellbeing-goal-full-text {
+    font-style: italic;
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.wellbeing-goal-stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 16px;
+}
+
+.wellbeing-stat {
+    text-align: center;
+}
+
+.wellbeing-stat-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #e57373;
+}
+
+.wellbeing-stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wellbeing-progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.wellbeing-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e57373, #ef9a9a);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.wellbeing-progress-label {
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Mood records section */
+.wellbeing-mood-records {
+    margin-bottom: 16px;
+}
+
+.wellbeing-mood-records h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mood-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mood-record-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+}
+
+.mood-record-emoji {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.mood-record-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.mood-record-comment {
+    display: block;
+    font-size: 0.9rem;
+    color: #444;
+    margin-bottom: 2px;
+    word-wrap: break-word;
+}
+
+.mood-record-date {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* Add mood section */
+.wellbeing-add-mood {
+    padding: 16px;
+    background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+    border-radius: 8px;
+    border: 1px dashed #ddd;
+}
+
+.wellbeing-add-mood h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.wellbeing-mood-input {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.wellbeing-smileys {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.wellbeing-smileys .smiley {
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+}
+
+.wellbeing-smileys .smiley:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.wellbeing-smileys .smiley.selected {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.wellbeing-smileys .smiley img {
+    width: 100%;
+    height: 100%;
+}
+
+.wellbeing-mood-comment {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.9rem;
+    resize: none;
+    min-height: 60px;
+}
+
+.wellbeing-mood-comment:focus {
+    border-color: #e57373;
+    outline: none;
+}
+
+.add-mood-btn {
+    margin-top: 4px;
+}
+
+/* ================================
+   QUANTIFIABLE GOALS STYLES
+   ================================ */
+
+.quantifiable-goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.quantifiable-goal-card {
+    background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+    border: 1px solid #d4e5f7;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.quantifiable-goal-card.quantifiable-goal-active {
+    border-left: 4px solid #4a90d9;
+}
+
+.quantifiable-goal-card.quantifiable-goal-completed {
+    border-left: 4px solid #81c784;
+    opacity: 0.85;
+}
+
+.quantifiable-goal-header {
+    padding: 16px;
+    background: rgba(255,255,255,0.7);
+    border-bottom: 1px solid #eef4fb;
+}
+
+.quantifiable-goal-type {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.quantifiable-goal-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.quantifiable-goal-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.quantifiable-goal-status.on-track {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.quantifiable-goal-status.off-track {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.quantifiable-goal-target {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+.quantifiable-from {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #c62828;
+}
+
+.quantifiable-goal-target i {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.quantifiable-to {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+.quantifiable-unit {
+    font-size: 0.85rem;
+    color: #666;
+    margin-left: 4px;
+}
+
+.quantifiable-goal-body {
+    padding: 16px;
+}
+
+/* Current status stats */
+.quantifiable-current-status {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 8px;
+}
+
+.quantifiable-stat {
+    text-align: center;
+}
+
+.quantifiable-stat-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #4a90d9;
+}
+
+.quantifiable-stat-label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Progress bar */
+.quantifiable-progress {
+    margin-bottom: 16px;
+}
+
+.quantifiable-progress-bar {
+    height: 10px;
+    background: #e8e8e8;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.quantifiable-progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.quantifiable-progress-fill.on-track {
+    background: linear-gradient(90deg, #66bb6a, #81c784);
+}
+
+.quantifiable-progress-fill.off-track {
+    background: linear-gradient(90deg, #ef5350, #e57373);
+}
+
+.quantifiable-progress-text {
+    display: block;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 6px;
+}
+
+/* Schedule section */
+.quantifiable-schedule {
+    background: rgba(255,255,255,0.7);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.quantifiable-schedule h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a90d9;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantifiable-schedule h5 i {
+    font-size: 0.9rem;
+}
+
+.quantifiable-milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #eef4fb;
+    transition: all 0.2s ease;
+}
+
+.milestone-item.milestone-past {
+    background: #f8fdf8;
+    border-color: #d4edda;
+}
+
+.milestone-check {
+    font-size: 1rem;
+    color: #ccc;
+    flex-shrink: 0;
+}
+
+.milestone-past .milestone-check {
+    color: #66bb6a;
+}
+
+.milestone-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.milestone-target {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #444;
+}
+
+.milestone-date {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.milestone-pct {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a90d9;
+    background: #e3f2fd;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.milestone-past .milestone-pct {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* Footer */
+.quantifiable-goal-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #eef4fb;
+    background: rgba(255,255,255,0.5);
+}
+
+.quantifiable-created {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* Goals section headers */
+.goals-section-header {
+    margin-bottom: 16px;
+}
+
+.goals-section-header h3 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.goals-section-header h3 i {
+    color: #888;
+}
+
+.goals-section-subtitle {
+    font-size: 0.85rem;
+    margin-top: -4px;
+}
+
+/* ================================
+   CREATE GOAL DIALOG STYLES
+   ================================ */
+
+.create-goal-btn {
+    margin-top: 10px;
+    font-size: 1.1rem;
+}
+
+.create-goal-btn i {
+    margin-right: 5px;
+}
+
+.create-goal.log-more-info {
+    margin-bottom: 20px;
+}
+
+.goal-type-selector {
+    margin-bottom: 15px;
+}
+
+.goal-type-selector label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.goal-type-dropdown {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.goal-type-dropdown:focus {
+    outline: none;
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+}
+
+.goal-type-inputs {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.create-goal .goal-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 15px;
+}
+
+.create-goal .goal-input-row label {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #495057;
+    flex: 1;
+}
+
+.create-goal .goal-input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    width: 100px;
+    text-align: right;
+}
+
+.create-goal .goal-timeline-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* Time picker in create goal dialog */
+.create-goal .time-picker-container.create-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-align: left;
+}
+
+.create-goal .time-picker-container.create-time-picker select {
+    font-size: 1.2rem;
+    padding: 6px 24px 6px 8px;
+}
+
+.create-goal .time-picker-container.create-time-picker .label {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Spending input label */
+.spending-input-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+    color: green;
+    font-size: 1.1rem;
+}
+
+.spending-input-label input {
+    width: 80px !important;
+    text-align: center;
+}
+
+/* Health mood tracker in create goal */
+.create-health-mood-tracker .smileys {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 15px;
+}
+
+.create-health-mood-tracker .smiley {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.create-health-mood-tracker .smiley:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.create-health-mood-tracker .smiley.selected {
+    opacity: 1;
+    transform: scale(1.15);
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.create-health-mood-tracker .smiley img {
+    width: 100%;
+    height: 100%;
+}
+
+/* Goal completion timeline section */
+.goal-completion-timeline {
+    margin-top: 10px;
+}
+
+/* ================================
+   QUESTION 4 - CURRENT STATUS STYLES
+   ================================ */
+
+.current-status-question .status-type-selector {
+    margin-bottom: 15px;
+}
+
+.status-type-dropdown {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.status-type-dropdown:focus {
+    outline: none;
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+}
+
+.status-type-inputs {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Baseline time picker */
+.baseline-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.baseline-time-picker select {
+    font-size: 1.2rem;
+    padding: 6px 24px 6px 8px;
+}
+
+.baseline-time-picker .label {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Baseline mood tracker */
+.baseline-mood-tracker .smileys {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 15px;
+}
+
+.baseline-mood-tracker .smiley {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.baseline-mood-tracker .smiley:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.baseline-mood-tracker .smiley.selected {
+    opacity: 1;
+    transform: scale(1.15);
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.baseline-mood-tracker .smiley img {
+    width: 100%;
+    height: 100%;
+}
+
+.baseline-wellness-submit {
+    width: 100%;
+}
+
+.baseline-wellness-text {
+    width: 100%;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.95rem;
+    resize: none;
+}
+
+.baseline-wellness-text:focus {
+    outline: none;
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+}
+
+/* ================================
+   JOURNAL TAB STYLES
+   ================================ */
+
+#journal-content {
+    padding-bottom: 20px;
+}
+
+#journal-content h2 {
+    margin-bottom: 5px;
+}
+
+#journal-content #mood-tracker-heading {
+    font-size: 1.3rem;
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+#journal-content #habit-log-heading {
+    font-size: 1.3rem;
+    color: #495057;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+#journal-content #mood-tracker-area {
+    background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#journal-content #mood-tracker-area .response .text {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 0.95rem;
+    resize: none;
+}
+
+#journal-content #mood-tracker-area .response .text:focus {
+    outline: none;
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+}
+
+#journal-content #habit-log-area {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#journal-content #habit-log-area .initial-instructions {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
 }

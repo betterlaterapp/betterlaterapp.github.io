@@ -156,65 +156,468 @@ var BehavioralGoalsModule = (function () {
     }
 
     /**
-     * Render the behavioral goals list in the goals tab
+     * Get mood records linked to a specific behavioral goal
+     */
+    function getMoodRecordsForGoal(goalId) {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var moodRecords = jsonObject.action.filter(function(a) {
+            return a.clickType === 'mood' && a.behavioralGoalId === goalId;
+        });
+        return moodRecords.sort(function(a, b) {
+            return parseInt(b.timestamp) - parseInt(a.timestamp);
+        });
+    }
+
+    /**
+     * Calculate average mood for a goal's mood records
+     */
+    function calculateAverageMood(moodRecords) {
+        if (!moodRecords || moodRecords.length === 0) return null;
+        var sum = moodRecords.reduce(function(acc, r) {
+            return acc + (parseInt(r.smiley) || 0);
+        }, 0);
+        return (sum / moodRecords.length).toFixed(1);
+    }
+
+    /**
+     * Calculate days remaining until goal completion
+     */
+    function calculateDaysRemaining(goal) {
+        var createdDate = new Date(goal.createdAt);
+        var endDate = new Date(createdDate.getTime() + (goal.completionTimeline * 24 * 60 * 60 * 1000));
+        var now = new Date();
+        var daysRemaining = Math.ceil((endDate - now) / (24 * 60 * 60 * 1000));
+        return Math.max(0, daysRemaining);
+    }
+
+    /**
+     * Calculate days elapsed since goal creation
+     */
+    function calculateDaysElapsed(goal) {
+        var createdDate = new Date(goal.createdAt);
+        var now = new Date();
+        return Math.floor((now - createdDate) / (24 * 60 * 60 * 1000));
+    }
+
+    /**
+     * Generate schedule milestones for quantifiable goal
+     */
+    function generateScheduleMilestones(goal) {
+        var milestones = [];
+        var totalDays = goal.completionTimeline;
+        var currentAmount = goal.currentAmount;
+        var goalAmount = goal.goalAmount;
+        var difference = currentAmount - goalAmount;
+        
+        // Generate 4 milestones: 25%, 50%, 75%, 100%
+        var checkpoints = [0.25, 0.50, 0.75, 1.0];
+        
+        checkpoints.forEach(function(pct, idx) {
+            var daysFromStart = Math.round(totalDays * pct);
+            var targetAmount = Math.round(currentAmount - (difference * pct));
+            var milestoneDate = new Date(goal.createdAt + (daysFromStart * 24 * 60 * 60 * 1000));
+            
+            milestones.push({
+                label: 'Week ' + (idx + 1),
+                percentage: Math.round(pct * 100),
+                daysFromStart: daysFromStart,
+                targetAmount: targetAmount,
+                date: milestoneDate,
+                isPast: milestoneDate < new Date()
+            });
+        });
+        
+        return milestones;
+    }
+
+    /**
+     * Get current period usage/spending from actions
+     */
+    function getCurrentPeriodActual(goal) {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var now = Date.now();
+        var periodStart = now - (goal.measurementTimeline * 24 * 60 * 60 * 1000);
+        
+        if (goal.unit === 'dollars') {
+            var boughtActions = jsonObject.action.filter(function(a) {
+                return a.clickType === 'bought' && 
+                       (parseInt(a.timestamp) * 1000) >= periodStart;
+            });
+            return boughtActions.reduce(function(sum, a) {
+                return sum + (parseFloat(a.spent) || 0);
+            }, 0);
+        } else if (goal.unit === 'times') {
+            var usedActions = jsonObject.action.filter(function(a) {
+                return a.clickType === 'used' && 
+                       (parseInt(a.timestamp) * 1000) >= periodStart;
+            });
+            return usedActions.length;
+        } else if (goal.unit === 'minutes') {
+            // For time-based goals, estimate from usage frequency
+            var usedActions = jsonObject.action.filter(function(a) {
+                return a.clickType === 'used' && 
+                       (parseInt(a.timestamp) * 1000) >= periodStart;
+            });
+            return usedActions.length * 15; // Estimate 15 min per use
+        }
+        return 0;
+    }
+
+    /**
+     * Calculate progress percentage for quantifiable goal
+     */
+    function calculateProgress(goal) {
+        var daysElapsed = calculateDaysElapsed(goal);
+        var totalDays = goal.completionTimeline;
+        var currentAmount = goal.currentAmount;
+        var goalAmount = goal.goalAmount;
+        var actualNow = getCurrentPeriodActual(goal);
+        
+        // Expected amount at this point in time (linear interpolation)
+        var expectedNow = currentAmount - ((currentAmount - goalAmount) * (daysElapsed / totalDays));
+        expectedNow = Math.max(goalAmount, Math.min(currentAmount, expectedNow));
+        
+        // Calculate how on-track they are
+        if (currentAmount === goalAmount) return 100;
+        
+        var difference = currentAmount - goalAmount;
+        var progressMade = currentAmount - actualNow;
+        var progressPct = Math.min(100, Math.max(0, Math.round((progressMade / difference) * 100)));
+        
+        return progressPct;
+    }
+
+    /**
+     * Render all goals lists (both wellbeing and quantifiable)
      */
     function renderBehavioralGoalsList() {
-        var goals = getBehavioralGoals();
-        var container = $('#behavioral-goals-list');
+        renderWellbeingGoalsList();
+        renderQuantifiableGoalsList();
+    }
+
+    /**
+     * Render wellbeing (qualitative) goals with accordions
+     */
+    function renderWellbeingGoalsList() {
+        var goals = getBehavioralGoals().filter(function(g) { return g.type === 'qualitative'; });
+        var container = $('#wellbeing-goals-list');
         
         if (goals.length === 0) {
-            container.html('<p class="text-center text-muted">No behavioral goals created yet. Create your first goal in the Baseline tab.</p>');
+            container.html('<p class="text-center text-muted">No wellbeing goals created yet. Create your first goal in the Baseline tab.</p>');
             return;
         }
         
-        var html = '';
-        goals.forEach(function(goal) {
-            html += renderBehavioralGoalCard(goal);
+        var html = '<div class="wellbeing-goals-accordion">';
+        goals.forEach(function(goal, index) {
+            html += renderWellbeingGoalAccordion(goal, index);
         });
+        html += '</div>';
+        
+        container.html(html);
+        setupAccordionListeners();
+    }
+
+    /**
+     * Render a single wellbeing goal accordion item
+     */
+    function renderWellbeingGoalAccordion(goal, index) {
+        var moodRecords = getMoodRecordsForGoal(goal.id);
+        var avgMood = calculateAverageMood(moodRecords);
+        var daysRemaining = calculateDaysRemaining(goal);
+        var daysElapsed = calculateDaysElapsed(goal);
+        var statusClass = goal.status === 'active' ? 'wellbeing-goal-active' : 'wellbeing-goal-' + goal.status;
+        var moodEmoji = getMoodEmoji(avgMood);
+        var progressPct = Math.min(100, Math.round((daysElapsed / goal.completionTimeline) * 100));
+        
+        var html = '<div class="wellbeing-goal-item ' + statusClass + '" data-goal-id="' + goal.id + '">' +
+            '<div class="wellbeing-goal-header" data-toggle="collapse" data-target="#wellbeing-collapse-' + index + '">' +
+                '<div class="wellbeing-goal-summary">' +
+                    '<span class="wellbeing-goal-status-indicator"></span>' +
+                    '<span class="wellbeing-goal-timeline text-muted">' + daysRemaining + ' days left</span>' +
+                    '<span class="wellbeing-goal-avg-mood" title="Average sentiment">' + moodEmoji + '</span>' +
+                '</div>' +
+                '<div class="wellbeing-goal-expand-icon">' +
+                    '<span class="wellbeing-goal-title">' + escapeHtml(truncateText(goal.tenetText, 40)) + '</span>' +
+                    '<i class="fas fa-chevron-down"></i>' +
+                '</div>' +
+            '</div>' +
+            '<div class="wellbeing-goal-collapse collapse" id="wellbeing-collapse-' + index + '">' +
+                '<div class="wellbeing-goal-content">' +
+                    
+                    // Add new mood input
+                    '<div class="wellbeing-add-mood">' +
+                        '<h5>How\'s your goal going?</h5>' +
+                        '<div class="wellbeing-mood-input">' +
+                            '<div class="wellbeing-smileys">' +
+                                '<div class="smiley mood-0" data-mood="0"><img src="../assets/images/mood-smiley-0.png" alt="Very bad"></div>' +
+                                '<div class="smiley mood-1" data-mood="1"><img src="../assets/images/mood-smiley-1.png" alt="Bad"></div>' +
+                                '<div class="smiley mood-2 selected" data-mood="2"><img src="../assets/images/mood-smiley-2.png" alt="Neutral"></div>' +
+                                '<div class="smiley mood-3" data-mood="3"><img src="../assets/images/mood-smiley-3.png" alt="Good"></div>' +
+                                '<div class="smiley mood-4" data-mood="4"><img src="../assets/images/mood-smiley-4.png" alt="Very good"></div>' +
+                            '</div>' +
+                            '<textarea class="wellbeing-mood-comment" placeholder="Any thoughts on your progress? (optional)"></textarea>' +
+                            '<button class="btn btn-outline-success btn-sm add-mood-btn" data-goal-id="' + goal.id + '">' +
+                                '<i class="fas fa-plus"></i> Add Check-in' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                    // Meta info section
+                    '<div class="wellbeing-goal-meta">' +
+                        '<div class="wellbeing-goal-full-text">"' + escapeHtml(goal.tenetText) + '"</div>' +
+                        '<div class="wellbeing-goal-stats-row">' +
+                            '<div class="wellbeing-stat">' +
+                                '<span class="wellbeing-stat-value">' + daysRemaining + '</span>' +
+                                '<span class="wellbeing-stat-label">days left</span>' +
+                            '</div>' +
+                            '<div class="wellbeing-stat">' +
+                                '<span class="wellbeing-stat-value">' + moodRecords.length + '</span>' +
+                                '<span class="wellbeing-stat-label">check-ins</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="wellbeing-progress-bar">' +
+                            '<div class="wellbeing-progress-fill" style="width: ' + progressPct + '%"></div>' +
+                            '<span class="wellbeing-progress-label">' + progressPct + '% complete</span>' +
+                        '</div>' +
+                    '</div>' +
+                    // Mood records section
+                    '<div class="wellbeing-mood-records">' +
+                        '<h5>Recent Check-ins</h5>' +
+                        renderMoodRecordsList(moodRecords.slice(0, 5)) +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+        
+        return html;
+    }
+
+    /**
+     * Render list of mood records
+     */
+    function renderMoodRecordsList(records) {
+        if (!records || records.length === 0) {
+            return '<p class="text-muted text-center">No check-ins yet. Add your first one below!</p>';
+        }
+        
+        var html = '<div class="mood-records-list">';
+        records.forEach(function(record) {
+            var date = new Date(parseInt(record.timestamp) * 1000);
+            var dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            var moodEmoji = getMoodEmojiFromValue(record.smiley);
+            
+            html += '<div class="mood-record-item">' +
+                '<span class="mood-record-emoji">' + moodEmoji + '</span>' +
+                '<div class="mood-record-details">' +
+                    '<span class="mood-record-comment">' + escapeHtml(record.comment || 'No comment') + '</span>' +
+                    '<span class="mood-record-date">' + dateStr + '</span>' +
+                '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        
+        return html;
+    }
+
+    /**
+     * Get mood emoji from average value
+     */
+    function getMoodEmoji(avgMood) {
+        if (avgMood === null) return '—';
+        var val = parseFloat(avgMood);
+        if (val < 1) return '😢';
+        if (val < 2) return '😕';
+        if (val < 3) return '😐';
+        if (val < 4) return '🙂';
+        return '😊';
+    }
+
+    /**
+     * Get mood emoji from smiley value
+     */
+    function getMoodEmojiFromValue(smiley) {
+        var val = parseInt(smiley);
+        switch(val) {
+            case 0: return '😢';
+            case 1: return '😕';
+            case 2: return '😐';
+            case 3: return '🙂';
+            case 4: return '😊';
+            default: return '😐';
+        }
+    }
+
+    /**
+     * Truncate text to a maximum length
+     */
+    function truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    /**
+     * Render quantifiable (quantitative) goals with schedule
+     */
+    function renderQuantifiableGoalsList() {
+        var goals = getBehavioralGoals().filter(function(g) { return g.type === 'quantitative'; });
+        var container = $('#behavioral-goals-list');
+        
+        if (goals.length === 0) {
+            container.html('<p class="text-center text-muted">No quantifiable goals created yet. Create your first goal in the Baseline tab.</p>');
+            return;
+        }
+        
+        var html = '<div class="quantifiable-goals-list">';
+        goals.forEach(function(goal) {
+            html += renderQuantifiableGoalCard(goal);
+        });
+        html += '</div>';
         
         container.html(html);
     }
 
     /**
-     * Render a single behavioral goal card
+     * Render a single quantifiable goal card with schedule
      */
-    function renderBehavioralGoalCard(goal) {
-        var statusClass = goal.status === 'active' ? 'behavioral-goal-active' : 'behavioral-goal-' + goal.status;
+    function renderQuantifiableGoalCard(goal) {
+        var statusClass = goal.status === 'active' ? 'quantifiable-goal-active' : 'quantifiable-goal-' + goal.status;
         var createdDate = new Date(goal.createdAt).toLocaleDateString();
+        var daysRemaining = calculateDaysRemaining(goal);
+        var daysElapsed = calculateDaysElapsed(goal);
+        var progressPct = calculateProgress(goal);
+        var actualNow = getCurrentPeriodActual(goal);
+        var milestones = generateScheduleMilestones(goal);
         
-        if (goal.type === 'quantitative') {
-            var unitLabel = goal.unit === 'times' ? 'times' : (goal.unit === 'minutes' ? 'min' : '$');
-            var periodLabel = goal.measurementTimeline === 1 ? 'day' : (goal.measurementTimeline === 7 ? 'week' : 'month');
+        var unitLabel = goal.unit === 'times' ? 'times' : (goal.unit === 'minutes' ? 'min' : '$');
+        var periodLabel = goal.measurementTimeline === 1 ? 'day' : (goal.measurementTimeline === 7 ? 'week' : 'month');
+        
+        // Calculate expected amount at this point
+        var expectedNow = goal.currentAmount - ((goal.currentAmount - goal.goalAmount) * (daysElapsed / goal.completionTimeline));
+        expectedNow = Math.max(goal.goalAmount, Math.round(expectedNow));
+        
+        // Determine if on track
+        var isOnTrack = actualNow <= expectedNow;
+        var trackStatusClass = isOnTrack ? 'on-track' : 'off-track';
+        var trackStatusText = isOnTrack ? 'On Track' : 'Behind Schedule';
+        
+        var html = '<div class="quantifiable-goal-card ' + statusClass + '" data-goal-id="' + goal.id + '">' +
+            '<div class="quantifiable-goal-header">' +
+                '<div class="quantifiable-goal-type">' +
+                    '<span class="quantifiable-goal-badge">' + goal.unit + '</span>' +
+                    '<span class="quantifiable-goal-status ' + trackStatusClass + '">' + trackStatusText + '</span>' +
+                '</div>' +
+                '<div class="quantifiable-goal-target">' +
+                    '<span class="quantifiable-from">' + goal.currentAmount + '</span>' +
+                    '<i class="fas fa-arrow-right"></i>' +
+                    '<span class="quantifiable-to">' + goal.goalAmount + '</span>' +
+                    '<span class="quantifiable-unit">' + unitLabel + '/' + periodLabel + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="quantifiable-goal-body">' +
+                // Current status
+                '<div class="quantifiable-current-status">' +
+                    '<div class="quantifiable-stat">' +
+                        '<span class="quantifiable-stat-value">' + actualNow + '</span>' +
+                        '<span class="quantifiable-stat-label">Current ' + unitLabel + '</span>' +
+                    '</div>' +
+                    '<div class="quantifiable-stat">' +
+                        '<span class="quantifiable-stat-value">' + expectedNow + '</span>' +
+                        '<span class="quantifiable-stat-label">Target now</span>' +
+                    '</div>' +
+                    '<div class="quantifiable-stat">' +
+                        '<span class="quantifiable-stat-value">' + daysRemaining + '</span>' +
+                        '<span class="quantifiable-stat-label">Days left</span>' +
+                    '</div>' +
+                '</div>' +
+                // Progress bar
+                '<div class="quantifiable-progress">' +
+                    '<div class="quantifiable-progress-bar">' +
+                        '<div class="quantifiable-progress-fill ' + trackStatusClass + '" style="width: ' + progressPct + '%"></div>' +
+                    '</div>' +
+                    '<span class="quantifiable-progress-text">' + progressPct + '% toward goal</span>' +
+                '</div>' +
+                // Schedule milestones
+                '<div class="quantifiable-schedule">' +
+                    '<h5><i class="fas fa-calendar-alt"></i> Your Schedule</h5>' +
+                    '<div class="quantifiable-milestones">' +
+                        renderMilestones(milestones, goal.unit) +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="quantifiable-goal-footer">' +
+                '<span class="quantifiable-created">Created ' + createdDate + '</span>' +
+            '</div>' +
+        '</div>';
+        
+        return html;
+    }
+
+    /**
+     * Render schedule milestones
+     */
+    function renderMilestones(milestones, unit) {
+        var unitLabel = unit === 'times' ? 'times' : (unit === 'minutes' ? 'min' : '$');
+        var html = '';
+        
+        milestones.forEach(function(m) {
+            var dateStr = m.date.toLocaleDateString();
+            var pastClass = m.isPast ? 'milestone-past' : '';
+            var checkIcon = m.isPast ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>';
             
-            return '<div class="behavioral-goal-card ' + statusClass + '" data-behavioral-goal-id="' + goal.id + '">' +
-                '<div class="behavioral-goal-header">' +
-                    '<span class="behavioral-goal-type-badge quantitative">' + goal.unit + '</span>' +
-                    '<span class="behavioral-goal-status">' + goal.status + '</span>' +
+            html += '<div class="milestone-item ' + pastClass + '">' +
+                '<div class="milestone-check">' + checkIcon + '</div>' +
+                '<div class="milestone-details">' +
+                    '<span class="milestone-target">' + m.targetAmount + ' ' + unitLabel + '</span>' +
+                    '<span class="milestone-date">by ' + dateStr + '</span>' +
                 '</div>' +
-                '<div class="behavioral-goal-body">' +
-                    '<p class="behavioral-goal-metric">From <strong>' + goal.currentAmount + '</strong> to <strong>' + goal.goalAmount + '</strong> ' + unitLabel + ' per ' + periodLabel + '</p>' +
-                    '<p class="behavioral-goal-timeline">Target: ' + goal.completionTimeline + ' days</p>' +
-                '</div>' +
-                '<div class="behavioral-goal-footer">' +
-                    '<span class="behavioral-goal-created">Created ' + createdDate + '</span>' +
-                '</div>' +
+                '<div class="milestone-pct">' + m.percentage + '%</div>' +
             '</div>';
-        } else {
-            // Qualitative goal
-            return '<div class="behavioral-goal-card ' + statusClass + '" data-behavioral-goal-id="' + goal.id + '">' +
-                '<div class="behavioral-goal-header">' +
-                    '<span class="behavioral-goal-type-badge qualitative">wellness</span>' +
-                    '<span class="behavioral-goal-status">' + goal.status + '</span>' +
-                '</div>' +
-                '<div class="behavioral-goal-body">' +
-                    '<p class="behavioral-goal-tenet">"' + escapeHtml(goal.tenetText) + '"</p>' +
-                    '<p class="behavioral-goal-timeline">Target: ' + goal.completionTimeline + ' days</p>' +
-                '</div>' +
-                '<div class="behavioral-goal-footer">' +
-                    '<span class="behavioral-goal-created">Created ' + createdDate + '</span>' +
-                '</div>' +
-            '</div>';
-        }
+        });
+        
+        return html;
+    }
+
+    /**
+     * Setup accordion toggle listeners
+     */
+    function setupAccordionListeners() {
+        // Toggle accordion on header click
+        $(document).off('click', '.wellbeing-goal-header').on('click', '.wellbeing-goal-header', function() {
+            var target = $(this).data('target');
+            var icon = $(this).find('.wellbeing-goal-expand-icon i');
+            
+            $(target).slideToggle(200, function() {
+                if ($(target).is(':visible')) {
+                    icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                } else {
+                    icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
+            });
+        });
+        
+        // Mood smiley selection in wellbeing goals
+        $(document).off('click', '.wellbeing-smileys .smiley').on('click', '.wellbeing-smileys .smiley', function() {
+            $(this).closest('.wellbeing-smileys').find('.smiley').removeClass('selected');
+            $(this).addClass('selected');
+        });
+        
+        // Add mood check-in button
+        $(document).off('click', '.add-mood-btn').on('click', '.add-mood-btn', function() {
+            var goalId = $(this).data('goal-id');
+            var container = $(this).closest('.wellbeing-add-mood');
+            var selectedSmiley = container.find('.smiley.selected').data('mood');
+            var comment = container.find('.wellbeing-mood-comment').val();
+            
+            if (selectedSmiley === undefined) selectedSmiley = 2;
+            
+            createMoodRecordForBehavioralGoal(goalId, selectedSmiley, comment);
+            
+            // Refresh the goals list
+            renderWellbeingGoalsList();
+            
+            // Show success feedback
+            NotificationsModule.createNotification('Check-in added!', null, { type: 'mood_added' });
+        });
     }
 
     /**
@@ -360,14 +763,232 @@ var BehavioralGoalsModule = (function () {
     }
 
     /**
+     * Populate goal type dropdown based on baseline importance options
+     * Returns the first available option value
+     */
+    function populateGoalTypeDropdown() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var baseline = jsonObject.baseline;
+        var dropdown = $('#create-goal-type-select');
+        var firstOptionValue = null;
+        
+        // Clear all options
+        dropdown.empty();
+        
+        // Add options based on selected importance values
+        if (baseline.valuesTimesDone) {
+            dropdown.append('<option value="usage">Usage Goal (times done)</option>');
+            if (!firstOptionValue) firstOptionValue = 'usage';
+        }
+        if (baseline.valuesTime) {
+            dropdown.append('<option value="time">Time Goal (time spent)</option>');
+            if (!firstOptionValue) firstOptionValue = 'time';
+        }
+        if (baseline.valuesMoney) {
+            dropdown.append('<option value="spending">Spending Goal (money spent)</option>');
+            if (!firstOptionValue) firstOptionValue = 'spending';
+        }
+        if (baseline.valuesHealth) {
+            dropdown.append('<option value="health">Wellbeing Goal (how it feels)</option>');
+            if (!firstOptionValue) firstOptionValue = 'health';
+        }
+        
+        // If no options are available, add a message
+        if (dropdown.find('option').length === 0) {
+            dropdown.append('<option value="" disabled selected>Please select what matters to you in the Baseline questionnaire first</option>');
+        }
+        
+        return firstOptionValue;
+    }
+
+    /**
+     * Open create goal dialog
+     */
+    function openCreateGoalDialog() {
+        var firstOption = populateGoalTypeDropdown();
+        
+        // Select the first available option
+        if (firstOption) {
+            $('#create-goal-type-select').val(firstOption);
+            handleGoalTypeChange();
+            $('.create-goal-submit').prop('disabled', false);
+        } else {
+            $('.create-goal-submit').prop('disabled', true);
+            $('.goal-type-inputs').hide();
+            $('.goal-completion-timeline').hide();
+        }
+        
+        // Use UIModule to open dialog with overlay
+        UIModule.openClickDialog('.create-goal');
+    }
+
+    /**
+     * Close create goal dialog
+     */
+    function closeCreateGoalDialog() {
+        // Use UIModule to close dialog with overlay
+        UIModule.closeClickDialog('.create-goal');
+        
+        // Reset form
+        $('.goal-type-inputs').hide();
+        $('.goal-completion-timeline').hide();
+        $('.create-goal-submit').prop('disabled', true);
+        // Reset inputs
+        $('.create-goal input').val('');
+        $('.create-goal textarea').val('');
+        $('.create-goal select:not(#create-goal-type-select)').prop('selectedIndex', 0);
+        $('.create-health-mood-tracker .smiley').removeClass('selected');
+        $('.create-health-mood-tracker .smiley.mood-2').addClass('selected');
+    }
+
+    /**
+     * Handle goal type selection change
+     */
+    function handleGoalTypeChange() {
+        var selectedType = $('#create-goal-type-select').val();
+        
+        // Hide all input sections
+        $('.goal-type-inputs').hide();
+        
+        // Show relevant input section
+        if (selectedType === 'usage') {
+            $('.usage-goal-inputs').show();
+        } else if (selectedType === 'time') {
+            $('.time-goal-inputs').show();
+        } else if (selectedType === 'spending') {
+            $('.spending-goal-inputs').show();
+        } else if (selectedType === 'health') {
+            $('.health-goal-inputs').show();
+        }
+        
+        // Show completion timeline if a type is selected
+        if (selectedType) {
+            $('.goal-completion-timeline').show();
+            $('.create-goal-submit').prop('disabled', false);
+        } else {
+            $('.goal-completion-timeline').hide();
+            $('.create-goal-submit').prop('disabled', true);
+        }
+    }
+
+    /**
+     * Handle create goal form submission from dialog
+     */
+    function handleCreateGoalSubmit() {
+        var selectedType = $('#create-goal-type-select').val();
+        if (!selectedType) return;
+        
+        var completionTimeline = parseInt($('.create-completion-timeline-input').val()) || 30;
+        var behavioralGoal = null;
+        
+        if (selectedType === 'usage') {
+            var currentAmount = parseInt($('.create-amountDonePerWeek').val()) || 0;
+            var goalAmount = parseInt($('.create-goalDonePerWeek').val()) || 0;
+            var measurementTimeline = timelineToDays($('.create-usage-timeline-select').val());
+            
+            if (currentAmount === 0 && goalAmount === 0) {
+                alert('Please enter current or goal usage amounts');
+                return;
+            }
+            
+            behavioralGoal = createQuantitativeGoal('times', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            
+        } else if (selectedType === 'time') {
+            var currentHours = parseInt($('.create-currentTimeHours').val()) || 0;
+            var currentMinutes = parseInt($('.create-currentTimeMinutes').val()) || 0;
+            var goalHours = parseInt($('.create-goalTimeHours').val()) || 0;
+            var goalMinutes = parseInt($('.create-goalTimeMinutes').val()) || 0;
+            
+            var currentAmount = (currentHours * 60) + currentMinutes;
+            var goalAmount = (goalHours * 60) + goalMinutes;
+            var measurementTimeline = timelineToDays($('.create-time-timeline-select').val());
+            
+            if (currentAmount === 0 && goalAmount === 0) {
+                alert('Please enter current or goal time amounts');
+                return;
+            }
+            
+            behavioralGoal = createQuantitativeGoal('minutes', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            
+        } else if (selectedType === 'spending') {
+            var currentAmount = parseInt($('.create-amountSpentPerWeek').val()) || 0;
+            var goalAmount = parseInt($('.create-goalSpentPerWeek').val()) || 0;
+            var measurementTimeline = timelineToDays($('.create-spending-timeline-select').val());
+            
+            if (currentAmount === 0 && goalAmount === 0) {
+                alert('Please enter current or goal spending amounts');
+                return;
+            }
+            
+            behavioralGoal = createQuantitativeGoal('dollars', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            
+        } else if (selectedType === 'health') {
+            var tenetText = $('.create-tenet-text').val();
+            
+            if (!tenetText || tenetText.trim() === '') {
+                alert('Please enter your wellness goal');
+                return;
+            }
+            
+            var selectedMood = $('.create-health-mood-tracker .smiley.selected').data('mood');
+            if (selectedMood === undefined) selectedMood = 2;
+            
+            behavioralGoal = createQualitativeGoal(tenetText, completionTimeline, selectedMood, '');
+        }
+        
+        if (behavioralGoal) {
+            closeCreateGoalDialog();
+            // Navigate to goals tab and refresh list
+            $('.goals-tab-toggler').click();
+            setTimeout(function() {
+                renderBehavioralGoalsList();
+            }, 100);
+            NotificationsModule.createNotification('Goal created successfully!', null, { type: 'goal_created' });
+        }
+    }
+
+    /**
      * Set up event listeners for behavioral goal forms
      */
     function setupEventListeners() {
-        // Goal submission
+        // Goal submission from baseline questionnaire
         $(document).on('click', '.goal-question-set .submit', handleBehavioralGoalSubmit);
         
-        // Mood smiley selection in health goal form
+        // Mood smiley selection in health goal form (baseline)
         $(document).on('click', '.health-goal-questions .smiley', function() {
+            $(this).closest('.smileys').find('.smiley').removeClass('selected');
+            $(this).addClass('selected');
+        });
+        
+        // Create goal button click (full-width button on goals page)
+        $(document).on('click', '#create-goal-btn', function(e) {
+            e.preventDefault();
+            openCreateGoalDialog();
+        });
+        
+        // Create goal button click (button bar)
+        $(document).on('click', '#create-goal-button', function(e) {
+            e.preventDefault();
+            openCreateGoalDialog();
+        });
+        
+        // Goal type dropdown change
+        $(document).on('change', '#create-goal-type-select', handleGoalTypeChange);
+        
+        // Cancel button click
+        $(document).on('click', '.create-goal-cancel', function(e) {
+            e.preventDefault();
+            closeCreateGoalDialog();
+        });
+        
+        // Submit button click
+        $(document).on('click', '.create-goal-submit', function(e) {
+            e.preventDefault();
+            handleCreateGoalSubmit();
+        });
+        
+        // Mood smiley selection in create goal dialog
+        $(document).on('click', '.create-health-mood-tracker .smiley', function() {
             $(this).closest('.smileys').find('.smiley').removeClass('selected');
             $(this).addClass('selected');
         });
@@ -389,8 +1010,14 @@ var BehavioralGoalsModule = (function () {
         createMoodRecordForBehavioralGoal: createMoodRecordForBehavioralGoal,
         getBehavioralGoals: getBehavioralGoals,
         getBehavioralGoalById: getBehavioralGoalById,
+        getMoodRecordsForGoal: getMoodRecordsForGoal,
         renderBehavioralGoalsList: renderBehavioralGoalsList,
-        timelineToDays: timelineToDays
+        renderWellbeingGoalsList: renderWellbeingGoalsList,
+        renderQuantifiableGoalsList: renderQuantifiableGoalsList,
+        timelineToDays: timelineToDays,
+        openCreateGoalDialog: openCreateGoalDialog,
+        closeCreateGoalDialog: closeCreateGoalDialog,
+        populateGoalTypeDropdown: populateGoalTypeDropdown
     };
 })();
 

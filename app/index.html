@@ -31,12 +31,6 @@
 </head>
 
 <body class="app-background">
-    <!-- 
-        FAILSAFE FALLBACK UI
-        This is completely self-contained with inline styles/script.
-        It fades in after 5 seconds unless app.js successfully completes.
-        Also triggered by uncaught JavaScript errors.
-    -->
     <div id="app-fallback" style="
         position: fixed;
         top: 0;
@@ -214,6 +208,10 @@
                         <i class="fas fa-bullseye"></i>
                         <span>Goals</span>
                     </a>
+                    <a class="hamburger-menu-item journal-tab-toggler" href="#">
+                        <i class="fas fa-book"></i>
+                        <span>Journal</span>
+                    </a>
                     <a class="hamburger-menu-item statistics-tab-toggler" href="#">
                         <i class="fas fa-chart-bar"></i>
                         <span>Statistics</span>
@@ -221,10 +219,6 @@
                     <a class="hamburger-menu-item settings-tab-toggler" href="#">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
-                    </a>
-                    <a class="hamburger-menu-item notifications-tab-toggler" href="#">
-                        <i class="fas fa-bell"></i>
-                        <span>Notifications</span>
                     </a>
                 </div>
             </nav>
@@ -407,6 +401,189 @@
                 </div>
             </div>
         </div>
+
+        <!-- Create Goal Dialog -->
+        <div class="create-goal log-more-info" style="display: none;">
+            <h3 class="text-center mt-0">Create a New Goal</h3>
+            <hr/>
+            
+            <!-- Goal Type Selector -->
+            <div class="goal-type-selector">
+                <label>What type of goal?</label>
+                <select class="goal-type-dropdown" id="create-goal-type-select">
+                    <option value="" disabled selected>Select a goal type...</option>
+                </select>
+            </div>
+            
+            <!-- Usage Goal Inputs -->
+            <div class="goal-type-inputs usage-goal-inputs" style="display: none;">
+                <hr/>
+                <div class="goal-timeline-row">
+                    <label>Measure usage</label>
+                    <select class="timeline-select create-usage-timeline-select">
+                        <option value="day">per day</option>
+                        <option value="week" selected>per week</option>
+                        <option value="month">per month</option>
+                    </select>
+                </div>
+                <hr/>
+                <div class="goal-input-row">
+                    <label>Current amount</label>
+                    <input type="number" min="0" max="500" class="goal-input create-amountDonePerWeek" placeholder="0">
+                </div>
+                <div class="goal-input-row">
+                    <label>Goal amount</label>
+                    <input type="number" min="0" max="500" class="goal-input create-goalDonePerWeek" placeholder="0">
+                </div>
+            </div>
+            
+            <!-- Time Goal Inputs -->
+            <div class="goal-type-inputs time-goal-inputs" style="display: none;">
+                <hr/>
+                <div class="goal-timeline-row">
+                    <label>Measure time</label>
+                    <select class="timeline-select create-time-timeline-select">
+                        <option value="day">per day</option>
+                        <option value="week" selected>per week</option>
+                        <option value="month">per month</option>
+                    </select>
+                </div>
+                <hr/>
+                <div class="goal-input-row">
+                    <label>Current average</label>
+                    <div class="time-picker-container create-time-picker">
+                        <select class="time-picker-hour create-currentTimeHours">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <span class="label">h</span>
+                        <select class="time-picker-minute create-currentTimeMinutes">
+                            <option value="0">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <span class="label">m</span>
+                    </div>
+                </div>
+                <div class="goal-input-row">
+                    <label>Goal average</label>
+                    <div class="time-picker-container create-time-picker">
+                        <select class="time-picker-hour create-goalTimeHours">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <span class="label">h</span>
+                        <select class="time-picker-minute create-goalTimeMinutes">
+                            <option value="0">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <span class="label">m</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Spending Goal Inputs -->
+            <div class="goal-type-inputs spending-goal-inputs" style="display: none;">
+                <hr/>
+                <div class="goal-timeline-row">
+                    <label>Measure cost</label>
+                    <select class="timeline-select create-spending-timeline-select">
+                        <option value="day">per day</option>
+                        <option value="week" selected>per week</option>
+                        <option value="month">per month</option>
+                    </select>
+                </div>
+                <hr/>
+                <div class="goal-input-row">
+                    <label>Current spending</label>
+                    <label class="spending-input-label"><input type="number" min="0" class="goal-input create-amountSpentPerWeek" placeholder="0" /> $</label>
+                </div>
+                <div class="goal-input-row">
+                    <label>Goal spending</label>
+                    <label class="spending-input-label"><input type="number" min="0" class="goal-input create-goalSpentPerWeek" placeholder="0" /> $</label>
+                </div>
+            </div>
+            
+            <!-- Health/Wellbeing Goal Inputs -->
+            <div class="goal-type-inputs health-goal-inputs" style="display: none;">
+                <hr/>
+                <div class="goal-input-row-textarea d-flex flex-column">
+                    <textarea class="text create-tenet-text" rows="3" placeholder="Type your goal here. i.e., lose 20 pounds, run a marathon, stop smoking, etc."></textarea>    
+                </div>
+                <hr/>
+                <div class="goal-input-row-textarea d-flex flex-column">
+                    <label>How do you currently feel about your progress?</label>
+                    <div class="health-mood-tracker create-health-mood-tracker">
+                        <div class="smileys">
+                            <div class="smiley mood-0" data-mood="0">
+                                <img class="img-fluid" src="../assets/images/mood-smiley-0.png" alt="feeling very bad">
+                            </div>
+                            <div class="smiley mood-1" data-mood="1">
+                                <img class="img-fluid" src="../assets/images/mood-smiley-1.png" alt="feeling bad">
+                            </div>
+                            <div class="smiley mood-2 selected" data-mood="2">
+                                <img class="img-fluid" src="../assets/images/mood-smiley-2.png" alt="feeling neutral">
+                            </div>
+                            <div class="smiley mood-3" data-mood="3">
+                                <img class="img-fluid" src="../assets/images/mood-smiley-3.png" alt="feeling good">
+                            </div>
+                            <div class="smiley mood-4" data-mood="4">
+                                <img class="img-fluid" src="../assets/images/mood-smiley-4.png" alt="feeling very good">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Completion Timeline (shared by all goal types) -->
+            <div class="goal-completion-timeline" style="display: none;">
+                <hr/>
+                <div class="goal-timeline-row">
+                    <label>Achieve in</label>
+                    <input type="number" min="1" max="365" class="goal-input create-completion-timeline-input" placeholder="30" value="30">
+                    <span class="timeline-unit">days</span>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-6" style="padding-right:7px;">
+                    <button class="cancel btn btn-outline-dark btn-md btn-block create-goal-cancel">
+                        Cancel
+                    </button>
+                </div>
+                <div class="col-6" style="padding-left:7px;">
+                    <button class="submit btn btn-success btn-md btn-block create-goal-submit" disabled>
+                        Create Goal
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="main-content">
             <div class="tab-content">
 
@@ -900,113 +1077,6 @@
                         </div>
                     </div>
 
-                    <!-- MOOD TRACKER-->
-                    <h2 id="mood-tracker-heading" style="margin-top:25px;">Mood Tracker</h2>
-                    <div id="mood-tracker-area">
-
-                        <div class="row">
-                            <div class="col-12">
-
-                                <div class="smileys">
-                                    <div class="smiley mood-0">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-0.png"
-                                            alt="feeling very bad">
-                                    </div>
-                                    <div class="smiley mood-1">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-1.png"
-                                            alt="feeling bad">
-
-                                    </div>
-                                    <div class="smiley mood-2 selected">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-2.png"
-                                            alt="feeling neutral">
-
-                                    </div>
-                                    <div class="smiley mood-3">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-3.png"
-                                            alt="feeling good">
-
-                                    </div>
-                                    <div class="smiley mood-4">
-                                        <img class="img-fluid" src="../assets/images/mood-smiley-4.png"
-                                            alt="feeling very good">
-
-                                    </div>
-                                </div>
-
-                                <div class="response">
-                                    <textarea class="text" rows="4" placeholder="Anything on your mind?"></textarea>
-
-                                    <button class="submit btn btn-success float-right">
-                                        Add to Habit Log
-                                    </button>
-                                </div>
-
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- HABIT LOG-->
-                    <h2 id="habit-log-heading" style="margin-top:25px;">Habit Log</h2>
-                    <div id="habit-log-area">
-                        <div class="row">
-                            <div class="col-12">
-
-                                <div class="initial-instructions">
-                                    <p>
-                                        As you click action logging buttons, a record will be made in this area of each
-                                        click.
-                                        Change what shows here in the app
-                                        <a class="settings-tab-toggler" href="#">Settings</a>.
-                                    </p>
-
-
-                                </div>
-
-                                <div id="habit-log">
-
-                                    <!--div class="item">
-                                    <p class="title">
-                                    
-
-                                    </p>
-                                    
-                                    <p class="cost-date" style="text-align:center;color:D8D8D8">
-                                    <span class="dayOfTheWeek">Monday,</span>&nbsp;<span class="">1/17/2019</span>
-                                    </p>
-                                <hr/>
-                                </div-->
-                                    <!--div class="item">
-                                    <p class="title">
-                                    
-                                    </p>
-                                    
-                                    <p class="goal-date" style="text-align:center;color:D8D8D8">
-                                    <span class="dayOfTheWeek">Monday,</span>&nbsp;<span class="">1/17/2019</span>
-                                    </p>
-                                <hr/>
-                                </div-->
-
-                                    <!--div class="item">
-                                    <p class="title">
-                                        You waited <b><span class="timeElapsed">{[time elapsed]}</span></b> 
-                                        <br/>to <span class="actionGerund">do or buy</span> it!
-                                    </p>
-                                    
-                                    <p class="goal-date" style="text-align:center;color:D8D8D8">
-                                        <span class="dayOfTheWeek">Monday,</span>&nbsp;<span class="">1/17/2019</span>
-                                    </p>
-                                    <hr/>
-                                </div-->
-                                </div>
-                                <div id="habit-log-show-more" class="text-center d-none">
-                                    <button href="#" class="btn btn-md btn-info" style="margin-top:15px;">Show
-                                        More</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!--start settings tab area-->
@@ -1336,19 +1406,20 @@
                             </div>
                             <div class="baseline-intro">
                                 <h2 class="text-left">Better Later</h2>
-                                    <h4 class="mt-0">The verifiably private Habit Tracking app</h4>
+                                <h3 class="mt-0">The easy-going Habit Tracking app</h3>
+                                <h4 class="mt-0">Accomplish your goals incrementally, non-judgementally, and  discreetly.</h4>
                                 
                             </div>
 
 
                             <div class="baseline-questionnaire show">
                                 <div class="baseline-intro baseline-heading mb-0">
-                                    <h2 class="text-muted mb-0">
+                                    <h2 class="text-muted mb-0" style="font-size: .8rem;">
                                         Baseline Questionnaire
                                     </h2>
                                 </div>
                                 <!-- question 1: specific habit in mind -->
-                                <div class="question-set">
+                                <div class="question-set mt-0">
                                     <div class="question">
                                         <h4 class="mt-0"><span>1. Do you have a specific habit in mind to track?</span></h4>
                                         <div class="big-choice-container">
@@ -1445,175 +1516,126 @@
                                     </div>
                                 </div>
 
-                                <!-- USAGE GOAL Question Set -->
-                                <div class="question-set serious goal-question-set usage-goal-questions" style="display: none;">
-                                    <h4 class="mt-0">Create a <span style="font-weight:bold">usage goal</span></h4>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Measure usage</label>
-                                        <select class="timeline-select usage-timeline-select">
-                                            <option value="day">per day</option>
-                                            <option value="week" selected>per week</option>
-                                            <option value="month">per month</option>
-                                        </select>
-                                    </div>
-                                    <hr/>
-                                    <div class="goal-input-row">
-                                        <label>Current amount</label>
-                                        <input type="number" min="0" max="500" class="goal-input amountDonePerWeek" placeholder="0">
-                                    </div>
-                                    
-                                    <div class="goal-input-row">
-                                        <label>Goal amount</label>
-                                        <input type="number" min="0" max="500" class="goal-input goalDonePerWeek" placeholder="0">
-                                    </div>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Achieve in</label>
-                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
-                                        <span class="timeline-unit">days</span>
-                                    </div>
-
-                                    <button class="btn btn-lg btn-block btn-outline-success submit"
-                                            style="margin-bottom:0px;">
-                                        Create goal
-                                    </button>
-
-                                </div>
-
-                                <!-- TIME GOAL Question Set -->
-                                <div class="question-set serious goal-question-set time-goal-questions" style="display: none;">
-                                    <h4 class="mt-0">Create a <span style="font-weight:bold">time goal</span></h4>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label class="text-muted">Measure time</label>
-                                        <select class="timeline-select time-timeline-select">
-                                            <option value="day">per day</option>
-                                            <option value="week" selected>per week</option>
-                                            <option value="month">per month</option>
-                                        </select>
-                                    </div>
-                                    <hr/>
-                                    
-                                    <div class="goal-input-row">
-                                        <label>Current average</label>
-                                        <div class="time-picker-inline">
-                                            <input type="number" min="0" max="23" class="goal-input time-input currentTimeHours" placeholder="0">
-                                            <span class="time-unit">h</span>
-                                            <input type="number" min="0" max="59" class="goal-input time-input currentTimeMinutes" placeholder="0">
-                                            <span class="time-unit">m</span>
+                                <!-- question 4: current status baseline -->
+                                <div class="question-set serious current-status-question" style="display: none;">
+                                    <div class="question">
+                                        <h4 class="mt-0"><span>4. What's your current status?</span></h4>
+                                        <p class="text-muted" style="font-size: 0.9rem;">Help us understand where you're starting from.</p>
+                                        
+                                        <!-- Status Type Selector -->
+                                        <div class="status-type-selector">
+                                            <select class="status-type-dropdown" id="current-status-type-select">
+                                                <option value="" disabled selected>Select what to report...</option>
+                                            </select>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="goal-input-row">
-                                        <label>Goal average</label>
-                                        <div class="time-picker-inline">
-                                            <input type="number" min="0" max="23" class="goal-input time-input goalTimeHours" placeholder="0">
-                                            <span class="time-unit">h</span>
-                                            <input type="number" min="0" max="59" class="goal-input time-input goalTimeMinutes" placeholder="0">
-                                            <span class="time-unit">m</span>
+                                        
+                                        <!-- Usage Status Inputs -->
+                                        <div class="status-type-inputs usage-status-inputs" style="display: none;">
+                                            <hr/>
+                                            <div class="goal-timeline-row">
+                                                <label>I currently do it</label>
+                                                <input type="number" min="0" max="500" class="goal-input baseline-amountDonePerWeek" placeholder="0">
+                                                <select class="timeline-select baseline-usage-timeline-select">
+                                                    <option value="day">per day</option>
+                                                    <option value="week" selected>per week</option>
+                                                    <option value="month">per month</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Achieve in</label>
-                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
-                                        <span class="timeline-unit">days</span>
-                                    </div>
-
-                                    <button class="btn btn-lg btn-block btn-outline-success submit"
-                                            style="margin-bottom:0px;">
-                                        Create goal
-                                    </button>
-                                    
-                                </div>
-
-                                <!-- SPENDING GOAL Question Set -->
-                                <div class="question-set serious goal-question-set spending-goal-questions" style="display: none;">
-                                    <h4 class="mt-0">Create a <span style="font-weight:bold">spending goal</span></h4>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Measure cost</label>
-                                        <select class="timeline-select spending-timeline-select">
-                                            <option value="day">per day</option>
-                                            <option value="week" selected>per week</option>
-                                            <option value="month">per month</option>
-                                        </select>
-                                    </div>
-                                    <hr/>
-                                    <div class="goal-input-row">
-                                        <label>Current spending</label>
-                                        <div class="money-input-wrapper">
-                                            <span class="currency-symbol">$</span>
-                                            <input type="number" min="0" max="10000" class="goal-input money-input amountSpentPerWeek" placeholder="0">
+                                        
+                                        <!-- Time Status Inputs -->
+                                        <div class="status-type-inputs time-status-inputs" style="display: none;">
+                                            <hr/>
+                                            <div class="goal-timeline-row">
+                                                <label>I currently spend</label>
+                                                <div class="time-picker-container baseline-time-picker">
+                                                    <select class="time-picker-hour baseline-currentTimeHours">
+                                                        <option value="0">0</option>
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                        <option value="6">6</option>
+                                                        <option value="7">7</option>
+                                                        <option value="8">8</option>
+                                                        <option value="9">9</option>
+                                                        <option value="10">10</option>
+                                                        <option value="11">11</option>
+                                                        <option value="12">12</option>
+                                                    </select>
+                                                    <span class="label">h</span>
+                                                    <select class="time-picker-minute baseline-currentTimeMinutes">
+                                                        <option value="0">00</option>
+                                                        <option value="15">15</option>
+                                                        <option value="30">30</option>
+                                                        <option value="45">45</option>
+                                                    </select>
+                                                    <span class="label">m</span>
+                                                </div>
+                                                <select class="timeline-select baseline-time-timeline-select">
+                                                    <option value="day">per day</option>
+                                                    <option value="week" selected>per week</option>
+                                                    <option value="month">per month</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="goal-input-row">
-                                        <label>Goal spending</label>
-                                        <div class="money-input-wrapper">
-                                            <span class="currency-symbol">$</span>
-                                            <input type="number" min="0" max="10000" class="goal-input money-input goalSpentPerWeek" placeholder="0">
+                                        
+                                        <!-- Spending Status Inputs -->
+                                        <div class="status-type-inputs spending-status-inputs" style="display: none;">
+                                            <hr/>
+                                            <div class="goal-timeline-row">
+                                                <label>I currently spend</label>
+                                                <label class="spending-input-label"><input type="number" min="0" class="goal-input baseline-amountSpentPerWeek" placeholder="0" /> $</label>
+                                                <select class="timeline-select baseline-spending-timeline-select">
+                                                    <option value="day">per day</option>
+                                                    <option value="week" selected>per week</option>
+                                                    <option value="month">per month</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Achieve in</label>
-                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
-                                        <span class="timeline-unit">days</span>
-                                    </div>
-
-                                    <button class="btn btn-lg btn-block btn-outline-success submit"
-                                            style="margin-bottom:0px;">
-                                        Create goal
-                                    </button>
-                                </div>
-
-                                <!-- WELLNESS / HEALTH GOAL Question Set -->
-                                <div class="question-set serious goal-question-set health-goal-questions" style="display: none;">
-                                    <h4 class="mt-0">Create a <span style="font-weight:bold">wellbeing goal</span></h4>
-                                    <hr/>
-                                    <div class="goal-input-row-textarea d-flex flex-column">
-                                        <textarea class="text tenet-text" rows="4" placeholder="Type your goal here. i.e., lose 20 pounds, run a marathon, stop smoking, etc."></textarea>    
-                                    </div>
-                                    <hr/>
-
-                                    <div class="goal-input-row-textarea d-flex flex-column">
-                                        <label>How do you currently feel about your progress?</label>
-                                       
-                                        <div class="health-mood-tracker">
-                                            <div class="smileys">
-                                                <div class="smiley mood-0">
-                                                    <img class="img-fluid" src="../assets/images/mood-smiley-0.png" alt="feeling very bad">
-                                                </div>
-                                                <div class="smiley mood-1">
-                                                    <img class="img-fluid" src="../assets/images/mood-smiley-1.png" alt="feeling bad">
-                                                </div>
-                                                <div class="smiley mood-2 selected">
-                                                    <img class="img-fluid" src="../assets/images/mood-smiley-2.png" alt="feeling neutral">
-                                                </div>
-                                                <div class="smiley mood-3">
-                                                    <img class="img-fluid" src="../assets/images/mood-smiley-3.png" alt="feeling good">
-                                                </div>
-                                                <div class="smiley mood-4">
-                                                    <img class="img-fluid" src="../assets/images/mood-smiley-4.png" alt="feeling very good">
+                                        
+                                        <!-- Wellness Status Inputs -->
+                                        <div class="status-type-inputs wellness-status-inputs" style="display: none;">
+                                            <hr/>
+                                            <div class="goal-input-row-textarea d-flex flex-column">
+                                                <textarea class="text baseline-wellness-text" rows="3" placeholder="Describe how you're feeling about this habit..."></textarea>    
+                                            </div>
+                                            <hr/>
+                                            <div class="goal-input-row-textarea d-flex flex-column">
+                                                <label>How do you currently feel?</label>
+                                                <div class="health-mood-tracker baseline-mood-tracker">
+                                                    <div class="smileys">
+                                                        <div class="smiley mood-0" data-mood="0">
+                                                            <img class="img-fluid" src="../assets/images/mood-smiley-0.png" alt="feeling very bad">
+                                                        </div>
+                                                        <div class="smiley mood-1" data-mood="1">
+                                                            <img class="img-fluid" src="../assets/images/mood-smiley-1.png" alt="feeling bad">
+                                                        </div>
+                                                        <div class="smiley mood-2 selected" data-mood="2">
+                                                            <img class="img-fluid" src="../assets/images/mood-smiley-2.png" alt="feeling neutral">
+                                                        </div>
+                                                        <div class="smiley mood-3" data-mood="3">
+                                                            <img class="img-fluid" src="../assets/images/mood-smiley-3.png" alt="feeling good">
+                                                        </div>
+                                                        <div class="smiley mood-4" data-mood="4">
+                                                            <img class="img-fluid" src="../assets/images/mood-smiley-4.png" alt="feeling very good">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <textarea class="text mood-comment-text" rows="2" placeholder="Any thoughts on how you're doing? (optional)"></textarea>
+                                            <button class="btn btn-md btn-outline-success baseline-wellness-submit mt-2">
+                                                <i class="fas fa-plus"></i>&nbsp;Add to Habit Log
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Save button for non-wellness inputs -->
+                                        <div class="baseline-status-save-row" style="display: none;">
+                                            <button class="btn btn-md btn-block btn-outline-primary baseline-status-save mt-3">
+                                                Save Current Status
+                                            </button>
                                         </div>
                                     </div>
-                                    <hr/>
-                                    <div class="goal-timeline-row">
-                                        <label>Achieve in</label>
-                                        <input type="number" min="1" max="365" class="goal-input completion-timeline-input" placeholder="30" value="30">
-                                        <span class="timeline-unit">days</span>
-                                    </div>
-
-                                    <button class="btn btn-lg btn-block btn-outline-success submit"
-                                            style="margin-bottom:0px;">
-                                        Create goal
-                                    </button>
-                                    
                                 </div>
 
                             </div>
@@ -1625,9 +1647,98 @@
                 <div class="tab-pane" id="goals-content">
                     <div class="row">
                         <div class="col-12">
-                            <h3 class="text-center mt-4 mb-4">Your Behavioral Goals</h3>
+                            <!-- Create Goal Button -->
+                            <button id="create-goal-btn" class="btn btn-lg btn-block btn-outline-primary create-goal-btn mb-4">
+                                <i class="far fa-calendar-plus"></i>&nbsp;&nbsp;Create a Goal
+                            </button>
+                            
+                            <div class="goals-section-header">
+                                <h3 class="text-center mt-4 mb-2">
+                                    <i class="fas fa-heart"></i> Wellbeing Goals
+                                </h3>
+                                <p class="goals-section-subtitle text-center text-muted">Track how you feel about your personal wellness journey</p>
+                            </div>
+                            <div id="wellbeing-goals-list" class="wellbeing-goals-container">
+                                <p class="text-center text-muted">No wellbeing goals created yet.</p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="goals-section-header">
+                                <h3 class="text-center mt-4 mb-2">
+                                    <i class="fas fa-chart-line"></i> Quantifiable Goals
+                                </h3>
+                                <p class="goals-section-subtitle text-center text-muted">Follow your personalized schedule to reach measurable targets</p>
+                            </div>
                             <div id="behavioral-goals-list" class="behavioral-goals-container">
-                                <p class="text-center text-muted">No behavioral goals created yet. Create your first goal in the Baseline tab.</p>
+                                <p class="text-center text-muted">No quantifiable goals created yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Journal tab area -->
+                <div class="tab-pane" id="journal-content">
+                    <div class="row">
+                        <div class="col-12">
+                            <h2 class="text-center">Journal</h2>
+                            
+                            <!-- MOOD TRACKER-->
+                            <h3 id="mood-tracker-heading" class="text-center mt-4">How are you feeling?</h3>
+                            <div id="mood-tracker-area">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="smileys">
+                                            <div class="smiley mood-0">
+                                                <img class="img-fluid" src="../assets/images/mood-smiley-0.png"
+                                                    alt="feeling very bad">
+                                            </div>
+                                            <div class="smiley mood-1">
+                                                <img class="img-fluid" src="../assets/images/mood-smiley-1.png"
+                                                    alt="feeling bad">
+                                            </div>
+                                            <div class="smiley mood-2 selected">
+                                                <img class="img-fluid" src="../assets/images/mood-smiley-2.png"
+                                                    alt="feeling neutral">
+                                            </div>
+                                            <div class="smiley mood-3">
+                                                <img class="img-fluid" src="../assets/images/mood-smiley-3.png"
+                                                    alt="feeling good">
+                                            </div>
+                                            <div class="smiley mood-4">
+                                                <img class="img-fluid" src="../assets/images/mood-smiley-4.png"
+                                                    alt="feeling very good">
+                                            </div>
+                                        </div>
+                                        <div class="response">
+                                            <textarea class="text" rows="3" placeholder="Anything on your mind?"></textarea>
+                                            <button class="submit btn btn-success btn-block mt-2">
+                                                <i class="fas fa-plus"></i>&nbsp;Add to Journal
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- HABIT LOG-->
+                            <h3 id="habit-log-heading" class="text-center mt-4">Habit Log</h3>
+                            <div id="habit-log-area">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="initial-instructions">
+                                            <p>
+                                                As you click action logging buttons, a record will be made here.
+                                                Change what shows here in the app
+                                                <a class="settings-tab-toggler" href="#">Settings</a>.
+                                            </p>
+                                        </div>
+                                        <div id="habit-log">
+                                            <!-- Habit log entries will be populated here -->
+                                        </div>
+                                        <div id="habit-log-show-more" class="text-center d-none">
+                                            <button href="#" class="btn btn-md btn-info" style="margin-top:15px;">Show More</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1660,6 +1771,17 @@
                                     <span class="desires-increase d-none">
                                         Set Goal
                                     </span>
+                                </p>
+                            </a>
+                        </div>
+
+                        <div class="button-group">
+                            <a id="create-goal-button" href="#">
+                                <div class="icon">
+                                    <i class="far fa-calendar-plus fa-3x"></i>
+                                </div>
+                                <p class="button-text">
+                                    Goal
                                 </p>
                             </a>
                         </div>
