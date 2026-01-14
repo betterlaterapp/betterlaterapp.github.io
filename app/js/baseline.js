@@ -53,13 +53,13 @@ var BaselineModule = (function() {
         // Make goal button click (quantifiable - usage, time, spending)
         $(document).on('click', '.baseline-make-goal-btn.quantifiable-btn', function(e) {
             e.preventDefault();
-            openGoalDialogWithSeed('quantifiable');
+            createGoalFromBaseline('quantifiable');
         });
         
         // Make goal button click (qualitative - wellness)
         $(document).on('click', '.baseline-make-goal-btn.qualitative-btn', function(e) {
             e.preventDefault();
-            openGoalDialogWithSeed('qualitative');
+            createGoalFromBaseline('qualitative');
         });
 
         // Save baseline values on any input change
@@ -227,26 +227,52 @@ var BaselineModule = (function() {
         }
         
         // Restore saved baseline values for question 4
+        var hasStatusValue = false;
         if (baseline.amountDonePerWeek) {
             $('.baseline-amountDonePerWeek').val(baseline.amountDonePerWeek);
+            hasStatusValue = true;
         }
         if (baseline.usageTimeline) {
             $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
         }
         if (baseline.currentTimeHours) {
             $('.baseline-currentTimeHours').val(baseline.currentTimeHours);
+            hasStatusValue = true;
         }
         if (baseline.currentTimeMinutes) {
             $('.baseline-currentTimeMinutes').val(baseline.currentTimeMinutes);
+            hasStatusValue = true;
         }
         if (baseline.timeTimeline) {
             $('.baseline-time-timeline-select').val(baseline.timeTimeline);
         }
         if (baseline.amountSpentPerWeek) {
             $('.baseline-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+            hasStatusValue = true;
         }
         if (baseline.spendingTimeline) {
             $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);
+        }
+        if (baseline.wellnessMood !== undefined || (baseline.wellnessText && baseline.wellnessText !== '')) {
+            // For wellness, we usually show Q5 if they've interacted with the mood tracker
+            // or if statusType was set to wellness.
+            if (baseline.statusType === 'wellness') {
+                hasStatusValue = true;
+            }
+        }
+
+        // --- Determine the active status type if not saved ---
+        var activeStatusType = baseline.statusType;
+        if (!activeStatusType) {
+            if (baseline.valuesTimesDone) activeStatusType = 'usage';
+            else if (baseline.valuesTime) activeStatusType = 'time';
+            else if (baseline.valuesMoney) activeStatusType = 'spending';
+            else if (baseline.valuesHealth) activeStatusType = 'wellness';
+        }
+
+        // Show question 5 if any status value exists or if baseline has been submitted
+        if (hasStatusValue && activeStatusType) {
+            showMakeGoalQuestion(activeStatusType);
         }
     }
     
@@ -413,6 +439,7 @@ var BaselineModule = (function() {
             jsonObject.baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
         }
         
+        jsonObject.baseline.statusType = selectedType;
         StorageModule.setStorageObject(jsonObject);
         NotificationsModule.createNotification('Baseline status saved!', null, { type: 'baseline_saved' });
     }
@@ -442,61 +469,46 @@ var BaselineModule = (function() {
     }
     
     /**
-     * Open goal dialog with seeded values from baseline
+     * Directly create a behavioral goal from baseline values and redirect to goals page
      * @param {string} goalType - 'quantifiable' or 'qualitative'
      */
-    function openGoalDialogWithSeed(goalType) {
+    function createGoalFromBaseline(goalType) {
         var selectedType = $('#current-status-type-select').val();
-        var seedData = {};
+        var behavioralGoal = null;
         
         if (goalType === 'qualitative' || selectedType === 'wellness') {
-            // For wellness/qualitative, seed with the wellness text
-            seedData = {
-                type: 'health',
-                wellnessText: $('.baseline-wellness-text').val() || '',
-                mood: $('.baseline-mood-tracker .smiley.selected').data('mood') || 2,
-                completionDays: 30 // Default 30 days for wellness goals
-            };
+            // For wellness/qualitative
+            var tenetText = $('.baseline-wellness-text').val() || 'Baseline wellness goal';
+            var selectedMood = $('.baseline-mood-tracker .smiley.selected').data('mood');
+            if (selectedMood === undefined) selectedMood = 2;
+            
+            behavioralGoal = BehavioralGoalsModule.createQualitativeGoal(tenetText, 30, selectedMood, '');
         } else if (selectedType === 'usage') {
             var amount = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
-            var timeline = $('.baseline-usage-timeline-select').val();
-            seedData = {
-                type: 'usage',
-                currentAmount: amount,
-                goalAmount: amount,
-                timeline: timeline,
-                completionDays: timelineToDays(timeline)
-            };
+            var timelineDays = timelineToDays($('.baseline-usage-timeline-select').val());
+            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('times', amount, amount, timelineDays, 30);
         } else if (selectedType === 'time') {
             var hours = parseInt($('.baseline-currentTimeHours').val()) || 0;
             var minutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
-            var timeline = $('.baseline-time-timeline-select').val();
-            seedData = {
-                type: 'time',
-                currentHours: hours,
-                currentMinutes: minutes,
-                goalHours: hours,
-                goalMinutes: minutes,
-                timeline: timeline,
-                completionDays: timelineToDays(timeline)
-            };
+            var amount = (hours * 60) + minutes;
+            var timelineDays = timelineToDays($('.baseline-time-timeline-select').val());
+            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('minutes', amount, amount, timelineDays, 30);
         } else if (selectedType === 'spending') {
             var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
-            var timeline = $('.baseline-spending-timeline-select').val();
-            seedData = {
-                type: 'spending',
-                currentAmount: amount,
-                goalAmount: amount,
-                timeline: timeline,
-                completionDays: timelineToDays(timeline)
-            };
+            var timelineDays = timelineToDays($('.baseline-spending-timeline-select').val());
+            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('dollars', amount, amount, timelineDays, 30);
         }
         
-        // Call BehavioralGoalsModule to open dialog with seed data
-        if (typeof BehavioralGoalsModule !== 'undefined' && BehavioralGoalsModule.openCreateGoalDialogWithSeed) {
-            BehavioralGoalsModule.openCreateGoalDialogWithSeed(seedData);
-        } else {
-            console.error('BehavioralGoalsModule.openCreateGoalDialogWithSeed is not available');
+        if (behavioralGoal) {
+            // Success! Navigate to goals tab and refresh list
+            $('.goals-tab-toggler').first().click(); // Use first() in case there are multiple togglers (hamburger + sidebar)
+            
+            // Give it a moment to switch tabs before rendering
+            setTimeout(function() {
+                BehavioralGoalsModule.renderBehavioralGoalsList();
+            }, 100);
+            
+            NotificationsModule.createNotification('Goal created successfully!', null, { type: 'goal_created' });
         }
     }
     

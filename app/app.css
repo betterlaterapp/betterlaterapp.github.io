@@ -1021,6 +1021,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     margin: 0;
     font-weight: 400;
     letter-spacing: 0.3px;
+    gap: 12px;
 }
 
 .stats-category .category-toggle label strong {
@@ -1028,10 +1029,11 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 }
 
 .stats-category .category-toggle .form-check-input {
-    margin-right: 12px;
+    margin: 0;
     width: 18px;
     height: 18px;
     cursor: pointer;
+    padding: 0;
 }
 
 .stats-category .category-options {
@@ -1057,6 +1059,15 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     font-size: 0.95rem;
     color: #495057;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding-left: 0;
+    gap: 12px;
+}
+
+.stats-category .category-options .form-check-input {
+    margin: 0;
+    padding: 0;
 }
 
 /* Category color variations */
@@ -1552,7 +1563,7 @@ input[type="number"] {
 }
 
 .use.log-more-info .time-picker-container .form-check-input {
-    margin-left: 0;
+    margin: 0;
     transform: scale(1.3);
 }
 

@@ -812,86 +812,6 @@ var BehavioralGoalsModule = (function () {
     }
 
     /**
-     * Open create goal dialog with seeded values from baseline
-     * @param {Object} seedData - Data to seed the dialog with
-     * @param {string} seedData.type - Goal type (usage, time, spending, health)
-     * @param {number} seedData.currentAmount - Current amount (for quantifiable)
-     * @param {number} seedData.goalAmount - Goal amount (for quantifiable)
-     * @param {string} seedData.timeline - Measurement timeline (day, week, month)
-     * @param {number} seedData.completionDays - Completion timeline in days
-     * @param {string} seedData.wellnessText - Wellness goal text (for qualitative)
-     * @param {number} seedData.mood - Initial mood value (for qualitative)
-     */
-    function openCreateGoalDialogWithSeed(seedData) {
-        // First populate the dropdown
-        populateGoalTypeDropdown();
-        
-        // Set the goal type
-        if (seedData.type) {
-            $('#create-goal-type-select').val(seedData.type);
-            handleGoalTypeChange();
-        }
-        
-        // Seed the appropriate inputs based on type
-        if (seedData.type === 'usage') {
-            if (seedData.currentAmount !== undefined) {
-                $('.create-amountDonePerWeek').val(seedData.currentAmount);
-            }
-            if (seedData.goalAmount !== undefined) {
-                $('.create-goalDonePerWeek').val(seedData.goalAmount);
-            }
-            if (seedData.timeline) {
-                $('.create-usage-timeline-select').val(seedData.timeline);
-            }
-        } else if (seedData.type === 'time') {
-            if (seedData.currentHours !== undefined) {
-                $('.create-currentTimeHours').val(seedData.currentHours);
-            }
-            if (seedData.currentMinutes !== undefined) {
-                $('.create-currentTimeMinutes').val(seedData.currentMinutes);
-            }
-            if (seedData.goalHours !== undefined) {
-                $('.create-goalTimeHours').val(seedData.goalHours);
-            }
-            if (seedData.goalMinutes !== undefined) {
-                $('.create-goalTimeMinutes').val(seedData.goalMinutes);
-            }
-            if (seedData.timeline) {
-                $('.create-time-timeline-select').val(seedData.timeline);
-            }
-        } else if (seedData.type === 'spending') {
-            if (seedData.currentAmount !== undefined) {
-                $('.create-amountSpentPerWeek').val(seedData.currentAmount);
-            }
-            if (seedData.goalAmount !== undefined) {
-                $('.create-goalSpentPerWeek').val(seedData.goalAmount);
-            }
-            if (seedData.timeline) {
-                $('.create-spending-timeline-select').val(seedData.timeline);
-            }
-        } else if (seedData.type === 'health') {
-            if (seedData.wellnessText) {
-                $('.create-tenet-text').val(seedData.wellnessText);
-            }
-            if (seedData.mood !== undefined) {
-                $('.create-health-mood-tracker .smiley').removeClass('selected');
-                $('.create-health-mood-tracker .smiley.mood-' + seedData.mood).addClass('selected');
-            }
-        }
-        
-        // Set completion timeline (Achieve in) based on seeded value
-        if (seedData.completionDays !== undefined) {
-            $('.create-completion-timeline-input').val(seedData.completionDays);
-        }
-        
-        // Enable submit button
-        $('.create-goal-submit').prop('disabled', false);
-        
-        // Use UIModule to open dialog with overlay
-        UIModule.openClickDialog('.create-goal');
-    }
-
-    /**
      * Close create goal dialog
      */
     function closeCreateGoalDialog() {
@@ -915,19 +835,51 @@ var BehavioralGoalsModule = (function () {
      */
     function handleGoalTypeChange() {
         var selectedType = $('#create-goal-type-select').val();
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var baseline = jsonObject.baseline;
         
         // Hide all input sections
         $('.goal-type-inputs').hide();
         
-        // Show relevant input section
+        // Show relevant input section and populate baseline values
         if (selectedType === 'usage') {
             $('.usage-goal-inputs').show();
+            if (baseline.amountDonePerWeek !== undefined) {
+                $('.create-amountDonePerWeek').val(baseline.amountDonePerWeek);
+                $('.create-goalDonePerWeek').val(baseline.amountDonePerWeek);
+            }
+            if (baseline.usageTimeline) {
+                $('.create-usage-timeline-select').val(baseline.usageTimeline);
+                updateCompletionTimelineFromMeasurement($('.create-usage-timeline-select'));
+            }
         } else if (selectedType === 'time') {
             $('.time-goal-inputs').show();
+            if (baseline.currentTimeHours !== undefined) {
+                $('.create-currentTimeHours').val(baseline.currentTimeHours);
+                $('.create-goalTimeHours').val(baseline.currentTimeHours);
+            }
+            if (baseline.currentTimeMinutes !== undefined) {
+                $('.create-currentTimeMinutes').val(baseline.currentTimeMinutes);
+                $('.create-goalTimeMinutes').val(baseline.currentTimeMinutes);
+            }
+            if (baseline.timeTimeline) {
+                $('.create-time-timeline-select').val(baseline.timeTimeline);
+                updateCompletionTimelineFromMeasurement($('.create-time-timeline-select'));
+            }
         } else if (selectedType === 'spending') {
             $('.spending-goal-inputs').show();
+            if (baseline.amountSpentPerWeek !== undefined) {
+                $('.create-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+                $('.create-goalSpentPerWeek').val(baseline.amountSpentPerWeek);
+            }
+            if (baseline.spendingTimeline) {
+                $('.create-spending-timeline-select').val(baseline.spendingTimeline);
+                updateCompletionTimelineFromMeasurement($('.create-spending-timeline-select'));
+            }
         } else if (selectedType === 'health') {
             $('.health-goal-inputs').show();
+            // Default completion for health is 30 days
+            $('.create-completion-timeline-input').val(30);
         }
         
         // Show completion timeline if a type is selected
@@ -938,6 +890,16 @@ var BehavioralGoalsModule = (function () {
             $('.goal-completion-timeline').hide();
             $('.create-goal-submit').prop('disabled', true);
         }
+    }
+
+    /**
+     * Update the "Achieve in" (completion timeline) value based on measurement timeline selection
+     * @param {jQuery} $select - The measurement timeline select element
+     */
+    function updateCompletionTimelineFromMeasurement($select) {
+        var timeline = $select.val();
+        var days = timelineToDays(timeline);
+        $('.create-completion-timeline-input').val(days);
     }
 
     /**
@@ -1044,6 +1006,11 @@ var BehavioralGoalsModule = (function () {
         // Goal type dropdown change
         $(document).on('change', '#create-goal-type-select', handleGoalTypeChange);
         
+        // Measurement timeline change (sync with completion timeline)
+        $(document).on('change', '.create-usage-timeline-select, .create-time-timeline-select, .create-spending-timeline-select', function() {
+            updateCompletionTimelineFromMeasurement($(this));
+        });
+        
         // Cancel button click
         $(document).on('click', '.create-goal-cancel', function(e) {
             e.preventDefault();
@@ -1083,7 +1050,6 @@ var BehavioralGoalsModule = (function () {
         renderBehavioralGoalsList: renderBehavioralGoalsList,
         timelineToDays: timelineToDays,
         openCreateGoalDialog: openCreateGoalDialog,
-        openCreateGoalDialogWithSeed: openCreateGoalDialogWithSeed,
         closeCreateGoalDialog: closeCreateGoalDialog,
         populateGoalTypeDropdown: populateGoalTypeDropdown
     };

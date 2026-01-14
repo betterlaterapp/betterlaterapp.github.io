@@ -174,7 +174,76 @@ var SettingsModule = (function () {
         if (StorageModule.hasStorageData()) {
             var jsonObject = StorageModule.retrieveStorageObject();
             initializeConditionalOptions(jsonObject.baseline);
+            updatePrerequisiteToggles(jsonObject);
         }
+    }
+
+    /**
+     * Disable/enable setting checkboxes based on missing prerequisite information
+     * @param {Object} jsonObject - The storage object
+     */
+    function updatePrerequisiteToggles(jsonObject) {
+        var baseline = jsonObject.baseline;
+        var stats = json ? json.statistics : null;
+
+        if (!stats) return;
+
+        // Helper to toggle disabled state and title attribute
+        function toggleOption(id, isDisabled, reason) {
+            var $input = $("#" + id);
+            var $label = $input.closest('label');
+            
+            $input.prop('disabled', isDisabled);
+            if (isDisabled) {
+                $label.css('opacity', '0.5');
+                $label.attr('title', reason);
+                // Also uncheck if disabled? The user might want to keep their preference 
+                // but the app won't show it anyway. Let's just disable for now.
+            } else {
+                $label.css('opacity', '1');
+                $label.removeAttr('title');
+            }
+        }
+
+        // 1. Weekly report: usage change vs. baseline
+        var hasUsageBaseline = baseline.amountDonePerWeek > 0;
+        toggleOption('useChangeVsBaselineDisplayed', !hasUsageBaseline, "Requires baseline usage amount");
+
+        // 2. Weekly report: usage this week vs. goal
+        var hasUsageGoal = baseline.goalDonePerWeek > 0;
+        toggleOption('useGoalVsThisWeekDisplayed', !hasUsageGoal, "Requires usage goal amount");
+
+        // 3. Weekly report: cost change vs. baseline
+        var hasCostBaseline = baseline.amountSpentPerWeek > 0;
+        toggleOption('costChangeVsBaselineDisplayed', !hasCostBaseline, "Requires baseline spending amount");
+
+        // 4. Weekly report: usage this week vs. goal
+        var hasCostGoal = baseline.goalSpentPerWeek > 0;
+        toggleOption('costGoalVsThisWeekDisplayed', !hasCostGoal, "Requires spending goal amount");
+
+        // 5. Longest Goal completed
+        var hasCompletedGoals = stats.goal.completedGoals > 0;
+        toggleOption('longestGoalDisplayed', !hasCompletedGoals, "Requires at least one completed goal");
+
+        // 6. Time until goal end
+        var hasActiveGoal = stats.goal.activeGoalUse || stats.goal.activeGoalBought || stats.goal.activeGoalBoth;
+        toggleOption('untilGoalEndDisplayed', !hasActiveGoal, "Requires an active goal timer");
+
+        // 7. Time since last 'did it'
+        var hasUsageActions = stats.use.clickCounter > 0;
+        toggleOption('sinceLastDoneDisplayed', !hasUsageActions, "Requires at least one 'did it' action");
+
+        // 8. Average time between 'did it'
+        var hasMultipleUsageActions = stats.use.clickCounter > 1;
+        toggleOption('avgBetweenDoneDisplayed', !hasMultipleUsageActions, "Requires at least two 'did it' actions");
+
+        // 9. Time since last 'spent'
+        var hasSpendingActions = stats.cost.clickCounter > 0;
+        toggleOption('sinceLastSpentDisplayed', !hasSpendingActions, "Requires at least one 'spent' action");
+
+        // 10. Average time between 'spent'
+        var hasMultipleSpendingActions = stats.cost.clickCounter > 1;
+        toggleOption('avgBetweenSpentDisplayed', !hasMultipleSpendingActions, "Requires at least two 'spent' actions");
     }
 
     function refreshSettingsUI() {
@@ -208,6 +277,9 @@ var SettingsModule = (function () {
 
         // Sync conditional (data-requires) items
         updateConditionalOptions();
+        
+        // Disable options with missing prerequisites
+        updatePrerequisiteToggles(jsonObject);
     }
 
     // (Habit log + report handlers consolidated into setupDisplayedOptionHandlers)
