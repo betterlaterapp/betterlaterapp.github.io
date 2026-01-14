@@ -164,15 +164,15 @@ var GoalsModule = (function () {
         var timestampSeconds = Math.round(date / 1000);
 
         // Get time selection from form
-        var requestedTimeEndHours = parseInt($(".goal.log-more-info select.time-picker-hour").val());
-        var requestedTimeEndMinutes = parseInt($(".goal.log-more-info select.time-picker-minute").val());
+        var requestedTimeEndHours = parseInt($(".wait.log-more-info select.time-picker-hour").val());
+        var requestedTimeEndMinutes = parseInt($(".wait.log-more-info select.time-picker-minute").val());
 
         // 12 am is actually the first hour in a day
         if (requestedTimeEndHours == 12) {
             requestedTimeEndHours = 0;
         }
         // Account for am vs pm from userfriendly version of time input
-        if ($(".goal.log-more-info select.time-picker-am-pm").val() == "PM") {
+        if ($(".wait.log-more-info select.time-picker-am-pm").val() == "PM") {
             requestedTimeEndHours = requestedTimeEndHours + 12;
         }
 
@@ -248,7 +248,7 @@ var GoalsModule = (function () {
                 TimersModule.adjustFibonacciTimerToBoxes("goal-timer");
             }
 
-            UIModule.closeClickDialog(".goal");
+            UIModule.closeClickDialog(".wait");
         } else {
             /* User selected a time on today (equal to or) prior to current time */
             alert("Please choose a time later than right now!");
@@ -260,7 +260,7 @@ var GoalsModule = (function () {
         var currHours = date.getHours(),
             currMinutes = date.getMinutes();
         if (currHours >= 12) {
-            $(".goal.log-more-info .time-picker-am-pm").val("PM");
+            $(".wait.log-more-info .time-picker-am-pm").val("PM");
             currHours = currHours % 12;
         }
 
@@ -275,15 +275,15 @@ var GoalsModule = (function () {
         } else {
             currHours += 1;
         }
-        $(".goal.log-more-info .time-picker-minute").val(currMinutesRounded);
-        $(".goal.log-more-info .time-picker-hour").val(currHours);
+        $(".wait.log-more-info .time-picker-minute").val(currMinutesRounded);
+        $(".wait.log-more-info .time-picker-hour").val(currHours);
     }
 
     function init(appJson) {
         json = appJson;
 
         // Set up event handlers
-        $(".goal.log-more-info button.submit").click(function () {
+        $(".wait.log-more-info button.submit").click(function () {
             handleGoalDialogSubmit(json);
         });
     }

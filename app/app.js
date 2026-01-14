@@ -683,8 +683,8 @@ $(document).ready(function () {
         //INITIALIZE GOAL DATE TIME PICKER
         $("#goalEndPicker").datepicker();
 
-        $(".goal.log-more-info button.cancel").click(function () {
-            UIModule.closeClickDialog(".goal");
+        $(".wait.log-more-info button.cancel").click(function () {
+            UIModule.closeClickDialog(".wait");
         });
 
         // App loaded successfully - cancel the fallback error screen

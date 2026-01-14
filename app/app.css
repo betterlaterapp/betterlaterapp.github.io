@@ -1532,12 +1532,12 @@ input[type="number"] {
 }
 
 /* Goal Dialog Specific */
-.goal.log-more-info #goalEndPicker {
+.wait.log-more-info #goalEndPicker {
     display: table;
     margin: 20px auto;
 }
 
-.goal.log-more-info .time-picker-container {
+.wait.log-more-info .time-picker-container {
     text-align: center;
 }
 

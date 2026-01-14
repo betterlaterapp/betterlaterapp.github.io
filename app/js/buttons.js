@@ -293,7 +293,7 @@ var ButtonsModule = (function() {
     }
     
     function handleGoalButtonClick() {
-        UIModule.openClickDialog(".goal");
+        UIModule.openClickDialog(".wait");
 
         // Setup goal dialog with current time
         GoalsModule.setupGoalDialog();
