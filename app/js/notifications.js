@@ -322,7 +322,7 @@ var NotificationsModule = (function () {
         var $logItem = $this.closest('.notification-log-item');
         var id = $logItem.data('id');
         
-        var jsonObject = JSON.parse(localStorage.esCrave);
+        var jsonObject = StorageModule.retrieveStorageObject();
         var activeGoals = jsonObject.action.filter(function (e) {
             return e.clickType == "goal" && e.status == 1;
         });

@@ -27,6 +27,13 @@ var welcomeHome;
 $(document).ready(function () {
     //CLIENT CAN USE STORAGE SYSTEM - html5
     if (typeof (Storage) !== "undefined") {
+        // Run migration if explicitly requested via update button OR if data is legacy (v0)
+        // This ensures users who update to this version of the code get the structural updates "out of the box"
+        if (localStorage.getItem('betterLaterPendingMigration') === 'true' || !StorageModule.isMigrated()) {
+            StorageModule.performOneTimeMigration();
+            localStorage.removeItem('betterLaterPendingMigration');
+        }
+
         // Initialize user activity tracking variable early
         var userWasInactive = false;
 
@@ -139,7 +146,6 @@ $(document).ready(function () {
                 "activeTab": "reports-content",
                 "liveStatsToDisplay": {
                     "goalButton": true,
-                    "createGoalButton": true,
                     "undoButton": true,
                     "untilGoalEnd": true,
                     "longestGoal": true,
@@ -654,10 +660,10 @@ $(document).ready(function () {
             //replace this with 
             //empty action table
             //basic stat display settings option table
-            var newJsonString = '{ "action": [], "behavioralGoals": [], ' +
+            var newJsonString = '{ "version": 1, "action": [], "behavioralGoals": [], ' +
                 '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"liveStatsToDisplay": { "goalButton": true, "createGoalButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true },' +
+                '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true },' +
                 '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
                 '} }';

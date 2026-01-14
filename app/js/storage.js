@@ -1,12 +1,112 @@
 var StorageModule = (function () {
     const STORAGE_KEY = 'esCrave';
 
+    /**
+     * Migrates the JSON storage object to the latest version
+     * This is intended to be called once during app initialization if needed.
+     */
+    function performOneTimeMigration() {
+        if (!hasStorageData()) return;
+
+        var jsonObject = JSON.parse(localStorage.esCrave);
+        var version = jsonObject.version || 0;
+
+        // Migration from legacy (v0) to v1
+        if (version < 1) {
+            console.log("Migrating storage from legacy to v1...");
+
+            // Ensure top-level keys exist
+            if (!jsonObject.behavioralGoals) jsonObject.behavioralGoals = [];
+            if (!jsonObject.notifications) jsonObject.notifications = [];
+
+            // Baseline updates
+            if (jsonObject.baseline) {
+                var b = jsonObject.baseline;
+
+                // Convert strings to numbers for counts
+                b.amountDonePerWeek = Number(b.amountDonePerWeek) || 0;
+                b.goalDonePerWeek = Number(b.goalDonePerWeek) || 0;
+                b.amountSpentPerWeek = Number(b.amountSpentPerWeek) || 0;
+                b.goalSpentPerWeek = Number(b.goalSpentPerWeek) || 0;
+
+                // Add missing timeline/time fields
+                if (b.usageTimeline === undefined) b.usageTimeline = 'week';
+                if (b.spendingTimeline === undefined) b.spendingTimeline = 'week';
+                if (b.timeTimeline === undefined) b.timeTimeline = 'week';
+                if (b.currentTimeHours === undefined) b.currentTimeHours = 0;
+                if (b.currentTimeMinutes === undefined) b.currentTimeMinutes = 0;
+                if (b.goalTimeHours === undefined) b.goalTimeHours = 0;
+                if (b.goalTimeMinutes === undefined) b.goalTimeMinutes = 0;
+
+                // Add valuesTimesDone - default to true if they have usage data or useStats was relevant
+                if (b.valuesTimesDone === undefined) {
+                    b.valuesTimesDone = (b.amountDonePerWeek > 0 || b.useStatsIrrelevant === false);
+                }
+
+                // Remove redundant keys
+                delete b.useStatsIrrelevant;
+                delete b.costStatsIrrelevant;
+                delete b.timeStatsIrrelevant;
+            }
+
+            // Options updates
+            if (jsonObject.option) {
+                var opt = jsonObject.option;
+
+                // Live stats to display
+                if (opt.liveStatsToDisplay) {
+                    var live = opt.liveStatsToDisplay;
+                    if (live.waitButton === undefined) live.waitButton = true;
+                    if (live.undoButton === undefined) live.undoButton = true;
+                    if (live.moodTracker === undefined) {
+                        live.moodTracker = jsonObject.baseline ? !!jsonObject.baseline.valuesHealth : true;
+                    }
+                    if (live.timesDone === undefined) live.timesDone = true;
+                }
+
+                // Log items to display
+                if (opt.logItemsToDisplay) {
+                    var log = opt.logItemsToDisplay;
+                    if (log.bought === undefined) log.bought = true;
+                    if (log.mood === undefined) log.mood = true;
+                }
+
+                // Report items to display
+                if (opt.reportItemsToDisplay) {
+                    var rep = opt.reportItemsToDisplay;
+                    if (rep.useChangeVsLastWeek === undefined) rep.useChangeVsLastWeek = true;
+                    if (rep.costChangeVsLastWeek === undefined) rep.costChangeVsLastWeek = true;
+                }
+            }
+
+            jsonObject.version = 1;
+            setStorageObject(jsonObject);
+            console.log("Storage migration to v1 complete.");
+        }
+    }
+
+    /**
+     * Checks if the storage object has a version number
+     * @returns {boolean}
+     */
+    function isMigrated() {
+        if (!hasStorageData()) return true;
+        try {
+            var jsonObject = JSON.parse(localStorage.esCrave);
+            return jsonObject && typeof jsonObject.version !== 'undefined';
+        } catch (e) {
+            return false;
+        }
+    }
+
     function retrieveStorageObject(key) {
         if (key) {
             var currJsonString = localStorage[key];
+            if (!currJsonString) return null;
             var jsonObject = JSON.parse(currJsonString);
         } else {
             var currJsonString = localStorage.esCrave;
+            if (!currJsonString) return null;
             var jsonObject = JSON.parse(currJsonString);
         }
         return jsonObject;
@@ -144,6 +244,8 @@ var StorageModule = (function () {
         updateActionTable,
         changeGoalStatus,
         undoLastAction,
+        performOneTimeMigration,
+        isMigrated,
         STORAGE_KEY
     };
 })();
