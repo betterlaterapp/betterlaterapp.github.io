@@ -746,70 +746,7 @@ input[type="number"] {
         margin-bottom: 18px;
     }
 
-    /* Timeline row - inline label and dropdown */
-    .goal-timeline-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-
-    .goal-timeline-row label {
-        margin: 0;
-        font-size: 0.95rem;
-        color: #495057;
-    }
-
-    .timeline-select {
-        appearance: none;
-        -webkit-appearance: none;
-        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 6px 30px 6px 12px;
-        font-size: 0.9rem;
-        color: #495057;
-        cursor: pointer;
-        min-width: 120px;
-    }
-
-    .timeline-select:focus {
-        outline: none;
-        border-color: #4d83b5;
-        box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
-    }
-
-    /* Goal input rows */
-    .goal-input-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        gap: 15px;
-    }
-
-    .goal-input-row label {
-        margin: 0;
-        font-size: 0.95rem;
-        color: #495057;
-        flex: 1;
-    }
-
-    .goal-input {
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 8px 12px;
-        font-size: 0.95rem;
-        width: 100px;
-        text-align: right;
-    }
-
-    .goal-input:focus {
-        outline: none;
-        border-color: #4d83b5;
-        box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
-    }
+    /* Goal form styles consolidated in CREATE GOAL DIALOG section */
 
     /* Time picker inline */
     .time-picker-inline {
@@ -1473,95 +1410,145 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     z-index: 1;
 }
 
-/* log more info div */
+/* ========================================
+   LOG MORE INFO DIALOGS (Shared Styles)
+   ======================================== */
+
 .log-more-info {
-    border: 1px solid black;
-	padding: 15px 7px 7px 7px;
-    background-color: white;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 24px 20px;
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
     z-index: 100;
-    border-radius: 5px;
-	position: relative;
-	left: 0;
-    width: 437px;
-	width: 100%;
-	display: none;
+    display: none;
 }
 
+.log-more-info h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #343a40;
+}
 
-	.cost.log-more-info div.input-area {
-		margin: 0px auto;
-		display: block;
-		max-width: 220px;
-        padding-bottom: 20px;
-	}
-	.cost.log-more-info h3 {
-		display: inline-block;
-		padding-left: 20px;
-	}
-	.cost.log-more-info input {
-		color: grey;
-		max-width: 75px;
-		text-align: center;
-        appearance: textfield;
-		-moz-appearance: textfield;
-	}
+.log-more-info hr {
+    border: none;
+    border-top: 1px solid #e9ecef;
+    margin: 16px 0;
+}
 
-	/*No more spinny shit on the number inputs */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+.log-more-info .row {
+    margin-left: -8px;
+    margin-right: -8px;
+}
 
-    /*DOUBLE NO MORE SPINNY SHIT hide spinners on number inputs*/
-        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        /* Note: Additional number input styling in iOS/Safari section below */
+.log-more-info .row > [class*="col-"] {
+    padding-left: 8px;
+    padding-right: 8px;
+}
 
+.log-more-info button.btn {
+    margin-top: 8px;
+}
 
-	.cost.log-more-info label {
-		margin: 15px auto;
-		display: inline-block;
-		font-weight: 700;
-		color: green;
-		font-size: 24px;
-		
-	}
-	
-	
-	.goal.log-more-info #goalEndPicker {
-		display: table;
-		margin: 20px auto;
-	}
+/* Standardized Input Widths */
+.log-more-info input[type="number"],
+.log-more-info input[type="text"] {
+    width: 100%;
+    max-width: 120px;
+    text-align: center;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+}
 
-	.goal.log-more-info .time-picker-container {
-		text-align: center;
-	}
+.log-more-info select {
+    min-width: 100px;
+}
 
-	.time-picker-container span.label {
-		font-size: 1.8rem;
-	}
+.log-more-info textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    resize: vertical;
+}
 
-    .use.log-more-info .time-picker-container .form-check-input {
-        margin-left: 0;
-        padding-left: 10px;
-        transform: scale(1.4);
-    }
-    
-    .use.log-more-info .time-picker-container .time-picker-now,
-    .use.log-more-info .time-picker-container .time-picker-before {
-        padding-left: 10px;
-        font-size: 1.8rem;
-        display: flex;
-        align-items: center;
-    }
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
-    .use.log-more-info .time-picker-container .time-picker-now label,
-    .use.log-more-info .time-picker-container .time-picker-before label {
-        padding-left: 30px;
-    }
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Cost Dialog Specific */
+.cost.log-more-info .input-area {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.cost.log-more-info .input-area label {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #28a745;
+}
+
+.cost.log-more-info .input-area input {
+    max-width: 100px;
+    font-size: 1.25rem;
+    margin-right: 8px;
+}
+
+/* Goal Dialog Specific */
+.goal.log-more-info #goalEndPicker {
+    display: table;
+    margin: 20px auto;
+}
+
+.goal.log-more-info .time-picker-container {
+    text-align: center;
+}
+
+.time-picker-container span.label {
+    font-size: 1.5rem;
+    padding: 0 4px;
+}
+
+/* Use Dialog Specific */
+.use.log-more-info .time-picker-container {
+    padding: 16px 0;
+}
+
+.use.log-more-info .time-picker-container .form-check-input {
+    margin-left: 0;
+    transform: scale(1.3);
+}
+
+.use.log-more-info .time-picker-container .time-picker-now,
+.use.log-more-info .time-picker-container .time-picker-before {
+    padding: 8px 0 8px 10px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.use.log-more-info .time-picker-container .time-picker-now label,
+.use.log-more-info .time-picker-container .time-picker-before label {
+    padding-left: 20px;
+    margin-bottom: 0;
+}
 
 
 #greyed-out-div {
@@ -2224,589 +2211,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     resize: none;
 }
 
-/* Completion Timeline Row */
-.goal-timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.goal-timeline-row label {
-    margin: 0;
-    color: #666;
-}
-
-.goal-timeline-row .completion-timeline-input {
-    width: 80px;
-    text-align: center;
-}
-
-.goal-timeline-row .timeline-unit {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-/* ================================
-   WELLBEING GOALS ACCORDION STYLES
-   ================================ */
-
-.wellbeing-goals-container {
-    padding: 10px 0;
-}
-
-.wellbeing-goals-accordion {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.wellbeing-goal-item {
-    background: linear-gradient(135deg, #fef9f3 0%, #fff 100%);
-    border: 1px solid #e8ddd4;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-/* .wellbeing-goal-item.wellbeing-goal-active {
-    border-left: 4px solid #e57373;
-} */
-
-.wellbeing-goal-item.wellbeing-goal-completed {
-    border-left: 4px solid #81c784;
-    opacity: 0.85;
-}
-
-.wellbeing-goal-header {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2px 14px 16px;
-    cursor: pointer;
-    background: rgba(255,255,255,0.6);
-    transition: background 0.2s ease;
-}
-
-.wellbeing-goal-header:hover {
-    background: rgba(255,255,255,0.9);
-}
-
-.wellbeing-goal-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex: 1;
-    opacity: 0.8;
-    width: 100%;
-}
-
-.wellbeing-goal-status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #e57373;
-    flex-shrink: 0;
-}
-
-.wellbeing-goal-active .wellbeing-goal-status-indicator {
-    background: #e57373;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.wellbeing-goal-completed .wellbeing-goal-status-indicator {
-    background: #81c784;
-}
-
-.wellbeing-goal-title {
-    font-size: 1.35rem;
-    font-weight: 500;
-    color: #4a4a4a;
-    flex: 1;
-}
-
-.wellbeing-goal-avg-mood {
-    font-size: 1.2rem;
-    margin-left: auto;
-}
-
-.wellbeing-goal-expand-icon {
-    display: flex;
-    align-items: center;
-    color: #999;
-    transition: transform 0.2s ease;
-}
-
-.wellbeing-goal-expand-icon i {
-    transition: transform 0.2s ease;
-}
-
-.wellbeing-goal-collapse {
-    display: none;
-}
-
-.wellbeing-goal-content {
-    padding: 0 16px 16px;
-}
-
-/* Meta section */
-.wellbeing-goal-meta {
-    padding: 16px;
-    background: rgba(255,255,255,0.7);
-    border-radius: 8px;
-    margin-bottom: 16px;
-}
-
-.wellbeing-goal-full-text {
-    font-style: italic;
-    font-size: 1rem;
-    color: #555;
-    margin-bottom: 16px;
-    line-height: 1.4;
-}
-
-.wellbeing-goal-stats-row {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 16px;
-}
-
-.wellbeing-stat {
-    text-align: center;
-}
-
-.wellbeing-stat-value {
-    display: block;
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #e57373;
-}
-
-.wellbeing-stat-label {
-    font-size: 0.75rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.wellbeing-progress-bar {
-    height: 8px;
-    background: #eee;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-}
-
-.wellbeing-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #e57373, #ef9a9a);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.wellbeing-progress-label {
-    display: block;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #888;
-    margin-top: 4px;
-}
-
-/* Mood records section */
-.wellbeing-mood-records {
-    margin-bottom: 16px;
-}
-
-.wellbeing-mood-records h5 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #666;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.mood-records-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.mood-record-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #f0f0f0;
-}
-
-.mood-record-emoji {
-    font-size: 1.3rem;
-    flex-shrink: 0;
-}
-
-.mood-record-details {
-    flex: 1;
-    min-width: 0;
-}
-
-.mood-record-comment {
-    display: block;
-    font-size: 0.9rem;
-    color: #444;
-    margin-bottom: 2px;
-    word-wrap: break-word;
-}
-
-.mood-record-date {
-    font-size: 0.75rem;
-    color: #999;
-}
-
-/* Add mood section */
-.wellbeing-add-mood {
-    padding: 16px;
-    background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
-    border-radius: 8px;
-    border: 1px dashed #ddd;
-}
-
-.wellbeing-add-mood h5 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #666;
-    margin-bottom: 12px;
-    text-align: center;
-}
-
-.wellbeing-mood-input {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.wellbeing-smileys {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-.wellbeing-smileys .smiley {
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    opacity: 0.5;
-    transition: all 0.2s ease;
-    border-radius: 50%;
-}
-
-.wellbeing-smileys .smiley:hover {
-    opacity: 0.8;
-    transform: scale(1.1);
-}
-
-.wellbeing-smileys .smiley.selected {
-    opacity: 1;
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    border-radius: 50%;
-    overflow: hidden;
-}
-
-.wellbeing-smileys .smiley img {
-    width: 100%;
-    height: 100%;
-}
-
-.wellbeing-mood-comment {
-    width: 100%;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px;
-    font-size: 0.9rem;
-    resize: none;
-    min-height: 60px;
-}
-
-.wellbeing-mood-comment:focus {
-    border-color: #e57373;
-    outline: none;
-}
-
-.add-mood-btn {
-    margin-top: 4px;
-}
-
-/* ================================
-   QUANTIFIABLE GOALS STYLES
-   ================================ */
-
-.quantifiable-goals-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.quantifiable-goal-card {
-    background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
-    border: 1px solid #d4e5f7;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-}
-
-.quantifiable-goal-card.quantifiable-goal-active {
-    border-left: 4px solid #4a90d9;
-}
-
-.quantifiable-goal-card.quantifiable-goal-completed {
-    border-left: 4px solid #81c784;
-    opacity: 0.85;
-}
-
-.quantifiable-goal-header {
-    padding: 16px;
-    background: rgba(255,255,255,0.7);
-    border-bottom: 1px solid #eef4fb;
-}
-
-.quantifiable-goal-type {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.quantifiable-goal-badge {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-weight: 600;
-    background: #e3f2fd;
-    color: #1976d2;
-}
-
-.quantifiable-goal-status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 12px;
-}
-
-.quantifiable-goal-status.on-track {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-.quantifiable-goal-status.off-track {
-    background: #ffebee;
-    color: #c62828;
-}
-
-.quantifiable-goal-target {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    font-size: 1.1rem;
-}
-
-.quantifiable-from {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #c62828;
-}
-
-.quantifiable-goal-target i {
-    color: #999;
-    font-size: 0.9rem;
-}
-
-.quantifiable-to {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #2e7d32;
-}
-
-.quantifiable-unit {
-    font-size: 0.85rem;
-    color: #666;
-    margin-left: 4px;
-}
-
-.quantifiable-goal-body {
-    padding: 16px;
-}
-
-/* Current status stats */
-.quantifiable-current-status {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: rgba(255,255,255,0.7);
-    border-radius: 8px;
-}
-
-.quantifiable-stat {
-    text-align: center;
-}
-
-.quantifiable-stat-value {
-    display: block;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #4a90d9;
-}
-
-.quantifiable-stat-label {
-    font-size: 0.7rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Progress bar */
-.quantifiable-progress {
-    margin-bottom: 16px;
-}
-
-.quantifiable-progress-bar {
-    height: 10px;
-    background: #e8e8e8;
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-.quantifiable-progress-fill {
-    height: 100%;
-    border-radius: 5px;
-    transition: width 0.3s ease;
-}
-
-.quantifiable-progress-fill.on-track {
-    background: linear-gradient(90deg, #66bb6a, #81c784);
-}
-
-.quantifiable-progress-fill.off-track {
-    background: linear-gradient(90deg, #ef5350, #e57373);
-}
-
-.quantifiable-progress-text {
-    display: block;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #888;
-    margin-top: 6px;
-}
-
-/* Schedule section */
-.quantifiable-schedule {
-    background: rgba(255,255,255,0.7);
-    border-radius: 8px;
-    padding: 14px;
-}
-
-.quantifiable-schedule h5 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #4a90d9;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.quantifiable-schedule h5 i {
-    font-size: 0.9rem;
-}
-
-.quantifiable-milestones {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.milestone-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid #eef4fb;
-    transition: all 0.2s ease;
-}
-
-.milestone-item.milestone-past {
-    background: #f8fdf8;
-    border-color: #d4edda;
-}
-
-.milestone-check {
-    font-size: 1rem;
-    color: #ccc;
-    flex-shrink: 0;
-}
-
-.milestone-past .milestone-check {
-    color: #66bb6a;
-}
-
-.milestone-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.milestone-target {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #444;
-}
-
-.milestone-date {
-    font-size: 0.75rem;
-    color: #888;
-}
-
-.milestone-pct {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #4a90d9;
-    background: #e3f2fd;
-    padding: 4px 10px;
-    border-radius: 12px;
-}
-
-.milestone-past .milestone-pct {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-/* Footer */
-.quantifiable-goal-footer {
-    padding: 12px 16px;
-    border-top: 1px solid #eef4fb;
-    background: rgba(255,255,255,0.5);
-}
-
-.quantifiable-created {
-    font-size: 0.75rem;
-    color: #999;
-}
+/* Completion Timeline Row - consolidated in CREATE GOAL DIALOG section */
 
 /* Goals section headers */
 .goals-section-header {
@@ -2842,12 +2247,17 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     margin-right: 5px;
 }
 
+/* ========================================
+   CREATE GOAL DIALOG
+   ======================================== */
+
 .create-goal.log-more-info {
     margin-bottom: 20px;
 }
 
+/* Goal Type Selector */
 .goal-type-selector {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .goal-type-selector label {
@@ -2859,10 +2269,10 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 
 .goal-type-dropdown {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 14px;
     font-size: 1rem;
     border: 1px solid #ced4da;
-    border-radius: 6px;
+    border-radius: 8px;
     background: #fff;
     cursor: pointer;
 }
@@ -2870,109 +2280,138 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 .goal-type-dropdown:focus {
     outline: none;
     border-color: #4d83b5;
-    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+    box-shadow: 0 0 0 3px rgba(77, 131, 181, 0.15);
 }
 
 .goal-type-inputs {
     animation: fadeIn 0.2s ease-out;
 }
 
-.create-goal .goal-input-row {
+/* Shared Goal Form Row Styles */
+.goal-input-row,
+.goal-timeline-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
-    gap: 15px;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 4px 0;
 }
 
-.create-goal .goal-input-row label {
+.goal-input-row label,
+.goal-timeline-row label {
     margin: 0;
     font-size: 0.95rem;
     color: #495057;
     flex: 1;
 }
 
-.create-goal .goal-input {
+/* Standardized Goal Input */
+.goal-input {
     border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 0.95rem;
-    width: 100px;
-    text-align: right;
-}
-
-.create-goal .goal-timeline-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-/* Time picker in create goal dialog */
-.create-goal .time-picker-container.create-time-picker {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    text-align: left;
-}
-
-.create-goal .time-picker-container.create-time-picker select {
-    font-size: 1.2rem;
-    padding: 6px 24px 6px 8px;
-}
-
-.create-goal .time-picker-container.create-time-picker .label {
+    border-radius: 6px;
+    padding: 10px 12px;
     font-size: 1rem;
-    color: #6c757d;
+    width: 100px;
+    text-align: center;
 }
 
-/* Spending input label */
+.goal-input:focus {
+    outline: none;
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.12);
+}
+
+/* Timeline Select */
+.timeline-select {
+    padding: 10px 30px 10px 12px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+}
+
+.timeline-unit {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Time Picker in Goal Dialogs */
+.create-goal .time-picker-container.create-time-picker,
+.baseline-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.create-goal .time-picker-container.create-time-picker select,
+.baseline-time-picker select {
+    font-size: 1.1rem;
+    padding: 8px 28px 8px 10px;
+    min-width: 70px;
+}
+
+.create-goal .time-picker-container.create-time-picker .label,
+.baseline-time-picker .label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Spending Input Label */
 .spending-input-label {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-weight: 700;
-    color: green;
+    gap: 6px;
+    font-weight: 600;
+    color: #28a745;
     font-size: 1.1rem;
 }
 
 .spending-input-label input {
-    width: 80px !important;
+    width: 90px !important;
     text-align: center;
 }
 
-/* Health mood tracker in create goal */
-.create-health-mood-tracker .smileys {
+/* Health/Wellness Mood Tracker */
+.create-health-mood-tracker .smileys,
+.baseline-mood-tracker .smileys,
+.health-mood-tracker .smileys {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin: 10px 0 15px;
+    gap: 12px;
+    margin: 12px 0 16px;
 }
 
-.create-health-mood-tracker .smiley {
-    width: 40px;
-    height: 40px;
+.create-health-mood-tracker .smiley,
+.baseline-mood-tracker .smiley,
+.health-mood-tracker .smiley {
+    width: 44px;
+    height: 44px;
     cursor: pointer;
-    opacity: 0.5;
-    transition: all 0.2s ease;
+    opacity: 0.4;
+    transition: opacity 0.15s, transform 0.15s;
+    border-radius: 50%;
 }
 
-.create-health-mood-tracker .smiley:hover {
+.create-health-mood-tracker .smiley:hover,
+.baseline-mood-tracker .smiley:hover,
+.health-mood-tracker .smiley:hover {
     opacity: 0.8;
     transform: scale(1.1);
 }
 
-.create-health-mood-tracker .smiley.selected {
+.create-health-mood-tracker .smiley.selected,
+.baseline-mood-tracker .smiley.selected,
+.health-mood-tracker .smiley.selected {
     opacity: 1;
     transform: scale(1.15);
-    border-radius: 50%;
-    overflow: hidden;
 }
 
-.create-health-mood-tracker .smiley img {
+.create-health-mood-tracker .smiley img,
+.baseline-mood-tracker .smiley img,
+.health-mood-tracker .smiley img {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
 }
 
 /* Goal completion timeline section */
@@ -3136,4 +2575,386 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     text-align: center;
     color: #6c757d;
     font-style: italic;
+}
+
+/* ========================================
+   UNIFIED GOALS ACCORDION
+   ======================================== */
+
+.goals-accordion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.goals-accordion-container .no-goals-message {
+    padding: 40px 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #6c757d;
+}
+
+/* Goal Item Base */
+.goal-accordion-item {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+
+.goal-accordion-item:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Goal Color Indicators */
+.goal-accordion-item.goal-on-track {
+    border-left: 4px solid #28a745;
+}
+
+.goal-accordion-item.goal-behind {
+    border-left: 4px solid #dc3545;
+}
+
+.goal-accordion-item.goal-neutral {
+    border-left: 4px solid #6c757d;
+}
+
+.goal-accordion-item.goal-good-mood {
+    border-left: 4px solid #28a745;
+}
+
+.goal-accordion-item.goal-bad-mood {
+    border-left: 4px solid #dc3545;
+}
+
+/* Closed State - Summary View (~175px) */
+.goal-summary {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    min-height: 175px;
+    cursor: pointer;
+    position: relative;
+}
+
+.goal-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.goal-summary-header .goal-type-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.goal-type-badge.badge-qualitative {
+    background: #e8f4fd;
+    color: #4d83b5;
+}
+
+.goal-type-badge.badge-usage {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.goal-type-badge.badge-time {
+    background: #d4edda;
+    color: #155724;
+}
+
+.goal-type-badge.badge-spending {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.goal-summary-header .goal-days-left {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.goal-summary-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    flex-grow: 1;
+}
+
+/* Goal Stats Row (closed state) */
+.goal-summary-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.goal-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.goal-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+.goal-stat-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Mood smiley in summary */
+.goal-stat-value .mood-smiley-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Inline mood check-in (for qualitative goals in closed state) */
+.goal-inline-checkin {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.goal-inline-checkin .inline-smileys {
+    display: flex;
+    gap: 4px;
+}
+
+.goal-inline-checkin .inline-smiley {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s, transform 0.15s;
+    border-radius: 50%;
+}
+
+.goal-inline-checkin .inline-smiley:hover,
+.goal-inline-checkin .inline-smiley.selected {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.goal-inline-checkin .inline-checkin-btn {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    margin-left: auto;
+}
+
+/* Timer display for quantitative goals */
+.goal-timer-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.goal-timer-display .timer-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-family: inherit;
+    text-transform: uppercase;
+}
+
+/* Expand/Collapse Icon */
+.goal-expand-icon {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    color: #adb5bd;
+    transition: transform 0.2s ease;
+}
+
+.goal-accordion-item.expanded .goal-expand-icon {
+    transform: rotate(180deg);
+}
+
+/* Expanded State - Detail View */
+.goal-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+}
+
+.goal-accordion-item.expanded .goal-details {
+    max-height: 600px;
+    transition: max-height 0.3s ease-in;
+}
+
+.goal-details-content {
+    padding: 0 16px 16px 16px;
+    border-top: 1px solid #eee;
+}
+
+/* Milestone Section */
+.goal-milestones {
+    margin-top: 16px;
+}
+
+.goal-milestones h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.milestone-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.milestone-item:last-child {
+    border-bottom: none;
+}
+
+.milestone-check {
+    width: 24px;
+    margin-right: 12px;
+    color: #adb5bd;
+}
+
+.milestone-item.milestone-past .milestone-check {
+    color: #28a745;
+}
+
+.milestone-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.milestone-target {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.milestone-date {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.milestone-pct {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+/* Mood Records Section (for qualitative) */
+.goal-mood-records {
+    margin-top: 16px;
+}
+
+.goal-mood-records h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.mood-record-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mood-record-row:last-child {
+    border-bottom: none;
+}
+
+.mood-record-row .mood-smiley-img {
+    width: 28px;
+    height: 28px;
+}
+
+.mood-record-info {
+    flex-grow: 1;
+}
+
+.mood-record-comment {
+    font-size: 0.9rem;
+    color: #343a40;
+}
+
+.mood-record-date {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Goal Progress Bar */
+.goal-progress-container {
+    margin-top: 16px;
+}
+
+.goal-progress-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.goal-progress-fill.on-track {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.goal-progress-fill.behind {
+    background: linear-gradient(90deg, #dc3545, #fd7e14);
+}
+
+.goal-progress-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+    .goal-summary {
+        min-height: 160px;
+        padding: 12px;
+    }
+    
+    .goal-summary-stats {
+        gap: 12px;
+    }
+    
+    .goal-stat-item {
+        min-width: 50px;
+    }
+    
+    .goal-inline-checkin .inline-smiley {
+        width: 24px;
+        height: 24px;
+    }
 }

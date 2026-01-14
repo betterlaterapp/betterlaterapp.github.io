@@ -333,18 +333,25 @@ var BaselineModule = (function() {
             comment = 'Baseline wellness check-in';
         }
         
+        // Save to baseline as well
+        var jsonObject = StorageModule.retrieveStorageObject();
+        jsonObject.baseline.wellnessText = comment;
+        jsonObject.baseline.wellnessMood = selectedMood;
+        jsonObject.baseline.statusType = 'wellness';
+        StorageModule.setStorageObject(jsonObject);
+        
         // Create habit log entry using ActionLogModule and StorageModule
         var now = Math.round(Date.now() / 1000);
         StorageModule.updateActionTable(now, 'mood', null, null, null, comment, selectedMood);
         ActionLogModule.placeActionIntoLog(now, 'mood', null, comment, selectedMood, false);
         
-        // Clear inputs
-        $('.baseline-wellness-text').val('');
+        // Reset inputs for next entry (keep values visible for reference)
+        // Don't clear the text - user might want to reference what they wrote
         $('.baseline-mood-tracker .smiley').removeClass('selected');
         $('.baseline-mood-tracker .smiley.mood-2').addClass('selected');
         
         // Notify user
-        NotificationsModule.createNotification('Added to Habit Log!', null, { type: 'mood_added' });
+        NotificationsModule.createNotification('Added to Habit Journal!', null, { type: 'mood_added' });
     }
     
     /**
