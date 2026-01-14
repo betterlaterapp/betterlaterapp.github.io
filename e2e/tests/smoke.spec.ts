@@ -56,6 +56,9 @@ test.describe('Smoke Test - App Loads', () => {
     const boughtButton = page.locator('#bought-button');
     await expect(boughtButton).toBeAttached();
     
+    const waitButton = page.locator('#wait-button');
+    await expect(waitButton).toBeAttached();
+
     const goalButton = page.locator('#goal-button');
     await expect(goalButton).toBeAttached();
     

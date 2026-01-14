@@ -11,28 +11,52 @@ import { test, expect } from '@playwright/test';
  * 5. Timer starts counting up
  */
 
+
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 // Helper function to set up a new user with baseline settings
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
-      useStatsIrrelevant: false,
-      costStatsIrrelevant: false,
-      amountDonePerWeek: 10,
-      goalDonePerWeek: 5,
-      amountSpentPerWeek: 50,
-      goalSpentPerWeek: 20,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
       valuesHealth: true,
-      userSubmitted: true
+
+      amountDonePerWeek: 10,
+      goalDonePerWeek: 5,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 50,
+      goalSpentPerWeek: 20,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
         goalButton: true,
+        waitButton: true,
+        undoButton: true,
         untilGoalEnd: true,
         longestGoal: true,
         usedButton: true,
@@ -47,7 +71,8 @@ async function setupUserWithBaseline(page) {
         boughtGoalButton: true,
         sinceLastSpent: true,
         avgBetweenSpent: true,
-        totalSpent: true
+        totalSpent: true,
+        moodTracker: true
       },
       logItemsToDisplay: {
         goal: true,
@@ -70,7 +95,10 @@ async function setupUserWithBaseline(page) {
 
   // Inject test data into localStorage before page loads
   await page.addInitScript((data) => {
-    localStorage.setItem('esCrave', JSON.stringify(data));
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
+      localStorage.setItem('esCrave', JSON.stringify(data));
+    }
   }, testData);
 }
 
@@ -125,6 +153,7 @@ test.describe('Better Later - First Action', () => {
     expect(parseInt(secondsValue || '0')).toBeGreaterThan(0);
     
     // Step 10: Verify habit log entry was created
+    await navigateToJournal(page)
     const logEntry = page.locator('#habit-log .item.used-record').first();
     await expect(logEntry).toBeVisible();
     await expect(logEntry).toContainText('You did it');

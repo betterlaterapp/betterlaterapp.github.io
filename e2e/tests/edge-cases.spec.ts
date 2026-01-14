@@ -19,50 +19,90 @@ async function navigateToSettings(page) {
   await page.waitForTimeout(300);
 }
 
+// Helper to navigate to journal via hamburger menu
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
-      userSubmitted: true
+      valuesHealth: true,
+
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 0,
+      goalSpentPerWeek: 0,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
+        untilGoalEnd: true,
+        longestGoal: true,
         usedButton: true,
+        usedGoalButton: true,
         cravedButton: true,
         spentButton: true,
-        goalButton: true,
         sinceLastDone: true,
+        avgBetweenDone: true,
+        didntPerDid: true,
+        resistedInARow: true,
         sinceLastSpent: true,
+        avgBetweenSpent: true,
         timesDone: true,
-        totalSpent: true
+        totalSpent: true,
+        moodTracker: true
       },
       logItemsToDisplay: {
+        goal: true,
         used: true,
         craved: true,
-        bought: true
+        bought: true,
+        mood: true
       },
-      reportItemsToDisplay: {}
+      reportItemsToDisplay: {
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
+      }
     }
   };
 
   await page.addInitScript((data) => {
-    const existing = localStorage.getItem('esCrave');
-    if (!existing) {
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
       localStorage.setItem('esCrave', JSON.stringify(data));
-    } else {
-      const existingData = JSON.parse(existing);
-      if (!existingData.baseline) {
-        existingData.baseline = data.baseline;
-      }
-      if (!existingData.option) {
-        existingData.option = data.option;
-      }
-      localStorage.setItem('esCrave', JSON.stringify(existingData));
     }
   }, testData);
 }
@@ -96,6 +136,7 @@ test.describe('Better Later - Edge Cases', () => {
     expect(boughtTimerHidden).toBe(true);
     
     // Habit log should be empty (it's visible by default in statistics-content)
+    await navigateToJournal(page)
     const logItems = page.locator('#habit-log .item');
     await expect(logItems).toHaveCount(0);
     
@@ -120,6 +161,7 @@ test.describe('Better Later - Edge Cases', () => {
     await expect(page.locator('#use-total')).toHaveText('0');
     
     // No log entry should exist
+    await navigateToJournal(page)
     const logEntries = page.locator('#habit-log .item.used-record');
     await expect(logEntries).toHaveCount(0);
     
@@ -144,6 +186,7 @@ test.describe('Better Later - Edge Cases', () => {
     await expect(page.locator('#use-total')).toHaveText('3');
     
     // Should have 3 log entries
+    await navigateToJournal(page)
     const logEntries = page.locator('#habit-log .item.used-record');
     await expect(logEntries).toHaveCount(3);
     
@@ -206,6 +249,7 @@ test.describe('Better Later - Edge Cases', () => {
     await expect(page.locator('#settings-content')).toBeVisible();
     
     // Verify habit log is accessible (it's within statistics-content by default)
+    await navigateToJournal(page)
     await expect(page.locator('#habit-log')).toBeAttached();
     
     console.log('✅ Multiple tabs navigation test passed!');
@@ -216,12 +260,14 @@ test.describe('Better Later - Edge Cases', () => {
     await expect(page.locator('#use-button')).toBeVisible();
     await expect(page.locator('#crave-button')).toBeVisible();
     await expect(page.locator('#bought-button')).toBeVisible();
+    await expect(page.locator('#wait-button')).toBeVisible();
     await expect(page.locator('#goal-button')).toBeVisible();
     
     // Verify buttons are clickable (not disabled)
     await expect(page.locator('#use-button')).toBeEnabled();
     await expect(page.locator('#crave-button')).toBeEnabled();
     await expect(page.locator('#bought-button')).toBeEnabled();
+    await expect(page.locator('#wait-button')).toBeEnabled();
     await expect(page.locator('#goal-button')).toBeEnabled();
     
     console.log('✅ Action buttons responsive test passed!');
@@ -236,6 +282,7 @@ test.describe('Better Later - Edge Cases', () => {
     await page.waitForTimeout(500);
     
     // Verify log entry has a timestamp (habit log is in statistics-content by default)
+    await navigateToJournal(page)
     const logEntry = page.locator('#habit-log .item.used-record').first();
     await expect(logEntry).toBeVisible();
     

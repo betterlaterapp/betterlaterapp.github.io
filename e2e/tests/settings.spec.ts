@@ -23,42 +23,90 @@ async function navigateToStatistics(page) {
     await page.waitForSelector('.hamburger-menu.show');
     await page.click('.hamburger-menu .statistics-tab-toggler');
     await page.waitForTimeout(300);
-  }
+}
+
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
 
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
-      userSubmitted: true
+      valuesHealth: true,
+
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 0,
+      goalSpentPerWeek: 0,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
+        untilGoalEnd: true,
+        longestGoal: true,
         usedButton: true,
+        usedGoalButton: true,
         cravedButton: true,
         spentButton: true,
-        goalButton: true,
         sinceLastDone: true,
+        avgBetweenDone: true,
+        didntPerDid: true,
+        resistedInARow: true,
         sinceLastSpent: true,
         timesDone: true,
-        totalSpent: true
+        avgBetweenSpent: true,
+        totalSpent: true,
+        moodTracker: true
       },
       logItemsToDisplay: {
+        goal: true,
         used: true,
         craved: true,
-        bought: true
+        bought: true,
+        mood: true
       },
-      reportItemsToDisplay: {}
+      reportItemsToDisplay: {
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
+      }
     }
   };
 
   await page.addInitScript((data) => {
-    const existing = localStorage.getItem('esCrave');
-    if (!existing) {
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
       localStorage.setItem('esCrave', JSON.stringify(data));
     }
   }, testData);
@@ -225,6 +273,7 @@ test.describe('Better Later - Settings & Preferences', () => {
     await expect(page.locator('#crave-total')).toHaveText('0');
     
     // Habit log should be empty
+    await navigateToJournal(page)
     const logItems = page.locator('#habit-log .item');
     await expect(logItems).toHaveCount(0);
     
@@ -283,6 +332,8 @@ test.describe('Better Later - Settings & Preferences', () => {
     // Reload page
     await page.reload();
     await page.waitForLoadState('networkidle');
+
+    await navigateToSettings(page);
     
     // With userSubmitted persisted, section should still be expanded
     await expect(page.locator('.displayed-statistics')).toBeVisible();

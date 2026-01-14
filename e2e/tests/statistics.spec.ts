@@ -11,50 +11,98 @@ import { test, expect } from '@playwright/test';
  * - Time-based aggregations
  */
 
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      // Baseline metric toggles (importance-options)
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
-      userSubmitted: true
+      valuesHealth: true,
+
+      // Baseline status defaults (used by some flows)
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 0,
+      goalSpentPerWeek: 0,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2,
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        // Buttons
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
+
+        // Goal stats
+        untilGoalEnd: true,
+        longestGoal: true,
+
+        // Action buttons / stats
         usedButton: true,
+        usedGoalButton: true,
         cravedButton: true,
         spentButton: true,
-        goalButton: true,
         sinceLastDone: true,
+        avgBetweenDone: true,
         sinceLastSpent: true,
+        avgBetweenSpent: true,
         timesDone: true,
-        totalSpent: true
+        didntPerDid: true,
+        resistedInARow: true,
+        totalSpent: true,
+
+        // Wellness
+        moodTracker: true
       },
       logItemsToDisplay: {
+        goal: true,
         used: true,
         craved: true,
-        bought: true
+        bought: true,
+        mood: true
       },
-      reportItemsToDisplay: {}
+      reportItemsToDisplay: {
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
+      }
     }
   };
 
   await page.addInitScript((data) => {
-    const existing = localStorage.getItem('esCrave');
-    if (!existing) {
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
       localStorage.setItem('esCrave', JSON.stringify(data));
-    } else {
-      const existingData = JSON.parse(existing);
-      if (!existingData.baseline) {
-        existingData.baseline = data.baseline;
-      }
-      if (!existingData.option) {
-        existingData.option = data.option;
-      }
-      localStorage.setItem('esCrave', JSON.stringify(existingData));
     }
   }, testData);
 }
@@ -95,7 +143,9 @@ test.describe('Better Later - Statistics & Reports', () => {
     await expect(page.locator('#smoke-timer')).toBeVisible();
     await expect(page.locator('#bought-timer')).toBeVisible();
     
-    // Habit log should show all three actions
+    // Habit journal log should show all three actions
+    await navigateToJournal(page)
+
     await expect(page.locator('#habit-log .item.used-record')).toBeVisible();
     await expect(page.locator('#habit-log .item.craved-record')).toBeVisible();
     await expect(page.locator('#habit-log .item.bought-record')).toBeVisible();
@@ -224,6 +274,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     // Habit log is visible by default in statistics-content
     await expect(page.locator('#statistics-content')).toBeVisible();
     
+    await navigateToJournal(page)
     // Verify habit log has entries
     const logItems = page.locator('#habit-log .item');
     const itemCount = await logItems.count();
@@ -249,14 +300,15 @@ test.describe('Better Later - Statistics & Reports', () => {
     
     // Verify counter is 1
     await expect(page.locator('#use-total')).toHaveText('1');
-    
+      
+    await navigateToJournal(page)
     // Verify log entry exists
     await expect(page.locator('#habit-log .item.used-record')).toBeVisible();
     
     // Check if undo button exists
     const undoButton = page.locator('#undoActionButton');
     const undoCount = await undoButton.count();
-    if (undoCount === 0) {
+    if (!undoCount || undoCount === 0) {
       console.log('⚠️  Undo button not found - skipping test');
       return;
     }

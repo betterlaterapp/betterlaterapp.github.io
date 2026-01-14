@@ -12,33 +12,91 @@ import { test, expect } from '@playwright/test';
  * - Invalid input is rejected
  */
 
+
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
+      valuesTime: true,
+      valuesMoney: true,
+      valuesHealth: true,
+
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
       amountSpentPerWeek: 50,
       goalSpentPerWeek: 20,
-      valuesMoney: true,
-      userSubmitted: true
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
+        untilGoalEnd: true,
+        longestGoal: true,
+        usedButton: true,
+        usedGoalButton: true,
+        cravedButton: true,
         spentButton: true,
+        sinceLastDone: true,
+        avgBetweenDone: true,
+        timesDone: true,
+        didntPerDid: true,
+        resistedInARow: true,
+        sinceLastSpent: true,
+        avgBetweenSpent: true,
         totalSpent: true,
-        sinceLastSpent: true
+        moodTracker: true
       },
       logItemsToDisplay: {
-        bought: true
+        goal: true,
+        used: true,
+        craved: true,
+        bought: true,
+        mood: true
       },
-      reportItemsToDisplay: {}
+      reportItemsToDisplay: {
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
+      }
     }
   };
 
   await page.addInitScript((data) => {
-    localStorage.setItem('esCrave', JSON.stringify(data));
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
+      localStorage.setItem('esCrave', JSON.stringify(data));
+    }
   }, testData);
 }
 
@@ -88,6 +146,7 @@ test.describe('Better Later - Spending Tracking', () => {
     expect(parseInt(seconds || '0')).toBeGreaterThan(0);
     
     // Habit log entry should exist
+    await navigateToJournal(page)
     const logEntry = page.locator('#habit-log .item.bought-record').first();
     await expect(logEntry).toBeVisible();
     await expect(logEntry).toContainText('You spent');

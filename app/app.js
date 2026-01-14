@@ -143,7 +143,7 @@ $(document).ready(function () {
                 "valuesHealth": false,
             },
             "option": {
-                "activeTab": "reports-content",
+                "activeTab": "statistics-content",
                 "liveStatsToDisplay": {
                     "goalButton": true,
                     "undoButton": true,

@@ -11,51 +11,90 @@ import { test, expect } from '@playwright/test';
  * - Goal timer visibility and updates
  */
 
+
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
-      userSubmitted: true
+      valuesHealth: true,
+
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 0,
+      goalSpentPerWeek: 0,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
         usedButton: true,
+        usedGoalButton: true,
         cravedButton: true,
         spentButton: true,
-        goalButton: true,
         sinceLastDone: true,
+        avgBetweenDone: true,
+        didntPerDid: true,
+        resistedInARow: true,
         sinceLastSpent: true,
+        avgBetweenSpent: true,
         timesDone: true,
         totalSpent: true,
-        untilGoalEnd: true  // Required for goal timer visibility
+        untilGoalEnd: true,  // Required for goal timer visibility
+        longestGoal: true,
+        moodTracker: true
       },
       logItemsToDisplay: {
+        goal: true,
         used: true,
         craved: true,
-        bought: true
+        bought: true,
+        mood: true
       },
-      reportItemsToDisplay: {}
+      reportItemsToDisplay: {
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
+      }
     }
   };
 
   await page.addInitScript((data) => {
-    const existing = localStorage.getItem('esCrave');
-    if (!existing) {
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
       localStorage.setItem('esCrave', JSON.stringify(data));
-    } else {
-      const existingData = JSON.parse(existing);
-      if (!existingData.baseline) {
-        existingData.baseline = data.baseline;
-      }
-      if (!existingData.option) {
-        existingData.option = data.option;
-      }
-      localStorage.setItem('esCrave', JSON.stringify(existingData));
     }
   }, testData);
 }
@@ -68,11 +107,11 @@ test.describe('Better Later - Goal System', () => {
   });
 
   test('create goal with future date starts countdown timer', async ({ page }) => {
-    // Click goal button
-    await page.click('#goal-button');
+    // Click wait button
+    await page.click('#wait-button');
     
     // Wait for goal dialog
-    const dialog = page.locator('.goal.log-more-info');
+    const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
     
     // Calculate time 2 hours from now
@@ -87,15 +126,15 @@ test.describe('Better Later - Goal System', () => {
     const ampm = futureHours >= 12 ? 'PM' : 'AM';
     const minuteRounded = Math.floor(futureMinutes / 15) * 15; // Round to 0, 15, 30, 45
     
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', minuteRounded.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
+    await page.selectOption('.wait.log-more-info .time-picker-hour', hour12.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-minute', minuteRounded.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-am-pm', ampm);
     
     await page.click('.ui-state-highlight');
     await page.waitForTimeout(500);
     
     // Submit goal
-    await page.click('.goal.log-more-info button.submit');
+    await page.click('.wait.log-more-info button.submit');
     
     // Wait a moment for submission to process
     await page.waitForTimeout(1500);
@@ -105,7 +144,7 @@ test.describe('Better Later - Goal System', () => {
     if (dialogVisible) {
       console.log('⚠️  Dialog still visible - goal creation may have validation issues');
       // Cancel and skip test
-      await page.click('.goal.log-more-info button.cancel');
+      await page.click('.wait.log-more-info button.cancel');
       return;
     }
     
@@ -121,8 +160,8 @@ test.describe('Better Later - Goal System', () => {
 
   test('goal timer is visible after creating goal', async ({ page }) => {
     // Create a goal first
-    await page.click('#goal-button');
-    const dialog = page.locator('.goal.log-more-info');
+    await page.click('#wait-button');
+    const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
     
     // Set time 1 hour from now
@@ -132,20 +171,20 @@ test.describe('Better Later - Goal System', () => {
     const hour12 = futureHours % 12 || 12;
     const ampm = futureHours >= 12 ? 'PM' : 'AM';
     
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', '0');
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
+    await page.selectOption('.wait.log-more-info .time-picker-hour', hour12.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-minute', '0');
+    await page.selectOption('.wait.log-more-info .time-picker-am-pm', ampm);
     await page.click('.ui-state-highlight');
     await page.waitForTimeout(500);
     
-    await page.click('.goal.log-more-info button.submit');
+    await page.click('.wait.log-more-info button.submit');
     await page.waitForTimeout(1500);
     
     // Check if dialog closed
     const dialogVisible = await dialog.isVisible();
     if (dialogVisible) {
       console.log('⚠️  Dialog still visible - skipping test');
-      await page.click('.goal.log-more-info button.cancel');
+      await page.click('.wait.log-more-info button.cancel');
       return;
     }
     
@@ -164,9 +203,9 @@ test.describe('Better Later - Goal System', () => {
   });
 
   test.skip('extend existing goal adds time', async ({ page }) => {
-    // Create initial goal (1 hour from now)
-    await page.click('#goal-button');
-    let dialog = page.locator('.goal.log-more-info');
+    // Create initial wait (1 hour from now)
+    await page.click('#wait-button');
+    let dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
     
     const initialGoalTime = new Date();
@@ -175,24 +214,24 @@ test.describe('Better Later - Goal System', () => {
     let hour12 = futureHours % 12 || 12;
     let ampm = futureHours >= 12 ? 'PM' : 'AM';
     
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', '0');
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
+    await page.selectOption('.wait.log-more-info .time-picker-hour', hour12.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-minute', '0');
+    await page.selectOption('.wait.log-more-info .time-picker-am-pm', ampm);
     await page.click('.ui-state-highlight');
     await page.waitForTimeout(500);
     
-    await page.click('.goal.log-more-info button.submit');
+    await page.click('.wait.log-more-info button.submit');
     await page.waitForTimeout(1500);
     
     // Check if dialog closed
     if (await dialog.isVisible()) {
       console.log('⚠️  Dialog still visible - skipping test');
-      await page.click('.goal.log-more-info button.cancel');
+      await page.click('.wait.log-more-info button.cancel');
       return;
     }
     
     // Extend the goal (set it to 3 hours from now)
-    await page.click('#goal-button');
+    await page.click('#wait-button');
     await expect(dialog).toBeVisible();
     
     const extendedGoalTime = new Date();
@@ -201,19 +240,19 @@ test.describe('Better Later - Goal System', () => {
     hour12 = futureHours % 12 || 12;
     ampm = futureHours >= 12 ? 'PM' : 'AM';
     
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', '0');
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
+    await page.selectOption('.wait.log-more-info .time-picker-hour', hour12.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-minute', '0');
+    await page.selectOption('.wait.log-more-info .time-picker-am-pm', ampm);
     await page.click('.ui-state-highlight');
     await page.waitForTimeout(500);
     
-    await page.click('.goal.log-more-info button.submit');
+    await page.click('.wait.log-more-info button.submit');
     await page.waitForTimeout(1500);
     
     // Check if dialog closed
     if (await dialog.isVisible()) {
       console.log('⚠️  Dialog still visible - skipping test');
-      await page.click('.goal.log-more-info button.cancel');
+      await page.click('.wait.log-more-info button.cancel');
       return;
     }
     
@@ -229,6 +268,7 @@ test.describe('Better Later - Goal System', () => {
     await expect(page.locator('#goal-timer')).toBeVisible();
     
     // Should have at least one goal entry in habit log
+    await navigateToJournal(page)
     const goalEntries = page.locator('#habit-log .item.goal-record');
     await expect(goalEntries).toHaveCount(1);
     
@@ -237,8 +277,8 @@ test.describe('Better Later - Goal System', () => {
 
   test.skip('end goal early creates habit log entry', async ({ page }) => {
     // Create a goal
-    await page.click('#goal-button');
-    const dialog = page.locator('.goal.log-more-info');
+    await page.click('#wait-button');
+    const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
     
     // Set goal 2 hours from now
@@ -248,19 +288,19 @@ test.describe('Better Later - Goal System', () => {
     const hour12 = futureHours % 12 || 12;
     const ampm = futureHours >= 12 ? 'PM' : 'AM';
     
-    await page.selectOption('.goal.log-more-info .time-picker-hour', hour12.toString());
-    await page.selectOption('.goal.log-more-info .time-picker-minute', '0');
-    await page.selectOption('.goal.log-more-info .time-picker-am-pm', ampm);
+    await page.selectOption('.wait.log-more-info .time-picker-hour', hour12.toString());
+    await page.selectOption('.wait.log-more-info .time-picker-minute', '0');
+    await page.selectOption('.wait.log-more-info .time-picker-am-pm', ampm);
     await page.click('.ui-state-highlight');
     await page.waitForTimeout(500);
     
-    await page.click('.goal.log-more-info button.submit');
+    await page.click('.wait.log-more-info button.submit');
     await page.waitForTimeout(1500);
     
     // Check if dialog closed
     if (await dialog.isVisible()) {
       console.log('⚠️  Dialog still visible - skipping test');
-      await page.click('.goal.log-more-info button.cancel');
+      await page.click('.wait.log-more-info button.cancel');
       return;
     }
     
@@ -291,6 +331,7 @@ test.describe('Better Later - Goal System', () => {
     await page.waitForTimeout(1000);
     
     // Should have entries for both goal and "did it" in habit log
+    await navigateToJournal(page)
     await expect(page.locator('#habit-log .item.goal-record')).toHaveCount(1);
     await expect(page.locator('#habit-log .item.used-record')).toHaveCount(1);
     

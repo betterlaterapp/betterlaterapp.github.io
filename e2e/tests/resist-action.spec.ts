@@ -11,35 +11,91 @@ import { test, expect } from '@playwright/test';
  * - Habit log entry created
  */
 
+
+async function navigateToJournal(page) {
+    await page.click('.hamburger-toggle');
+    await page.waitForSelector('.hamburger-menu.show');
+    await page.click('.hamburger-menu .journal-tab-toggler');
+    await page.waitForTimeout(300);
+}
+
 async function setupUserWithBaseline(page) {
   const testData = {
     action: [],
+    behavioralGoals: [],
     baseline: {
       specificSubject: true,
       decreaseHabit: true,
+      increaseHabit: false,
+      neutralHabit: false,
+      userSubmitted: true,
+
+      valuesTimesDone: true,
       valuesTime: true,
       valuesMoney: true,
       valuesHealth: true,
-      userSubmitted: true
+
+      amountDonePerWeek: 0,
+      goalDonePerWeek: 0,
+      usageTimeline: 'week',
+      amountSpentPerWeek: 0,
+      goalSpentPerWeek: 0,
+      spendingTimeline: 'week',
+      currentTimeHours: 0,
+      currentTimeMinutes: 0,
+      goalTimeHours: 0,
+      goalTimeMinutes: 0,
+      timeTimeline: 'week',
+      statusType: '',
+      wellnessText: '',
+      wellnessMood: 2
     },
     option: {
       activeTab: 'statistics-content',
       liveStatsToDisplay: {
+        goalButton: true,
+        waitButton: true,
+        undoButton: true,
+        untilGoalEnd: true,
+        longestGoal: true,
+        usedButton: true,
+        usedGoalButton: true,
         cravedButton: true,
+        spentButton: true,
+        sinceLastDone: true,
+        avgBetweenDone: true,
+        timesDone: true,
+        didntPerDid: true,
         resistedInARow: true,
-        didntPerDid: true
+        sinceLastSpent: true,
+        avgBetweenSpent: true,
+        totalSpent: true,
+        moodTracker: true
       },
       logItemsToDisplay: {
-        craved: true
+        goal: true,
+        used: true,
+        craved: true,
+        bought: true,
+        mood: true
       },
       reportItemsToDisplay: {
-        useVsResistsGraph: true
+        useChangeVsBaseline: false,
+        useChangeVsLastWeek: true,
+        useVsResistsGraph: true,
+        costChangeVsBaseline: false,
+        costChangeVsLastWeek: true,
+        useGoalVsThisWeek: false,
+        costGoalVsThisWeek: false
       }
     }
   };
 
   await page.addInitScript((data) => {
-    localStorage.setItem('esCrave', JSON.stringify(data));
+    // Only set if not already present, to allow persistence across reloads
+    if (!localStorage.getItem('esCrave')) {
+      localStorage.setItem('esCrave', JSON.stringify(data));
+    }
   }, testData);
 }
 
@@ -68,6 +124,7 @@ test.describe('Better Later - Resist Action', () => {
     await expect(streakCounter).toHaveText('1');
     
     // Habit log entry should be created
+    await navigateToJournal(page)
     const logEntry = page.locator('#habit-log .item.craved-record').first();
     await expect(logEntry).toBeVisible();
     await expect(logEntry).toContainText('You resisted it');
@@ -102,6 +159,7 @@ test.describe('Better Later - Resist Action', () => {
     await page.click('.use.log-more-info button.submit');
     
     // Streak should reset to 0
+    await navigateToJournal(page)
     await expect(page.locator('#cravingsResistedInARow')).toHaveText('0');
     
     console.log('✅ Streak reset test passed!');
