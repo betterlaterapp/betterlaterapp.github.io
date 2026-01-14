@@ -81,7 +81,14 @@ var TabsModule = (function () {
     function setupSettingsTabHandler() {
         $(document).on('click', '.settings-tab-toggler', function (e) {
             e.preventDefault();
-            switchToTab('settings-content');
+            switchToTab('settings-content', function () {
+                if (typeof SettingsModule !== 'undefined' && SettingsModule.refreshSettingsUI) {
+                    // Defer one tick so the tab pane is active/visible before syncing UI state
+                    setTimeout(function () {
+                        SettingsModule.refreshSettingsUI();
+                    }, 0);
+                }
+            });
             $('.settings-tab-toggler').addClass('active');
         });
     }

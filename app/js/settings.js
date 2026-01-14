@@ -2,29 +2,62 @@ var SettingsModule = (function () {
     // Private variables
     var json;
 
-    function setupLiveStatsDisplayHandlers() {
-        // Handle individual stat checkboxes (exclude category checkboxes)
-        $(".statistics-display-options .form-check-input:not(.category-checkbox)").on('change', function () {
-            //detect specific id
+    function setupDisplayedOptionHandlers() {
+        $(".displayed-statistics .form-check-input:not(.category-checkbox)").on('change', function () {
             var itemHandle = this.id;
-            var displayCorrespondingStat = false;
+            var isChecked = $("#" + itemHandle).is(":checked");
 
-            if ($("#" + itemHandle).is(":checked")) {
-                displayCorrespondingStat = true;
+            var jsonObject = StorageModule.retrieveStorageObject();
+
+            // Habit journal record toggles
+            if (itemHandle.endsWith("RecordDisplayed")) {
+                var logHandle = itemHandle.replace("RecordDisplayed", "");
+                json.option.logItemsToDisplay[logHandle] = isChecked;
+                jsonObject.option.logItemsToDisplay[logHandle] = isChecked;
+
+                if (isChecked) {
+                    $("#habit-log .item." + logHandle + "-record").removeClass("d-none");
+                } else {
+                    $("#habit-log .item." + logHandle + "-record").addClass("d-none");
+                }
+
+                StorageModule.setStorageObject(jsonObject);
+                return;
             }
 
-            //change value in JSON
-            var jsonHandle = itemHandle.replace("Displayed", "");
-            json.option.liveStatsToDisplay[jsonHandle] = displayCorrespondingStat;
+            // Displayed toggles (either live stats OR weekly report)
+            if (itemHandle.endsWith("Displayed")) {
+                var handle = itemHandle.replace("Displayed", "");
 
-            //update option table value
-            var jsonObject = StorageModule.retrieveStorageObject();
-            jsonObject.option.liveStatsToDisplay[jsonHandle] = displayCorrespondingStat;
+                if (json.option.liveStatsToDisplay.hasOwnProperty(handle)) {
+                    json.option.liveStatsToDisplay[handle] = isChecked;
+                    jsonObject.option.liveStatsToDisplay[handle] = isChecked;
+                    StorageModule.setStorageObject(jsonObject);
 
-            StorageModule.setStorageObject(jsonObject);
-            UIModule.showActiveStatistics(json);
-            UIModule.toggleActiveStatGroups(json);
-            UIModule.hideInactiveStatistics(json);
+                    UIModule.showActiveStatistics(json);
+                    UIModule.toggleActiveStatGroups(json);
+                    UIModule.hideInactiveStatistics(json);
+                    return;
+                }
+
+                if (json.option.reportItemsToDisplay.hasOwnProperty(handle)) {
+                    json.option.reportItemsToDisplay[handle] = isChecked;
+                    jsonObject.option.reportItemsToDisplay[handle] = isChecked;
+                    StorageModule.setStorageObject(jsonObject);
+
+                    // case to remove an existing graph
+                    if (!json.option.reportItemsToDisplay.useVsResistsGraph) {
+                        $(".weekly-report .chart-title").hide();
+                        $(".weekly-report .bar-chart").hide();
+                        $(".weekly-report .week-range").hide();
+                    } else {
+                        $(".weekly-report .chart-title").show();
+                        $(".weekly-report .bar-chart").show();
+                        $(".weekly-report .week-range").show();
+                    }
+                    return;
+                }
+            }
         });
     }
 
@@ -59,13 +92,22 @@ var SettingsModule = (function () {
                 var togglesMap = {
                     'valuesTimesDone': '.usage-goal-questions',
                     'valuesTime': '.time-goal-questions',
-                    'valuesMoney': '.spending-goal-questions'
+                    'valuesMoney': '.spending-goal-questions',
+                    'valuesHealth': '.wellness-goal-questions'
                 };
                 if (togglesMap[categoryName]) {
                     isChecked ? $(togglesMap[categoryName]).show() : $(togglesMap[categoryName]).hide();
                 }
+                
+                // Call saveBaselineValues to ensure all derived options stay in sync
+                if (typeof BaselineModule !== 'undefined' && BaselineModule.saveBaselineValues) {
+                    BaselineModule.saveBaselineValues();
+                }
             }
 
+            // Update conditional options (buttons, log items, report items)
+            updateConditionalOptions();
+            
             UIModule.showActiveStatistics(json);
             UIModule.toggleActiveStatGroups(json);
             UIModule.hideInactiveStatistics(json);
@@ -76,90 +118,99 @@ var SettingsModule = (function () {
         // Set initial category states based on baseline values
         if (StorageModule.hasStorageData()) {
             var jsonObject = StorageModule.retrieveStorageObject();
-            
-            // valuesTimesDone category
-            if (jsonObject.baseline.valuesTimesDone === false) {
-                $('#valuesTimesDoneCategory').prop('checked', false);
-                $('[data-category="valuesTimesDone"]').addClass('category-disabled');
-                $('[data-category="valuesTimesDone"] .category-options .form-check-input').prop('disabled', true);
-            }
-            
-            // valuesTime category
-            if (jsonObject.baseline.valuesTime === false) {
-                $('#valuesTimeCategory').prop('checked', false);
-                $('[data-category="valuesTime"]').addClass('category-disabled');
-                $('[data-category="valuesTime"] .category-options .form-check-input').prop('disabled', true);
-            }
-            
-            // valuesMoney category
-            if (jsonObject.baseline.valuesMoney === false) {
-                $('#valuesMoneyCategory').prop('checked', false);
-                $('[data-category="valuesMoney"]').addClass('category-disabled');
-                $('[data-category="valuesMoney"] .category-options .form-check-input').prop('disabled', true);
-            }
+            var baseline = jsonObject.baseline;
+
+            // Categories should be OPEN iff their baseline values* is true.
+            // (Buttons category is always open / always available.)
+            syncCategoryFromBaseline('valuesTimesDone', baseline.valuesTimesDone);
+            syncCategoryFromBaseline('valuesTime', baseline.valuesTime);
+            syncCategoryFromBaseline('valuesMoney', baseline.valuesMoney);
+            syncCategoryFromBaseline('valuesHealth', baseline.valuesHealth);
+
+            // Initialize conditional option visibility based on baseline
+            initializeConditionalOptions(baseline);
         }
     }
 
-    function setupHabitLogDisplayHandlers() {
-        $(".habit-log-display-options .form-check-input").on('change', function () {
-            //detect specific id
-            var itemHandle = this.id;
-            var jsonHandle = itemHandle.replace("RecordDisplayed", "");
-            var displayCorrespondingStat = false;
+    function syncCategoryFromBaseline(categoryKey, isEnabled) {
+        var $category = $('[data-category="' + categoryKey + '"]');
+        var $checkbox = $('#' + categoryKey);
+        var enabled = isEnabled === true;
 
-            if ($("#" + itemHandle).is(":checked")) {
-                displayCorrespondingStat = true;
-                //remove display none from relevant habit log items
-                $("#habit-log .item." + jsonHandle + "-record").removeClass("d-none");
-
+        $checkbox.prop('checked', enabled);
+        if (enabled) {
+            $category.removeClass('category-disabled');
+            $category.find('.category-options .form-check-input').prop('disabled', false);
+        } else {
+            $category.addClass('category-disabled');
+            $category.find('.category-options .form-check-input').prop('disabled', true);
+        }
+    }
+    
+    function initializeConditionalOptions(baseline) {
+        // Handle elements with data-requires attribute
+        // These elements are shown/hidden based on baseline values
+        $('[data-requires]').each(function() {
+            var $element = $(this);
+            var requires = $element.data('requires').split(',');
+            
+            // Check if any of the required baseline values are true
+            var shouldShow = requires.some(function(req) {
+                return baseline[req.trim()] === true;
+            });
+            
+            if (shouldShow) {
+                $element.show();
+                $element.find('.form-check-input').prop('disabled', false);
             } else {
-                //add display none to relevant habit log items
-                $("#habit-log .item." + jsonHandle + "-record").addClass("d-none");
+                $element.hide();
+                $element.find('.form-check-input').prop('disabled', true);
             }
-
-            //change value in JSON
-            json.option.logItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-            //update option table value
-            var jsonObject = StorageModule.retrieveStorageObject();
-            jsonObject.option.logItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-            StorageModule.setStorageObject(jsonObject);
         });
     }
-
-    function setupReportDisplayHandlers() {
-        $(".report-display-options .form-check-input").on('change', function () {
-            //detect specific id
-            var itemHandle = this.id;
-            var displayCorrespondingStat = false;
-
-            if ($("#" + itemHandle).is(":checked")) {
-                displayCorrespondingStat = true;
-            }
-
-            //change value in JSON
-            var jsonHandle = itemHandle.replace("Displayed", "");
-            json.option.reportItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-            //update option table value
+    
+    function updateConditionalOptions() {
+        // Called when baseline values change - update visibility of conditional options
+        if (StorageModule.hasStorageData()) {
             var jsonObject = StorageModule.retrieveStorageObject();
-            jsonObject.option.reportItemsToDisplay[jsonHandle] = displayCorrespondingStat;
-
-            //case to remove an existing graph
-            if (!json.option.reportItemsToDisplay.useVsResistsGraph) {
-                $(".weekly-report .chart-title").hide();
-                $(".weekly-report .bar-chart").hide();
-                $(".weekly-report .week-range").hide();
-            } else {
-                $(".weekly-report .chart-title").show();
-                $(".weekly-report .bar-chart").show();
-                $(".weekly-report .week-range").show();
-            }
-
-            StorageModule.setStorageObject(jsonObject);
-        });
+            initializeConditionalOptions(jsonObject.baseline);
+        }
     }
+
+    function refreshSettingsUI() {
+        if (!StorageModule.hasStorageData()) return;
+
+        var jsonObject = StorageModule.retrieveStorageObject();
+
+        // Keep in-memory json in sync
+        json.baseline = jsonObject.baseline;
+        json.option = jsonObject.option;
+
+        // Sync displayed option checkboxes (live stats + journal records + weekly reports)
+        if (json.option && json.option.liveStatsToDisplay) {
+            for (var key in json.option.liveStatsToDisplay) {
+                $("#" + key + "Displayed").prop('checked', json.option.liveStatsToDisplay[key]);
+            }
+        }
+        if (json.option && json.option.logItemsToDisplay) {
+            for (var k2 in json.option.logItemsToDisplay) {
+                $("#" + k2 + "RecordDisplayed").prop('checked', json.option.logItemsToDisplay[k2]);
+            }
+        }
+        if (json.option && json.option.reportItemsToDisplay) {
+            for (var k3 in json.option.reportItemsToDisplay) {
+                $("#" + k3 + "Displayed").prop('checked', json.option.reportItemsToDisplay[k3]);
+            }
+        }
+
+        // Sync category dropdown open/closed state from baseline
+        initializeCategoryStates();
+
+        // Sync conditional (data-requires) items
+        updateConditionalOptions();
+    }
+
+    // (Habit log + report handlers consolidated into setupDisplayedOptionHandlers)
 
     function setupReportNavigationHandlers() {
         $(".previous-report").on("click", function () {
@@ -236,22 +287,21 @@ var SettingsModule = (function () {
     function init(appJson) {
         json = appJson;
 
-        setupLiveStatsDisplayHandlers();
+        setupDisplayedOptionHandlers();
         setupCategoryToggleHandlers();
         initializeCategoryStates();
-        setupHabitLogDisplayHandlers();
-        setupReportDisplayHandlers();
         setupReportNavigationHandlers();
         setupSettingsMenuHandlers();
     }
 
     // Public API
     return {
-        setupLiveStatsDisplayHandlers: setupLiveStatsDisplayHandlers,
+        setupDisplayedOptionHandlers: setupDisplayedOptionHandlers,
         setupCategoryToggleHandlers: setupCategoryToggleHandlers,
         initializeCategoryStates: initializeCategoryStates,
-        setupHabitLogDisplayHandlers: setupHabitLogDisplayHandlers,
-        setupReportDisplayHandlers: setupReportDisplayHandlers,
+        initializeConditionalOptions: initializeConditionalOptions,
+        updateConditionalOptions: updateConditionalOptions,
+        refreshSettingsUI: refreshSettingsUI,
         setupReportNavigationHandlers: setupReportNavigationHandlers,
         undoLastAction: undoLastAction,
         clearActions: clearActions,

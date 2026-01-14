@@ -93,23 +93,52 @@ var BaselineModule = (function() {
         jsonObject.baseline.userSubmitted = true;
 
         // --- Update display options based on importance selections ---
-        // Times done stats
+        
+        // Buttons: "Wait" / goal area is available when any tracking is active
+        jsonObject.option.liveStatsToDisplay.goalButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
+        
+        // Create goal button follows the same gating as the rest of the app UX
+        jsonObject.option.liveStatsToDisplay.createGoalButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
+        
+        // Undo is always available
+        jsonObject.option.liveStatsToDisplay.undoButton = true;
+        
+        // "Did It" button shown when valuesTimesDone OR valuesTime
+        jsonObject.option.liveStatsToDisplay.usedButton = valuesTimesDone || valuesTime;
+        
+        // Usage Goal input for action-oriented tracking
+        jsonObject.option.liveStatsToDisplay.usedGoalButton = valuesTimesDone;
+        
+        // "Resisted" button only for action-oriented tracking
+        jsonObject.option.liveStatsToDisplay.cravedButton = valuesTimesDone;
+        
+        // "Spent" button for money tracking
+        jsonObject.option.liveStatsToDisplay.spentButton = valuesMoney;
+        
+        // Spending Goal input for money tracking
+        jsonObject.option.liveStatsToDisplay.boughtGoalButton = valuesMoney;
+        
+        // Times done stats (action-oriented)
         jsonObject.option.liveStatsToDisplay.timesDone = valuesTimesDone;
         jsonObject.option.liveStatsToDisplay.didntPerDid = valuesTimesDone;
         jsonObject.option.liveStatsToDisplay.resistedInARow = valuesTimesDone || isDecrease || isNeutral;
         
-        // Time stats
-        jsonObject.option.liveStatsToDisplay.sinceLastDone = valuesTime;
-        jsonObject.option.liveStatsToDisplay.avgBetweenDone = valuesTime;
+        // Time stats (time-oriented)
+        jsonObject.option.liveStatsToDisplay.sinceLastDone = valuesTimesDone || valuesTime;
+        jsonObject.option.liveStatsToDisplay.avgBetweenDone = valuesTimesDone || valuesTime;
         
         // Money stats
-        jsonObject.option.liveStatsToDisplay.spentButton = valuesMoney;
-        jsonObject.option.liveStatsToDisplay.boughtGoalButton = valuesMoney;
         jsonObject.option.liveStatsToDisplay.sinceLastSpent = valuesMoney;
         jsonObject.option.liveStatsToDisplay.avgBetweenSpent = valuesMoney;
         jsonObject.option.liveStatsToDisplay.totalSpent = valuesMoney;
         
-        // Health/mood
+        // Wellness stats
+        jsonObject.option.liveStatsToDisplay.moodTracker = valuesHealth;
+        
+        // Habit log display options
+        jsonObject.option.logItemsToDisplay.used = valuesTimesDone || valuesTime;
+        jsonObject.option.logItemsToDisplay.craved = valuesTimesDone;
+        jsonObject.option.logItemsToDisplay.bought = valuesMoney;
         jsonObject.option.logItemsToDisplay.mood = valuesHealth;
 
         // --- Save to storage ---
@@ -120,6 +149,12 @@ var BaselineModule = (function() {
         // --- Update DOM (all in one block) ---
         updateBodyClasses(isDecrease, isIncrease, isNeutral);
         syncSettingsPage(jsonObject);
+
+        // Keep Settings categories (open/closed) and conditional options in sync even before navigating to Settings
+        if (typeof SettingsModule !== 'undefined') {
+            if (SettingsModule.initializeCategoryStates) SettingsModule.initializeCategoryStates();
+            if (SettingsModule.updateConditionalOptions) SettingsModule.updateConditionalOptions();
+        }
     }
 
     function updateBodyClasses(isDecrease, isIncrease, isNeutral) {
@@ -144,6 +179,11 @@ var BaselineModule = (function() {
         }
         for (var key in jsonObject.option.reportItemsToDisplay) {
             $("#" + key + "Displayed").prop('checked', jsonObject.option.reportItemsToDisplay[key]);
+        }
+        
+        // Update conditional options visibility (buttons, log items, report items)
+        if (typeof SettingsModule !== 'undefined' && SettingsModule.updateConditionalOptions) {
+            SettingsModule.updateConditionalOptions();
         }
     }
 

@@ -162,8 +162,8 @@ var UIModule = (function() {
             $(".stat-group .statistic.use.totals.total").parent().parent().parent().hide();
         }
 
-        // MOOD TRACKER 
-        if (!json.option.logItemsToDisplay.mood) {
+        // HABIT JOURNAL MOOD TRACKER (Journal tab)
+        if (!display.moodTracker) {
             $("#mood-tracker-heading").hide();
             $("#mood-tracker-area").hide();
         }
@@ -178,11 +178,17 @@ var UIModule = (function() {
         if (!display.cravedButton) {
             $("#crave-button").parent().hide();
         }
+        if (!display.createGoalButton) {
+            $("#create-goal-button").parent().hide();
+        }
         if (!display.longestGoal) {
             $("#goal-content .longestGoal").parent().hide();
         }
         if (!display.untilGoalEnd) {
             $("#goal-content .timer-recepticle").hide();
+        }
+        if (!display.undoButton) {
+            $("#undoActionButton").parent().hide();
         }
     }
 
@@ -208,6 +214,12 @@ var UIModule = (function() {
         }
         if (display.goalButton) {
             $("#goal-button").parent().show();
+        }
+        if (display.createGoalButton) {
+            $("#create-goal-button").parent().show();
+        }
+        if (display.undoButton) {
+            $("#undoActionButton").parent().show();
         }
 
         if (display.timesDone && stat.use.clickCounter > 5) {
@@ -310,7 +322,7 @@ var UIModule = (function() {
             $("#numberOfGoalsCompleted").parent().show();
         }
 
-        if (json.option.logItemsToDisplay.mood) {
+        if (display.moodTracker) {
             $("#mood-tracker-heading").show();
             $("#mood-tracker-area").show();
         }

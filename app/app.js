@@ -119,9 +119,6 @@ $(document).ready(function () {
                 "increaseHabit": false,
                 "decreaseHabit": false,
                 "neutralHabit": true,
-                "useStatsIrrelevant": false,
-                "costStatsIrrelevant": false,
-                "timeStatsIrrelevant": false,
                 "amountDonePerWeek": 0,
                 "goalDonePerWeek": 0,
                 "usageTimeline": "week",
@@ -142,6 +139,8 @@ $(document).ready(function () {
                 "activeTab": "reports-content",
                 "liveStatsToDisplay": {
                     "goalButton": true,
+                    "createGoalButton": true,
+                    "undoButton": true,
                     "untilGoalEnd": true,
                     "longestGoal": true,
                     "usedButton": true,
@@ -156,7 +155,8 @@ $(document).ready(function () {
                     "boughtGoalButton": true,
                     "sinceLastSpent": true,
                     "avgBetweenSpent": true,
-                    "totalSpent": true
+                    "totalSpent": true,
+                    "moodTracker": true
                 },
                 "logItemsToDisplay": {
                     "goal": true,
@@ -655,9 +655,9 @@ $(document).ready(function () {
             //empty action table
             //basic stat display settings option table
             var newJsonString = '{ "action": [], "behavioralGoals": [], ' +
-                '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "useStatsIrrelevant": false, "costStatsIrrelevant": false, "timeStatsIrrelevant": false, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
+                '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"liveStatsToDisplay": { "goalButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true },' +
+                '"liveStatsToDisplay": { "goalButton": true, "createGoalButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true },' +
                 '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
                 '} }';

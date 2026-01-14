@@ -1075,6 +1075,27 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 .stats-category.category-disabled .category-toggle {
     background: linear-gradient(135deg, #eeeded 0%, #dcdcdc 100%);
 }
+
+/* Buttons category - always visible, checkbox disabled but styled as active */
+.stats-category-buttons .category-toggle {
+    background: linear-gradient(135deg, #4d83b5 0%, #3a6591 100%);
+}
+
+.stats-category-buttons .category-toggle label strong {
+    color: #fff;
+}
+
+.stats-category-buttons .category-toggle .form-check-input {
+    opacity: 0.7;
+}
+
+/* Conditional options (buttons, log items, report items) that are hidden */
+.button-option[style*="display: none"],
+.log-option[style*="display: none"],
+.report-option[style*="display: none"] {
+    margin: 0;
+    padding: 0;
+}
 	.baseline-questionnaire div.question > label {
 		font-weight: 550;
 	}
