@@ -169,6 +169,12 @@ var UIModule = (function() {
         }
 
         // BUTTONS
+        if (!display.waitButton) {
+            $("#wait-button").parent().hide();
+        }
+        if (!display.goalButton) {
+            $("#goal-button").parent().hide();
+        }
         if (!display.spentButton) {
             $("#bought-button").parent().hide();
         }
@@ -177,9 +183,6 @@ var UIModule = (function() {
         }
         if (!display.cravedButton) {
             $("#crave-button").parent().hide();
-        }
-        if (!display.createGoalButton) {
-            $("#create-goal-button").parent().hide();
         }
         if (!display.longestGoal) {
             $("#goal-content .longestGoal").parent().hide();
@@ -197,6 +200,12 @@ var UIModule = (function() {
         var stat = json.statistics;
         
         // Show Buttons if requested
+        if (display.waitButton) {
+            $("#wait-button").parent().show();
+        }
+        if (display.goalButton) {
+            $("#goal-button").parent().show();
+        }
         if (display.spentButton) {
             $("#bought-button").parent().show();
         }
@@ -207,16 +216,10 @@ var UIModule = (function() {
             $("#use-button").parent().show();
         }
         if (display.usedGoalButton) {
-            $("#usedGoalInput").parent().hide();
+            $("#usedGoalInput").parent().show();
         }
         if (display.cravedButton) {
             $("#crave-button").parent().show();
-        }
-        if (display.goalButton) {
-            $("#goal-button").parent().show();
-        }
-        if (display.createGoalButton) {
-            $("#create-goal-button").parent().show();
         }
         if (display.undoButton) {
             $("#undoActionButton").parent().show();

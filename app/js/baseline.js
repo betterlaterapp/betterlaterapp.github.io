@@ -95,10 +95,10 @@ var BaselineModule = (function() {
         // --- Update display options based on importance selections ---
         
         // Buttons: "Wait" / goal area is available when any tracking is active
-        jsonObject.option.liveStatsToDisplay.goalButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
+        jsonObject.option.liveStatsToDisplay.waitButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
         
         // Create goal button follows the same gating as the rest of the app UX
-        jsonObject.option.liveStatsToDisplay.createGoalButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
+        jsonObject.option.liveStatsToDisplay.goalButton = valuesTimesDone || valuesTime || valuesMoney || valuesHealth;
         
         // Undo is always available
         jsonObject.option.liveStatsToDisplay.undoButton = true;

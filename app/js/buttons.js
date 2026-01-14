@@ -300,14 +300,14 @@ var ButtonsModule = (function() {
     }
 
     function setupButtonHandlers() {
-        $("#bought-button, #crave-button, #use-button, #goal-button").click(function() {
+        $("#bought-button, #crave-button, #use-button, #wait-button").click(function() {
             if (this.id == "crave-button") {
                 handleCraveButtonClick();
             } else if (this.id == "use-button") {
                 handleUseButtonClick();
             } else if (this.id == "bought-button") {
                 handleBoughtButtonClick();
-            } else if (this.id == "goal-button") {
+            } else if (this.id == "wait-button") {
                 handleGoalButtonClick();
             }
         });
@@ -322,8 +322,8 @@ var ButtonsModule = (function() {
         $("#use-total").click(function() {
             $("#use-button").click();
         });
-        $("#goal-total").click(function() {
-            $("#goal-button").click();
+        $("#wait-total").click(function() {
+            $("#wait-button").click();
         });
 
         //USE DIALOG CLICK

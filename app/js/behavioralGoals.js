@@ -784,7 +784,7 @@ var BehavioralGoalsModule = (function () {
         
         // If no options are available, add a message
         if (dropdown.find('option').length === 0) {
-            dropdown.append('<option value="" disabled selected>Please select what matters to you in the Baseline questionnaire first</option>');
+            dropdown.append('<option value="" disabled selected>Please complete the Baseline questionnaire first</option>');
         }
         
         return firstOptionValue;
@@ -1036,7 +1036,7 @@ var BehavioralGoalsModule = (function () {
         });
         
         // Create goal button click (button bar)
-        $(document).on('click', '#create-goal-button', function(e) {
+        $(document).on('click', '#goal-button', function(e) {
             e.preventDefault();
             openCreateGoalDialog();
         });

@@ -1122,39 +1122,31 @@
                                         <div class="category-options">
                                             <!-- Wait/Goal button - always visible -->
                                             <div class="form-check button-option">
-                                                <label class="form-check-label" for="goalButtonDisplayed">
+                                                <label class="form-check-label" for="waitButtonDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
-                                                        id="goalButtonDisplayed" checked>
-                                                    Wait / Goal button
+                                                        id="waitButtonDisplayed" checked>
+                                                    Wait button
                                                 </label>
                                             </div>
                                             
                                             <!-- Create a goal button -->
                                             <div class="form-check button-option">
-                                                <label class="form-check-label" for="createGoalButtonDisplayed">
+                                                <label class="form-check-label" for="goalButtonDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
-                                                        id="createGoalButtonDisplayed" checked>
-                                                    Create goal button
+                                                        id="goalButtonDisplayed" checked>
+                                                    Goal button
                                                 </label>
                                             </div>
                                             <!-- Did It button - shown when valuesTimesDone OR valuesTime -->
-                                            <div class="form-check button-option" data-requires="valuesTimesDone,valuesTime">
+                                            <div class="form-check button-option">
                                                 <label class="form-check-label" for="usedButtonDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="usedButtonDisplayed" checked>
                                                     'Did It' Button
                                                 </label>
                                             </div>
-                                            <!-- Usage Goal input - shown when valuesTimesDone -->
-                                            <div class="form-check button-option" data-requires="valuesTimesDone">
-                                                <label class="form-check-label" for="usedGoalButtonDisplayed">
-                                                    <input class="form-check-input" type="checkbox" value=""
-                                                        id="usedGoalButtonDisplayed" checked>
-                                                    Usage Goal Input
-                                                </label>
-                                            </div>
                                             <!-- Resisted button - shown when valuesTimesDone -->
-                                            <div class="form-check button-option" data-requires="valuesTimesDone">
+                                            <div class="form-check button-option">
                                                 <label class="form-check-label" for="cravedButtonDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="cravedButtonDisplayed" checked>
@@ -1162,19 +1154,11 @@
                                                 </label>
                                             </div>
                                             <!-- Spent button - shown when valuesMoney -->
-                                            <div class="form-check button-option" data-requires="valuesMoney">
+                                            <div class="form-check button-option">
                                                 <label class="form-check-label" for="spentButtonDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="spentButtonDisplayed" checked>
                                                     'Spent' Button
-                                                </label>
-                                            </div>
-                                            <!-- Spending Goal input - shown when valuesMoney -->
-                                            <div class="form-check button-option" data-requires="valuesMoney">
-                                                <label class="form-check-label" for="boughtGoalButtonDisplayed">
-                                                    <input class="form-check-input" type="checkbox" value=""
-                                                        id="boughtGoalButtonDisplayed" checked>
-                                                    Spending Goal Input
                                                 </label>
                                             </div>
                                             
@@ -1231,14 +1215,14 @@
                                             </div>
                                             
                                             <hr/>
-                                            <div class="form-check log-option" data-requires="valuesTimesDone,valuesTime">
+                                            <div class="form-check log-option" >
                                                 <label class="form-check-label" for="usedRecordDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="usedRecordDisplayed" checked>
                                                     Journal: did it
                                                 </label>
                                             </div>
-                                            <div class="form-check log-option" data-requires="valuesTimesDone">
+                                            <div class="form-check log-option">
                                                 <label class="form-check-label" for="cravedRecordDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="cravedRecordDisplayed" checked>
@@ -1247,28 +1231,28 @@
                                             </div>
                                             
                                             <hr/>
-                                            <div class="form-check report-option" data-requires="valuesTimesDone">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="useVsResistsGraphDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useVsResistsGraphDisplayed" checked>
                                                     Weekly report: usage vs. resists (graph)
                                                 </label>
                                             </div>
-                                            <div class="form-check report-option" data-requires="valuesTimesDone">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="useChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsBaselineDisplayed" checked>
                                                     Weekly report: usage change vs. baseline
                                                 </label>
                                             </div>
-                                            <div class="form-check report-option" data-requires="valuesTimesDone">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="useChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsLastWeekDisplayed" checked>
                                                     Weekly report: usage change vs. last week
                                                 </label>
                                             </div>
-                                            <div class="form-check report-option" data-requires="valuesTimesDone">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="useGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useGoalVsThisWeekDisplayed" checked>
@@ -1352,7 +1336,7 @@
                                             </div>
                                             
                                             <hr/>
-                                            <div class="form-check log-option" data-requires="valuesMoney">
+                                            <div class="form-check log-option">
                                                 <label class="form-check-label" for="boughtRecordDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="boughtRecordDisplayed" checked>
@@ -1361,21 +1345,21 @@
                                             </div>
                                             
                                             <hr/>
-                                            <div class="form-check report-option" data-requires="valuesMoney">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="costChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsBaselineDisplayed" checked>
                                                     Weekly report: cost change vs. baseline
                                                 </label>
                                             </div>
-                                            <div class="form-check report-option" data-requires="valuesMoney">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="costChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsLastWeekDisplayed" checked>
                                                     Weekly report: cost change vs. last week
                                                 </label>
                                             </div>
-                                            <div class="form-check report-option" data-requires="valuesMoney">
+                                            <div class="form-check report-option">
                                                 <label class="form-check-label" for="costGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costGoalVsThisWeekDisplayed" checked>
@@ -1391,7 +1375,7 @@
                                             <label class="form-check-label">
                                                 <input class="form-check-input category-checkbox" type="checkbox" 
                                                     id="valuesHealth">
-                                                <strong>Wellness / Wellbeing</strong>
+                                                <strong>Wellness / Wellbeing stats</strong>
                                             </label>
                                         </div>
                                         <div class="category-options">
@@ -1402,7 +1386,7 @@
                                                     Habit Journal mood tracker
                                                 </label>
                                             </div>
-                                            <div class="form-check log-option" data-requires="valuesHealth">
+                                            <div class="form-check log-option">
                                                 <label class="form-check-label" for="moodRecordDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="moodRecordDisplayed" checked>
@@ -1826,7 +1810,7 @@
                     <div class="nav nav-tabs">
                         <div class="button-group">
                             <div class="clickCounter"><span id="numberOfGoalsCompleted"></span> </div>
-                            <a id="goal-button" href="#">
+                            <a id="wait-button" href="#">
 
                                 <div class="icon">
                                     <span class="desires-decrease">
@@ -1842,14 +1826,14 @@
                                         Wait
                                     </span>
                                     <span class="desires-increase d-none">
-                                        Set Goal
+                                        Schedule next
                                     </span>
                                 </p>
                             </a>
                         </div>
 
                         <div class="button-group">
-                            <a id="create-goal-button" href="#">
+                            <a id="goal-button" href="#">
                                 <div class="icon">
                                     <i class="far fa-calendar-plus fa-3x"></i>
                                 </div>
