@@ -13,7 +13,8 @@ var BaselineModule = (function() {
         // User has a specific habit - show follow-up questions
         $(".baseline-questionnaire .serious-user").on('change', function () {
             if ($(this).is(":checked")) {
-                $(".serious.question-set:not(.current-status-question)").slideDown();
+                // Show serious question-sets except question 4 and 5 (which have special show/hide logic)
+                $(".serious.question-set:not(.current-status-question):not(.make-goal-question)").slideDown();
             }
         });
 
@@ -38,12 +39,27 @@ var BaselineModule = (function() {
         $(document).on('click', '.baseline-wellness-submit', function(e) {
             e.preventDefault();
             submitWellnessStatusToLog();
+            showMakeGoalQuestion('wellness');
         });
         
         // Save baseline status button
         $(document).on('click', '.baseline-status-save', function(e) {
             e.preventDefault();
             saveCurrentStatus();
+            var selectedType = $('#current-status-type-select').val();
+            showMakeGoalQuestion(selectedType);
+        });
+        
+        // Make goal button click (quantifiable - usage, time, spending)
+        $(document).on('click', '.baseline-make-goal-btn.quantifiable-btn', function(e) {
+            e.preventDefault();
+            openGoalDialogWithSeed('quantifiable');
+        });
+        
+        // Make goal button click (qualitative - wellness)
+        $(document).on('click', '.baseline-make-goal-btn.qualitative-btn', function(e) {
+            e.preventDefault();
+            openGoalDialogWithSeed('qualitative');
         });
 
         // Save baseline values on any input change
@@ -143,8 +159,14 @@ var BaselineModule = (function() {
         $("input.serious-user").prop('checked', baseline.specificSubject);
         $("input.passerby-user").prop('checked', !baseline.specificSubject);
         
-        // Show/hide serious question-sets based on saved selection
-        baseline.specificSubject ? $(".serious.question-set").show() : $(".serious.question-set").hide();
+        // Show/hide serious question-sets based on saved selection (excluding question 4 and 5 which have special logic)
+        if (baseline.specificSubject) {
+            $(".serious.question-set:not(.current-status-question):not(.make-goal-question)").show();
+        } else {
+            $(".serious.question-set").hide();
+        }
+        // Always hide question 5 on load - it only shows after user submits status
+        $(".make-goal-question").hide();
 
         // --- Restore Question Set 2: desire direction ---
         $("input.decreaseHabit").prop('checked', baseline.decreaseHabit);
@@ -274,6 +296,28 @@ var BaselineModule = (function() {
             $('.wellness-status-inputs').show();
             // Wellness has its own submit button
         }
+        
+        // Update question 5's subtitle/button based on status type (if visible)
+        updateMakeGoalQuestionType(selectedType);
+    }
+    
+    /**
+     * Update question 5's subtitle and button based on selected status type
+     */
+    function updateMakeGoalQuestionType(selectedType) {
+        var isQualitative = selectedType === 'wellness';
+        
+        if (isQualitative) {
+            $('.quantifiable-subtitle').hide();
+            $('.qualitative-subtitle').show();
+            $('.quantifiable-btn').hide();
+            $('.qualitative-btn').show();
+        } else {
+            $('.quantifiable-subtitle').show();
+            $('.qualitative-subtitle').hide();
+            $('.quantifiable-btn').show();
+            $('.qualitative-btn').hide();
+        }
     }
     
     /**
@@ -324,6 +368,89 @@ var BaselineModule = (function() {
         
         StorageModule.setStorageObject(jsonObject);
         NotificationsModule.createNotification('Baseline status saved!', null, { type: 'baseline_saved' });
+    }
+    
+    /**
+     * Show question 5 (make a realistic goal) after status is submitted
+     * @param {string} statusType - The type of status submitted (usage, time, spending, wellness)
+     */
+    function showMakeGoalQuestion(statusType) {
+        // Update subtitle/button based on status type
+        updateMakeGoalQuestionType(statusType);
+        
+        // Slide down question 5
+        $('.make-goal-question').slideDown();
+    }
+    
+    /**
+     * Convert timeline string to days for completion timeline
+     */
+    function timelineToDays(timeline) {
+        switch (timeline) {
+            case 'day': return 1;
+            case 'week': return 7;
+            case 'month': return 30;
+            default: return 7;
+        }
+    }
+    
+    /**
+     * Open goal dialog with seeded values from baseline
+     * @param {string} goalType - 'quantifiable' or 'qualitative'
+     */
+    function openGoalDialogWithSeed(goalType) {
+        var selectedType = $('#current-status-type-select').val();
+        var seedData = {};
+        
+        if (goalType === 'qualitative' || selectedType === 'wellness') {
+            // For wellness/qualitative, seed with the wellness text
+            seedData = {
+                type: 'health',
+                wellnessText: $('.baseline-wellness-text').val() || '',
+                mood: $('.baseline-mood-tracker .smiley.selected').data('mood') || 2,
+                completionDays: 30 // Default 30 days for wellness goals
+            };
+        } else if (selectedType === 'usage') {
+            var amount = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
+            var timeline = $('.baseline-usage-timeline-select').val();
+            seedData = {
+                type: 'usage',
+                currentAmount: amount,
+                goalAmount: amount,
+                timeline: timeline,
+                completionDays: timelineToDays(timeline)
+            };
+        } else if (selectedType === 'time') {
+            var hours = parseInt($('.baseline-currentTimeHours').val()) || 0;
+            var minutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
+            var timeline = $('.baseline-time-timeline-select').val();
+            seedData = {
+                type: 'time',
+                currentHours: hours,
+                currentMinutes: minutes,
+                goalHours: hours,
+                goalMinutes: minutes,
+                timeline: timeline,
+                completionDays: timelineToDays(timeline)
+            };
+        } else if (selectedType === 'spending') {
+            var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
+            var timeline = $('.baseline-spending-timeline-select').val();
+            seedData = {
+                type: 'spending',
+                currentAmount: amount,
+                goalAmount: amount,
+                timeline: timeline,
+                completionDays: timelineToDays(timeline)
+            };
+        }
+        
+        // Call BehavioralGoalsModule to open dialog with seed data
+        if (typeof BehavioralGoalsModule !== 'undefined' && BehavioralGoalsModule.openCreateGoalDialogWithSeed) {
+            BehavioralGoalsModule.openCreateGoalDialogWithSeed(seedData);
+        } else {
+            console.error('BehavioralGoalsModule.openCreateGoalDialogWithSeed is not available');
+        }
     }
     
     function init(appJson) {

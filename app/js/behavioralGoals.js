@@ -823,6 +823,86 @@ var BehavioralGoalsModule = (function () {
     }
 
     /**
+     * Open create goal dialog with seeded values from baseline
+     * @param {Object} seedData - Data to seed the dialog with
+     * @param {string} seedData.type - Goal type (usage, time, spending, health)
+     * @param {number} seedData.currentAmount - Current amount (for quantifiable)
+     * @param {number} seedData.goalAmount - Goal amount (for quantifiable)
+     * @param {string} seedData.timeline - Measurement timeline (day, week, month)
+     * @param {number} seedData.completionDays - Completion timeline in days
+     * @param {string} seedData.wellnessText - Wellness goal text (for qualitative)
+     * @param {number} seedData.mood - Initial mood value (for qualitative)
+     */
+    function openCreateGoalDialogWithSeed(seedData) {
+        // First populate the dropdown
+        populateGoalTypeDropdown();
+        
+        // Set the goal type
+        if (seedData.type) {
+            $('#create-goal-type-select').val(seedData.type);
+            handleGoalTypeChange();
+        }
+        
+        // Seed the appropriate inputs based on type
+        if (seedData.type === 'usage') {
+            if (seedData.currentAmount !== undefined) {
+                $('.create-amountDonePerWeek').val(seedData.currentAmount);
+            }
+            if (seedData.goalAmount !== undefined) {
+                $('.create-goalDonePerWeek').val(seedData.goalAmount);
+            }
+            if (seedData.timeline) {
+                $('.create-usage-timeline-select').val(seedData.timeline);
+            }
+        } else if (seedData.type === 'time') {
+            if (seedData.currentHours !== undefined) {
+                $('.create-currentTimeHours').val(seedData.currentHours);
+            }
+            if (seedData.currentMinutes !== undefined) {
+                $('.create-currentTimeMinutes').val(seedData.currentMinutes);
+            }
+            if (seedData.goalHours !== undefined) {
+                $('.create-goalTimeHours').val(seedData.goalHours);
+            }
+            if (seedData.goalMinutes !== undefined) {
+                $('.create-goalTimeMinutes').val(seedData.goalMinutes);
+            }
+            if (seedData.timeline) {
+                $('.create-time-timeline-select').val(seedData.timeline);
+            }
+        } else if (seedData.type === 'spending') {
+            if (seedData.currentAmount !== undefined) {
+                $('.create-amountSpentPerWeek').val(seedData.currentAmount);
+            }
+            if (seedData.goalAmount !== undefined) {
+                $('.create-goalSpentPerWeek').val(seedData.goalAmount);
+            }
+            if (seedData.timeline) {
+                $('.create-spending-timeline-select').val(seedData.timeline);
+            }
+        } else if (seedData.type === 'health') {
+            if (seedData.wellnessText) {
+                $('.create-tenet-text').val(seedData.wellnessText);
+            }
+            if (seedData.mood !== undefined) {
+                $('.create-health-mood-tracker .smiley').removeClass('selected');
+                $('.create-health-mood-tracker .smiley.mood-' + seedData.mood).addClass('selected');
+            }
+        }
+        
+        // Set completion timeline (Achieve in) based on seeded value
+        if (seedData.completionDays !== undefined) {
+            $('.create-completion-timeline-input').val(seedData.completionDays);
+        }
+        
+        // Enable submit button
+        $('.create-goal-submit').prop('disabled', false);
+        
+        // Use UIModule to open dialog with overlay
+        UIModule.openClickDialog('.create-goal');
+    }
+
+    /**
      * Close create goal dialog
      */
     function closeCreateGoalDialog() {
@@ -1016,6 +1096,7 @@ var BehavioralGoalsModule = (function () {
         renderQuantifiableGoalsList: renderQuantifiableGoalsList,
         timelineToDays: timelineToDays,
         openCreateGoalDialog: openCreateGoalDialog,
+        openCreateGoalDialogWithSeed: openCreateGoalDialogWithSeed,
         closeCreateGoalDialog: closeCreateGoalDialog,
         populateGoalTypeDropdown: populateGoalTypeDropdown
     };

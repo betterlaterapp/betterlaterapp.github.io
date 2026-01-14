@@ -1519,8 +1519,8 @@
                                 <!-- question 4: current status baseline -->
                                 <div class="question-set serious current-status-question" style="display: none;">
                                     <div class="question">
-                                        <h4 class="mt-0"><span>4. What's your current status?</span></h4>
-                                        <p class="text-muted" style="font-size: 0.9rem;">Help us understand where you're starting from.</p>
+                                        <h4 class="mt-0"><span>4. Where are you starting from?</span></h4>
+                                        <p class="text-muted" style="font-size: 0.9rem;">How often do you do it, how much time do you spend, how much money do you spend, or how do you feel about it?</p>
                                         
                                         <!-- Status Type Selector -->
                                         <div class="status-type-selector">
@@ -1532,8 +1532,8 @@
                                         <!-- Usage Status Inputs -->
                                         <div class="status-type-inputs usage-status-inputs" style="display: none;">
                                             <hr/>
+                                            <label>I currently do it</label>
                                             <div class="goal-timeline-row">
-                                                <label>I currently do it</label>
                                                 <input type="number" min="0" max="500" class="goal-input baseline-amountDonePerWeek" placeholder="0">
                                                 <select class="timeline-select baseline-usage-timeline-select">
                                                     <option value="day">per day</option>
@@ -1546,8 +1546,8 @@
                                         <!-- Time Status Inputs -->
                                         <div class="status-type-inputs time-status-inputs" style="display: none;">
                                             <hr/>
+                                            <label>I currently spend</label>
                                             <div class="goal-timeline-row">
-                                                <label>I currently spend</label>
                                                 <div class="time-picker-container baseline-time-picker">
                                                     <select class="time-picker-hour baseline-currentTimeHours">
                                                         <option value="0">0</option>
@@ -1584,8 +1584,8 @@
                                         <!-- Spending Status Inputs -->
                                         <div class="status-type-inputs spending-status-inputs" style="display: none;">
                                             <hr/>
+                                            <label>I currently spend</label>
                                             <div class="goal-timeline-row">
-                                                <label>I currently spend</label>
                                                 <label class="spending-input-label"><input type="number" min="0" class="goal-input baseline-amountSpentPerWeek" placeholder="0" /> $</label>
                                                 <select class="timeline-select baseline-spending-timeline-select">
                                                     <option value="day">per day</option>
@@ -1603,7 +1603,6 @@
                                             </div>
                                             <hr/>
                                             <div class="goal-input-row-textarea d-flex flex-column">
-                                                <label>How do you currently feel?</label>
                                                 <div class="health-mood-tracker baseline-mood-tracker">
                                                     <div class="smileys">
                                                         <div class="smiley mood-0" data-mood="0">
@@ -1625,7 +1624,7 @@
                                                 </div>
                                             </div>
                                             <button class="btn btn-md btn-outline-success baseline-wellness-submit mt-2">
-                                                <i class="fas fa-plus"></i>&nbsp;Add to Habit Log
+                                                <i class="fas fa-plus"></i>&nbsp;Add to Habit Journal
                                             </button>
                                         </div>
                                         
@@ -1635,6 +1634,25 @@
                                                 Save Current Status
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- question 5: make a realistic goal -->
+                                <div class="question-set serious make-goal-question" style="display: none;">
+                                    <div class="question">
+                                        <h4 class="mt-0"><span>5. Make a realistic goal</span></h4>
+                                        <p class="make-goal-subtitle quantifiable-subtitle text-muted" style="font-size: 0.9rem;">
+                                            It's more likely that you'll be successful in your goal if you can first maintain where you're currently at. Or in other words, prove it.
+                                        </p>
+                                        <p class="make-goal-subtitle qualitative-subtitle text-muted" style="font-size: 0.9rem; display: none;">
+                                            Studies have shown that people are more likely to succeed in their goals if they are very specific about what they are trying to achieve - what do you want to accomplish?
+                                        </p>
+                                        <button class="btn btn-lg btn-block btn-outline-success baseline-make-goal-btn quantifiable-btn">
+                                            <i class="far fa-calendar-plus"></i>&nbsp;make a goal
+                                        </button>
+                                        <button class="btn btn-lg btn-block btn-outline-success baseline-make-goal-btn qualitative-btn" style="display: none;">
+                                            <i class="fas fa-heart"></i>&nbsp;Start tracking a wellbeing goal
+                                        </button>
                                     </div>
                                 </div>
 
