@@ -80,20 +80,50 @@ var StorageModule = (function () {
             }
 
             jsonObject.version = 1;
-            setStorageObject(jsonObject);
-            console.log("Storage migration to v1 complete.");
+        }
+
+        // Migration to v2 - Time tracking support
+        if (version < 2) {
+            console.log("Migrating storage to v2 (time tracking)...");
+
+            // Add activeTimers array for tracking in-progress activity timers
+            if (!jsonObject.activeTimers) jsonObject.activeTimers = [];
+
+            // Add customUnits array for user-defined quantity units
+            if (!jsonObject.customUnits) jsonObject.customUnits = [];
+
+            // Options updates for time tracking
+            if (jsonObject.option && jsonObject.option.liveStatsToDisplay) {
+                var live = jsonObject.option.liveStatsToDisplay;
+                if (live.timeSpentDoing === undefined) live.timeSpentDoing = true;
+                if (live.activeTimer === undefined) live.activeTimer = true;
+            }
+
+            // Log items for timed entries
+            if (jsonObject.option && jsonObject.option.logItemsToDisplay) {
+                var log = jsonObject.option.logItemsToDisplay;
+                if (log.timed === undefined) log.timed = true;
+            }
+
+            jsonObject.version = 2;
+        }
+
+        setStorageObject(jsonObject);
+        if (version < 2) {
+            console.log("Storage migration to v2 complete.");
         }
     }
 
     /**
-     * Checks if the storage object has a version number
+     * Checks if the storage object is at the latest version
      * @returns {boolean}
      */
     function isMigrated() {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            return jsonObject && typeof jsonObject.version !== 'undefined';
+            // Check if at latest version (v2)
+            return jsonObject && jsonObject.version >= 2;
         } catch (e) {
             return false;
         }
@@ -235,6 +265,216 @@ var StorageModule = (function () {
         return undoneActionClickType;
     }
 
+    /**
+     * Create a new 'timed' action record (for time spent tracking)
+     * @param {number} ts - timestamp when activity started
+     * @param {number} duration - duration in seconds
+     * @param {number} amount - optional quantity amount (for "How much" tracking)
+     * @param {string} unit - optional unit for the amount (e.g., "laps", "reps", "grams")
+     */
+    function updateTimedAction(ts, duration, amount, unit) {
+        var jsonObject = retrieveStorageObject();
+        var now = Math.round(new Date() / 1000);
+
+        var newRecord = {
+            timestamp: ts.toString(),
+            clickType: "timed",
+            clickStamp: now,
+            duration: duration
+        };
+
+        // Optional amount and unit (for combined time + quantity tracking)
+        if (amount !== undefined && amount !== null) {
+            newRecord.amount = amount;
+        }
+        if (unit !== undefined && unit !== null) {
+            newRecord.unit = unit;
+        }
+
+        jsonObject["action"].push(newRecord);
+        setStorageObject(jsonObject);
+        return newRecord;
+    }
+
+    /**
+     * Create a 'used' action with optional amount and unit (for "How much" tracking)
+     * @param {number} ts - timestamp
+     * @param {number} amount - optional quantity amount
+     * @param {string} unit - optional unit for the amount
+     */
+    function updateUsedActionWithAmount(ts, amount, unit) {
+        var jsonObject = retrieveStorageObject();
+        var now = Math.round(new Date() / 1000);
+
+        var newRecord = {
+            timestamp: ts.toString(),
+            clickType: "used",
+            clickStamp: now
+        };
+
+        if (amount !== undefined && amount !== null) {
+            newRecord.amount = amount;
+        }
+        if (unit !== undefined && unit !== null) {
+            newRecord.unit = unit;
+        }
+
+        jsonObject["action"].push(newRecord);
+        setStorageObject(jsonObject);
+        return newRecord;
+    }
+
+    /**
+     * Start a new activity timer (persists to localStorage)
+     * @param {string} timerId - unique ID for the timer
+     * @returns {object} The created timer object
+     */
+    function startActivityTimer(timerId) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.activeTimers) jsonObject.activeTimers = [];
+
+        var now = Math.round(new Date() / 1000);
+        var newTimer = {
+            id: timerId || 'timer_' + now,
+            startedAt: now,
+            pausedAt: null,
+            accumulatedSeconds: 0,
+            status: 'running' // running, paused, stopped
+        };
+
+        jsonObject.activeTimers.push(newTimer);
+        setStorageObject(jsonObject);
+        return newTimer;
+    }
+
+    /**
+     * Pause an activity timer
+     * @param {string} timerId - ID of the timer to pause
+     * @returns {object|null} The updated timer object or null if not found
+     */
+    function pauseActivityTimer(timerId) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.activeTimers) return null;
+
+        var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
+        if (!timer || timer.status !== 'running') return null;
+
+        var now = Math.round(new Date() / 1000);
+        timer.accumulatedSeconds += (now - timer.startedAt);
+        timer.pausedAt = now;
+        timer.status = 'paused';
+
+        setStorageObject(jsonObject);
+        return timer;
+    }
+
+    /**
+     * Resume a paused activity timer
+     * @param {string} timerId - ID of the timer to resume
+     * @returns {object|null} The updated timer object or null if not found
+     */
+    function resumeActivityTimer(timerId) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.activeTimers) return null;
+
+        var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
+        if (!timer || timer.status !== 'paused') return null;
+
+        var now = Math.round(new Date() / 1000);
+        timer.startedAt = now;
+        timer.pausedAt = null;
+        timer.status = 'running';
+
+        setStorageObject(jsonObject);
+        return timer;
+    }
+
+    /**
+     * Stop and remove an activity timer, returning its total duration
+     * @param {string} timerId - ID of the timer to stop
+     * @returns {object|null} Object with timer details and totalSeconds, or null
+     */
+    function stopActivityTimer(timerId) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.activeTimers) return null;
+
+        var timerIndex = jsonObject.activeTimers.findIndex(function(t) { return t.id === timerId; });
+        if (timerIndex === -1) return null;
+
+        var timer = jsonObject.activeTimers[timerIndex];
+        var now = Math.round(new Date() / 1000);
+        var totalSeconds = timer.accumulatedSeconds;
+
+        // If running (not paused), add time since last start
+        if (timer.status === 'running') {
+            totalSeconds += (now - timer.startedAt);
+        }
+
+        // Remove timer from active timers
+        jsonObject.activeTimers.splice(timerIndex, 1);
+        setStorageObject(jsonObject);
+
+        return {
+            id: timer.id,
+            totalSeconds: totalSeconds,
+            originalStartedAt: timer.startedAt - timer.accumulatedSeconds
+        };
+    }
+
+    /**
+     * Get all active timers
+     * @returns {Array} Array of active timer objects
+     */
+    function getActiveTimers() {
+        var jsonObject = retrieveStorageObject();
+        return jsonObject.activeTimers || [];
+    }
+
+    /**
+     * Get current elapsed time for a timer
+     * @param {string} timerId - ID of the timer
+     * @returns {number|null} Elapsed seconds or null if not found
+     */
+    function getTimerElapsedSeconds(timerId) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.activeTimers) return null;
+
+        var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
+        if (!timer) return null;
+
+        var totalSeconds = timer.accumulatedSeconds;
+        if (timer.status === 'running') {
+            var now = Math.round(new Date() / 1000);
+            totalSeconds += (now - timer.startedAt);
+        }
+        return totalSeconds;
+    }
+
+    /**
+     * Add a custom unit to the user's list
+     * @param {string} unit - The unit to add (e.g., "laps", "reps")
+     */
+    function addCustomUnit(unit) {
+        var jsonObject = retrieveStorageObject();
+        if (!jsonObject.customUnits) jsonObject.customUnits = [];
+
+        var normalizedUnit = unit.trim().toLowerCase();
+        if (normalizedUnit && !jsonObject.customUnits.includes(normalizedUnit)) {
+            jsonObject.customUnits.push(normalizedUnit);
+            setStorageObject(jsonObject);
+        }
+        return jsonObject.customUnits;
+    }
+
+    /**
+     * Get all custom units
+     * @returns {Array} Array of custom unit strings
+     */
+    function getCustomUnits() {
+        var jsonObject = retrieveStorageObject();
+        return jsonObject.customUnits || [];
+    }
+
     // Public API
     return {
         retrieveStorageObject,
@@ -246,7 +486,18 @@ var StorageModule = (function () {
         undoLastAction,
         performOneTimeMigration,
         isMigrated,
-        STORAGE_KEY
+        STORAGE_KEY,
+        // Time tracking functions
+        updateTimedAction,
+        updateUsedActionWithAmount,
+        startActivityTimer,
+        pauseActivityTimer,
+        resumeActivityTimer,
+        stopActivityTimer,
+        getActiveTimers,
+        getTimerElapsedSeconds,
+        addCustomUnit,
+        getCustomUnits
     };
 })();
 
