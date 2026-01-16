@@ -127,6 +127,10 @@ var BaselineModule = (function() {
         jsonObject.option.liveStatsToDisplay.sinceLastDone = valuesTimesDone || valuesTime;
         jsonObject.option.liveStatsToDisplay.avgBetweenDone = valuesTimesDone || valuesTime;
         
+        // Time spent tracking stats
+        jsonObject.option.liveStatsToDisplay.timeSpentDoing = valuesTime;
+        jsonObject.option.liveStatsToDisplay.activeTimer = valuesTime;
+        
         // Money stats
         jsonObject.option.liveStatsToDisplay.sinceLastSpent = valuesMoney;
         jsonObject.option.liveStatsToDisplay.avgBetweenSpent = valuesMoney;

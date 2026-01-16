@@ -168,6 +168,11 @@ var UIModule = (function() {
             $("#mood-tracker-area").hide();
         }
 
+        // Time spent stats
+        if (!display.timeSpentDoing) {
+            $(".time-spent-stat").hide();
+        }
+
         // BUTTONS
         if (!display.waitButton) {
             $("#wait-button").parent().hide();
@@ -328,6 +333,15 @@ var UIModule = (function() {
         if (display.moodTracker) {
             $("#mood-tracker-heading").show();
             $("#mood-tracker-area").show();
+        }
+
+        // Time spent stats (only visible when valuesTime is selected)
+        if (display.timeSpentDoing) {
+            $(".time-spent-stat").show();
+            // Update the time spent stats if the module is available
+            if (typeof ActivityTimerModule !== 'undefined') {
+                ActivityTimerModule.updateTimeSpentStats();
+            }
         }
     }
 

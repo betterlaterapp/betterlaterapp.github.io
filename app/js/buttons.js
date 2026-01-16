@@ -2,6 +2,191 @@ var ButtonsModule = (function() {
     // Private variables
     var json;
 
+    /**
+     * Setup tab switching for the 'Did it' dialog
+     */
+    function setupDialogTabs() {
+        // Tab click handler
+        $(document).on('click', '.use-dialog-tab', function() {
+            var tabId = $(this).data('tab');
+            
+            // Update active tab button
+            $('.use-dialog-tab').removeClass('active');
+            $(this).addClass('active');
+            
+            // Show corresponding tab content
+            $('.use-dialog-tab-content').removeClass('active').hide();
+            $('.use-dialog-tab-content[data-tab-content="' + tabId + '"]').addClass('active').show();
+        });
+
+        // Custom unit selector handler
+        $(document).on('change', '.how-much-unit-select', function() {
+            var value = $(this).val();
+            if (value === '__custom__') {
+                $(this).hide();
+                $(this).siblings('.custom-unit-input').show().find('input').focus();
+            }
+        });
+
+        // Save custom unit handler
+        $(document).on('click', '.custom-unit-save-btn', function() {
+            var input = $(this).siblings('.how-much-custom-unit');
+            var customUnit = input.val().trim();
+            
+            if (customUnit) {
+                // Add to storage
+                StorageModule.addCustomUnit(customUnit);
+                
+                // Add to dropdown and select it
+                var select = $(this).closest('.how-much-unit-container').find('.how-much-unit-select');
+                var optionExists = select.find('option[value="' + customUnit + '"]').length > 0;
+                
+                if (!optionExists) {
+                    select.find('option[value="__custom__"]').before(
+                        '<option value="' + customUnit + '">' + customUnit + '</option>'
+                    );
+                }
+                select.val(customUnit).show();
+                
+                // Hide custom input
+                $(this).closest('.custom-unit-input').hide();
+                input.val('');
+            }
+        });
+
+        // "How long" radio button change
+        $(document).on('change', 'input[name="howLongRadios"]', function() {
+            var value = $(this).val();
+            if (value === 'startTimer') {
+                $('.how-long-manual-inputs').hide();
+            } else {
+                $('.how-long-manual-inputs').show();
+            }
+        });
+    }
+
+    /**
+     * Update the dialog tabs visibility based on baseline settings
+     */
+    function updateDialogTabsVisibility() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var baseline = jsonObject.baseline;
+
+        // "How much" tab - visible if valuesTimesDone is selected
+        if (baseline.valuesTimesDone) {
+            $('.use-dialog-tab[data-tab="how-much"]').show();
+        } else {
+            $('.use-dialog-tab[data-tab="how-much"]').hide();
+        }
+
+        // "How long" tab - visible if valuesTime is selected
+        if (baseline.valuesTime) {
+            $('.use-dialog-tab[data-tab="how-long"]').show();
+        } else {
+            $('.use-dialog-tab[data-tab="how-long"]').hide();
+        }
+    }
+
+    /**
+     * Reset dialog to initial state
+     */
+    function resetDialogState() {
+        // Reset to "When" tab
+        $('.use-dialog-tab').removeClass('active');
+        $('.use-dialog-tab[data-tab="when"]').addClass('active');
+        $('.use-dialog-tab-content').removeClass('active').hide();
+        $('.use-dialog-tab-content[data-tab-content="when"]').addClass('active').show();
+
+        // Reset "How much" inputs
+        $('.how-much-amount').val('');
+        $('.how-much-unit-select').val('').show();
+        $('.custom-unit-input').hide();
+        $('.how-much-custom-unit').val('');
+
+        // Reset "How long" inputs
+        $('#manualDurationRadio').prop('checked', true);
+        $('.duration-picker-hours').val('0');
+        $('.duration-picker-minutes').val('0');
+        $('.how-long-manual-inputs').show();
+
+        // Populate custom units from storage
+        populateCustomUnits();
+    }
+
+    /**
+     * Populate custom units dropdown from storage
+     */
+    function populateCustomUnits() {
+        var customUnits = StorageModule.getCustomUnits();
+        var select = $('.how-much-unit-select');
+        
+        // Remove existing custom units (keep default ones)
+        select.find('option').each(function() {
+            var val = $(this).val();
+            if (val && val !== '__custom__' && !isDefaultUnit(val)) {
+                $(this).remove();
+            }
+        });
+
+        // Add custom units before the "Add custom" option
+        customUnits.forEach(function(unit) {
+            if (!select.find('option[value="' + unit + '"]').length) {
+                select.find('option[value="__custom__"]').before(
+                    '<option value="' + unit + '">' + unit + '</option>'
+                );
+            }
+        });
+    }
+
+    /**
+     * Check if a unit is one of the default units
+     */
+    function isDefaultUnit(unit) {
+        var defaults = ['', 'times', 'reps', 'laps', 'sets', 'grams', 'oz', 'ml', 'cups', 'pages', 'minutes'];
+        return defaults.includes(unit);
+    }
+
+    /**
+     * Get "How much" data from the dialog
+     */
+    function getHowMuchData() {
+        var amount = parseFloat($('.how-much-amount').val());
+        var unit = $('.how-much-unit-select').val();
+        
+        if (isNaN(amount) || amount <= 0) {
+            return null;
+        }
+        
+        return {
+            amount: amount,
+            unit: unit || null
+        };
+    }
+
+    /**
+     * Get "How long" data from the dialog
+     */
+    function getHowLongData() {
+        var selectedOption = $('input[name="howLongRadios"]:checked').val();
+        
+        if (selectedOption === 'startTimer') {
+            return { type: 'startTimer' };
+        } else {
+            var hours = parseInt($('.duration-picker-hours').val()) || 0;
+            var minutes = parseInt($('.duration-picker-minutes').val()) || 0;
+            var totalSeconds = (hours * 3600) + (minutes * 60);
+            
+            if (totalSeconds <= 0) {
+                return null;
+            }
+            
+            return {
+                type: 'manual',
+                duration: totalSeconds
+            };
+        }
+    }
+
     function handleCraveButtonClick() {
 
         var timestampSeconds = Math.round(new Date() / 1000);
@@ -44,6 +229,10 @@ var ButtonsModule = (function() {
 
     function handleUseButtonClick() {
         UIModule.openClickDialog(".use");
+
+        // Reset dialog state and update tab visibility
+        resetDialogState();
+        updateDialogTabsVisibility();
 
         var date = new Date();
         var currHours = date.getHours(),
@@ -165,6 +354,24 @@ var ButtonsModule = (function() {
         var timeData = calculateRequestedTimestamp();
         var { timestampSeconds, requestedTimestamp, userDidItNow } = timeData;
 
+        // Get optional "How much" data
+        var howMuchData = getHowMuchData();
+
+        // Get optional "How long" data (only if valuesTime is set)
+        var howLongData = null;
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (jsonObject.baseline.valuesTime) {
+            howLongData = getHowLongData();
+        }
+
+        // Handle "Start Timer" option - don't log action yet, start timer instead
+        if (howLongData && howLongData.type === 'startTimer') {
+            UIModule.closeClickDialog(".use");
+            $(".statistics-tab-toggler").click();
+            ActivityTimerModule.startNewTimer();
+            return;
+        }
+
         // Return to statistics screen
         $(".statistics-tab-toggler").click();
 
@@ -179,13 +386,43 @@ var ButtonsModule = (function() {
         json.statistics.use.cravingsInARow = 0;
         $("#cravingsResistedInARow").html(json.statistics.use.cravingsInARow);
 
-        // Handle action recording and timer
+        // Determine what type of action to record
+        var actionTimestamp = userDidItNow ? timestampSeconds : requestedTimestamp;
+        
+        // Handle "How long" with manual duration - creates a 'timed' action
+        if (howLongData && howLongData.type === 'manual' && howLongData.duration > 0) {
+            StorageModule.updateTimedAction(
+                actionTimestamp, 
+                howLongData.duration,
+                howMuchData ? howMuchData.amount : null,
+                howMuchData ? howMuchData.unit : null
+            );
+            ActionLogModule.placeActionIntoLog(actionTimestamp, "timed", null, null, null, false, howLongData.duration);
+            
+            // Update time spent stats
+            if (typeof ActivityTimerModule !== 'undefined') {
+                ActivityTimerModule.updateTimeSpentStats();
+            }
+        }
+        // Handle "How much" data with optional amount/unit
+        else if (howMuchData) {
+            StorageModule.updateUsedActionWithAmount(
+                actionTimestamp,
+                howMuchData.amount,
+                howMuchData.unit
+            );
+            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false);
+        }
+        // Standard "used" action
+        else {
+            StorageModule.updateActionTable(actionTimestamp, "used");
+            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false);
+        }
+
+        // Handle timer
         if (userDidItNow) {
-            StorageModule.updateActionTable(timestampSeconds, "used");
-            ActionLogModule.placeActionIntoLog(timestampSeconds, "used", null, null, null, false);
             TimerStateManager.initiate('smoke', undefined, json);
         } else {
-            StorageModule.updateActionTable(requestedTimestamp, "used");
             TimerStateManager.initiate('smoke', requestedTimestamp, json);
         }
 
@@ -300,6 +537,9 @@ var ButtonsModule = (function() {
     }
 
     function setupButtonHandlers() {
+        // Setup dialog tabs for the "Did it" dialog
+        setupDialogTabs();
+
         $("#bought-button, #crave-button, #use-button, #wait-button").click(function() {
             if (this.id == "crave-button") {
                 handleCraveButtonClick();
@@ -360,6 +600,8 @@ var ButtonsModule = (function() {
         handleBoughtButtonDialog: handleBoughtButtonDialog,
         handleGoalButtonClick: handleGoalButtonClick,
         setupButtonHandlers: setupButtonHandlers,
+        setupDialogTabs: setupDialogTabs,
+        updateDialogTabsVisibility: updateDialogTabsVisibility,
         init: init
     };
 })();

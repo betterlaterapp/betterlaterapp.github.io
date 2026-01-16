@@ -2990,3 +2990,417 @@ input[type="number"] {
         height: 24px;
     }
 }
+
+/* ==========================================
+   "Did it" Dialog Tabs
+   ========================================== */
+
+.use-dialog-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.use-dialog-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.use-dialog-tab:hover {
+    background: rgba(77, 131, 181, 0.1);
+    color: #4d83b5;
+}
+
+.use-dialog-tab.active {
+    background: #fff;
+    color: #4d83b5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.use-dialog-tab i {
+    font-size: 0.9rem;
+}
+
+.use-dialog-tab-content {
+    display: none;
+}
+
+.use-dialog-tab-content.active {
+    display: block;
+}
+
+/* ==========================================
+   "How much" Tab Styles
+   ========================================== */
+
+.how-much-input-container {
+    padding: 16px 0;
+}
+
+.how-much-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.how-much-amount {
+    flex: 0 0 100px;
+    padding: 12px 16px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.how-much-amount:focus {
+    border-color: #4d83b5;
+    outline: none;
+}
+
+.how-much-unit-container {
+    flex: 1;
+}
+
+.how-much-unit-select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.how-much-unit-select:focus {
+    border-color: #4d83b5;
+    outline: none;
+}
+
+.custom-unit-input {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.how-much-custom-unit {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    border: 2px solid #4d83b5;
+    border-radius: 8px;
+}
+
+.custom-unit-save-btn {
+    padding: 10px 16px;
+    background: #4d83b5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.custom-unit-save-btn:hover {
+    background: #3d6a94;
+}
+
+/* ==========================================
+   "How long" Tab Styles
+   ========================================== */
+
+.how-long-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.how-long-option {
+    padding: 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.how-long-option:has(input:checked) {
+    border-color: #4d83b5;
+    background: rgba(77, 131, 181, 0.05);
+}
+
+.how-long-option .form-check {
+    margin-bottom: 0;
+}
+
+.how-long-option .form-check-label {
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.how-long-option .form-check-label i {
+    color: #4d83b5;
+}
+
+.how-long-hint {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 8px 0 0 24px;
+}
+
+.how-long-manual-inputs {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+.duration-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.duration-picker-hours,
+.duration-picker-minutes {
+    width: 70px;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.duration-picker-container .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+/* ==========================================
+   Activity Timer Panel (Full-width, Modern)
+   ========================================== */
+
+#activity-timers-container {
+    margin-bottom: 24px;
+}
+
+.activity-timer-panel {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #3d7ab5 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);
+}
+
+.activity-timer-panel::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.activity-timer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.activity-timer-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.activity-timer-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.activity-timer-discard-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.activity-timer-discard-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+.activity-timer-display {
+    text-align: center;
+    padding: 24px 0;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace;
+}
+
+.activity-timer-display span {
+    font-size: 3rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+.activity-timer-display .timer-separator {
+    opacity: 0.5;
+    margin: 0 4px;
+}
+
+.activity-timer-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.running {
+    background: #4ade80;
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
+}
+
+.status-indicator.paused {
+    background: #fbbf24;
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.activity-timer-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-timer-control {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.activity-timer-pause-btn,
+.activity-timer-resume-btn {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+.activity-timer-pause-btn:hover,
+.activity-timer-resume-btn:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.activity-timer-stop-btn {
+    background: #fff;
+    color: #1e3a5f;
+}
+
+.activity-timer-stop-btn:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+/* Time Spent Stat styling (matches longestGoal) */
+.time-spent-stat {
+    /* Inherits standard stat-recepticle styles */
+}
+
+.stat-group.timeSpentDoing {
+    /* Inherits standard stat-group styles */
+}
+
+/* Responsive adjustments for activity timer */
+@media (max-width: 576px) {
+    .activity-timer-display span {
+        font-size: 2.2rem;
+    }
+    
+    .activity-timer-controls {
+        flex-direction: column;
+    }
+    
+    .btn-timer-control {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .use-dialog-tab {
+        padding: 8px 6px;
+        font-size: 0.75rem;
+    }
+    
+    .use-dialog-tab i {
+        font-size: 0.8rem;
+    }
+}

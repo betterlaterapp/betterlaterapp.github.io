@@ -478,6 +478,16 @@ $(document).ready(function () {
                 return e.clickType == "mood";
             });
 
+            /* TIME SPENT STATISTICS */
+            var timedCount = jsonObject.action.filter(function (e) {
+                return e.clickType == "timed";
+            });
+            
+            if (timedCount.length > 0 && typeof ActivityTimerModule !== 'undefined') {
+                // Calculate and display time spent stats
+                ActivityTimerModule.updateTimeSpentStats();
+            }
+
             /* GOAL STATISTICS*/
             var goalCount = jsonObject.action.filter(function (e) {
                 return e.clickType == "goal";
@@ -608,6 +618,11 @@ $(document).ready(function () {
         GoalsModule.init(json);
         BehavioralGoalsModule.init(json);
         ButtonsModule.init(json);
+        
+        // Initialize ActivityTimerModule for time spent tracking
+        if (typeof ActivityTimerModule !== 'undefined') {
+            ActivityTimerModule.init(json);
+        }
 
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
@@ -660,11 +675,11 @@ $(document).ready(function () {
             //replace this with 
             //empty action table
             //basic stat display settings option table
-            var newJsonString = '{ "version": 1, "action": [], "behavioralGoals": [], ' +
+            var newJsonString = '{ "version": 2, "action": [], "behavioralGoals": [], "activeTimers": [], "customUnits": [], ' +
                 '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true },' +
-                '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true},' +
+                '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
+                '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true, "timed": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
                 '} }';
             localStorage.setItem("esCrave", newJsonString);

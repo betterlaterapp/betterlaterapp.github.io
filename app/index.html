@@ -333,58 +333,179 @@
         <div class="use log-more-info">
             <div class="row">
                 <div class="col-12">
+                    <!-- Tab Navigation -->
+                    <div class="use-dialog-tabs">
+                        <button class="use-dialog-tab active" data-tab="when">
+                            <i class="fas fa-clock"></i> When
+                        </button>
+                        <button class="use-dialog-tab" data-tab="how-much" style="display: none;">
+                            <i class="fas fa-hashtag"></i> How much
+                        </button>
+                        <button class="use-dialog-tab" data-tab="how-long" style="display: none;">
+                            <i class="fas fa-stopwatch"></i> How long
+                        </button>
+                    </div>
 
-                    <div class="time-picker-container">
-                        <h3 class="text-center">When did you do it?</h3>
+                    <!-- Tab 1: When (always visible) -->
+                    <div class="use-dialog-tab-content active" data-tab-content="when">
+                        <div class="time-picker-container">
+                            <h3 class="text-center">When did you do it?</h3>
 
-                        <div class="form-check time-picker-now">
-                            <input class="form-check-input" type="radio" name="useRadios" id="nowUseRadio" value="now"
-                                checked>
-                            <label class="form-check-label" for="nowUseRadio">
-                                Now
-                            </label>
+                            <div class="form-check time-picker-now">
+                                <input class="form-check-input" type="radio" name="useRadios" id="nowUseRadio" value="now"
+                                    checked>
+                                <label class="form-check-label" for="nowUseRadio">
+                                    Now
+                                </label>
+                            </div>
+
+                            <div class="form-check time-picker-before">
+                                <input class="form-check-input" type="radio" name="useRadios" id="pastTimeUseRadio"
+                                    value="pastTime">
+                                <label class="form-check-label" for="pastTimeUseRadio">
+
+                                    <select class="time-picker-hour" data-min="0" data-max="23" data-step="1">
+                                        <option value="0">12</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+
+                                    </select>
+                                    <span class="label">
+                                        :
+                                    </span>
+                                    <select class="time-picker-minute" data-min="0" data-max="59" data-step="1">
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+
+                                    </select>
+
+                                    <select class="time-picker-am-pm">
+                                        <option value="AM">AM</option>
+                                        <option value="PM">PM</option>
+                                    </select>
+
+                                </label>
+                            </div>
+                            <div class="24-hour-day-indicator" style="color: grey; display: none;">
+                                <p>Yesterday</p>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="form-check time-picker-before">
-                            <input class="form-check-input" type="radio" name="useRadios" id="pastTimeUseRadio"
-                                value="pastTime">
-                            <label class="form-check-label" for="pastTimeUseRadio">
-
-                                <select class="time-picker-hour" data-min="0" data-max="23" data-step="1">
-                                    <option value="0">12</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                    <option value="11">11</option>
-
-                                </select>
-                                <span class="label">
-                                    :
-                                </span>
-                                <select class="time-picker-minute" data-min="0" data-max="59" data-step="1">
-                                    <option value="0">00</option>
-                                    <option value="15">15</option>
-                                    <option value="30">30</option>
-                                    <option value="45">45</option>
-
-                                </select>
-
-                                <select class="time-picker-am-pm">
-                                    <option value="AM">AM</option>
-                                    <option value="PM">PM</option>
-                                </select>
-
-                            </label>
+                    <!-- Tab 2: How much (visible when 'Times done' is selected) -->
+                    <div class="use-dialog-tab-content" data-tab-content="how-much" style="display: none;">
+                        <h3 class="text-center">How much?</h3>
+                        <p class="text-center text-muted" style="font-size: 0.85rem;">Optional: track quantity with a custom unit</p>
+                        
+                        <div class="how-much-input-container">
+                            <div class="how-much-row">
+                                <input type="number" 
+                                       class="how-much-amount" 
+                                       placeholder="0" 
+                                       step="0.1" 
+                                       min="0">
+                                <div class="how-much-unit-container">
+                                    <select class="how-much-unit-select">
+                                        <option value="">— select unit —</option>
+                                        <option value="times">times</option>
+                                        <option value="reps">reps</option>
+                                        <option value="laps">laps</option>
+                                        <option value="sets">sets</option>
+                                        <option value="grams">grams</option>
+                                        <option value="oz">oz</option>
+                                        <option value="ml">ml</option>
+                                        <option value="cups">cups</option>
+                                        <option value="pages">pages</option>
+                                        <option value="minutes">minutes</option>
+                                        <option value="__custom__">+ Add custom...</option>
+                                    </select>
+                                    <div class="custom-unit-input" style="display: none;">
+                                        <input type="text" 
+                                               class="how-much-custom-unit" 
+                                               placeholder="Enter unit (e.g., hits)"
+                                               maxlength="20">
+                                        <button class="custom-unit-save-btn" type="button">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="24-hour-day-indicator" style="color: grey; display: none;">
-                            <p>Yesterday</p>
+                    </div>
+
+                    <!-- Tab 3: How long (visible when 'Time spent' is selected) -->
+                    <div class="use-dialog-tab-content" data-tab-content="how-long" style="display: none;">
+                        <h3 class="text-center">How long?</h3>
+                        <p class="text-center text-muted" style="font-size: 0.85rem;">Track duration with a timer or manual entry</p>
+                        
+                        <div class="how-long-options">
+                            <!-- Option 1: Start a new timer -->
+                            <div class="how-long-option how-long-timer-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="howLongRadios" 
+                                           id="startTimerRadio" value="startTimer">
+                                    <label class="form-check-label" for="startTimerRadio">
+                                        <i class="fas fa-play-circle"></i> Start a timer now
+                                    </label>
+                                </div>
+                                <p class="how-long-hint">Creates a timer you can pause/stop later</p>
+                            </div>
+
+                            <!-- Option 2: Enter duration manually -->
+                            <div class="how-long-option how-long-manual-option">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="howLongRadios" 
+                                           id="manualDurationRadio" value="manualDuration" checked>
+                                    <label class="form-check-label" for="manualDurationRadio">
+                                        <i class="fas fa-keyboard"></i> Enter duration
+                                    </label>
+                                </div>
+                                <div class="how-long-manual-inputs">
+                                    <div class="duration-picker-container">
+                                        <select class="duration-picker-hours">
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                        </select>
+                                        <span class="label">h</span>
+                                        <select class="duration-picker-minutes">
+                                            <option value="0">00</option>
+                                            <option value="5">05</option>
+                                            <option value="10">10</option>
+                                            <option value="15">15</option>
+                                            <option value="20">20</option>
+                                            <option value="25">25</option>
+                                            <option value="30">30</option>
+                                            <option value="35">35</option>
+                                            <option value="45">45</option>
+                                            <option value="50">50</option>
+                                            <option value="55">55</option>
+                                        </select>
+                                        <span class="label">m</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -649,6 +770,10 @@
                     <!-- Start Use are -->
                     <div id="use-content">
                         <!--h3 class="text-center">I wanted to...</h3-->
+                        
+                        <!-- Active Activity Timers Container -->
+                        <div id="activity-timers-container"></div>
+
                         <div class="row no-gutters">
 
                             <div class="col-12">
@@ -981,6 +1106,32 @@
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
                                             <span class="statistic goal month longestGoal"> test </span>
+                                            <p>Past&nbsp;30&nbsp;days</p>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- Time spent doing (visible when valuesTime is selected) -->
+                                <div class="stat-recepticle time-spent-stat" style="display: none;">
+                                    <p>Time spent doing</p>
+
+                                    <div class="stat-group timeSpentDoing time">
+                                        <div class="stat-recepticle">
+                                            <div class="white-bg"></div>
+                                            <span class="statistic time total timeSpentDoing"> — </span>
+                                            <p>Overall</p>
+                                        </div>
+
+                                        <div class="stat-recepticle">
+                                            <div class="white-bg"></div>
+                                            <span class="statistic time week timeSpentDoing"> — </span>
+                                            <p>Past&nbsp;7&nbsp;days</p>
+                                        </div>
+
+                                        <div class="stat-recepticle">
+                                            <div class="white-bg"></div>
+                                            <span class="statistic time month timeSpentDoing"> — </span>
                                             <p>Past&nbsp;30&nbsp;days</p>
                                         </div>
 
@@ -1519,7 +1670,7 @@
                                             <label class="form-check-label p-0">
                                                 <input type="radio" class="neutralHabit form-check-input"
                                                     name="incdecradio">
-                                                <span>I don't know yet</span>
+                                                <span>Just observe</span>
                                             </label>
                                         </div>
                                     </div>
@@ -1780,7 +1931,7 @@
                             <div id="habit-log-area">
                                 <div class="row">
                                     <div class="col-12">
-                                        <div class="initial-instructions">
+                                        <div class="initial-instructions d-none">
                                             <p>
                                                 As you click action logging buttons, a record will be made here.
                                                 Change what shows here in the app
@@ -1946,6 +2097,7 @@
         <script type="application/javascript" src="js/baseline.js"></script>
         <script type="application/javascript" src="js/goals.js"></script>
         <script type="application/javascript" src="js/behavioralGoals.js"></script>
+        <script type="application/javascript" src="js/activityTimer.js"></script>
         <script type="application/javascript" src="js/tabs.js"></script>
         <script type="application/javascript" src="js/settings.js"></script>
         <script type="application/javascript" src="js/buttons.js"></script>

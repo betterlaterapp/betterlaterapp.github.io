@@ -5,13 +5,14 @@ var ActionLogModule = (function () {
     /**
      * Place action into the habit log
      * @param {number} clickStamp - Timestamp of the action
-     * @param {string} clickType - Type of action (used, craved, bought, mood)
+     * @param {string} clickType - Type of action (used, craved, bought, mood, timed)
      * @param {number} amountSpent - Amount spent (for bought actions)
      * @param {string} comment - Comment for mood actions
      * @param {number} smiley - Smiley index for mood actions
      * @param {boolean} placeBelow - Whether to place below existing items
+     * @param {number} duration - Duration in seconds (for timed actions)
      */
-    function placeActionIntoLog(clickStamp, clickType, amountSpent, comment, smiley, placeBelow) {
+    function placeActionIntoLog(clickStamp, clickType, amountSpent, comment, smiley, placeBelow, duration) {
         //data seems to be in order
         var endDateObj = new Date(parseInt(clickStamp + "000"));
         var dayOfTheWeek = endDateObj.toString().split(' ')[0];
@@ -48,6 +49,10 @@ var ActionLogModule = (function () {
         } else if (clickType == "mood") {
             var scrubbedComment = comment.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
             titleHTML = '<img class="img-fluid habit-log-icon smiley mood-' + smiley + '" src="../assets/images/mood-smiley-' + smiley + '.png" />&nbsp;' + " <b>" + scrubbedComment + "</b>";
+        } else if (clickType == "timed") {
+            // Format duration using StatsCalculationsModule
+            var durationStr = duration ? StatsCalculationsModule.convertSecondsToDateFormat(duration, false) : '0m';
+            titleHTML = '<i class="fas fa-stopwatch"></i>&nbsp;' + "You spent <b>" + durationStr + "</b> on it.";
         }
 
         var template = '<div class="item ' + clickType + '-record">' +
@@ -60,7 +65,12 @@ var ActionLogModule = (function () {
 
 
         var jsonObject = StorageModule.retrieveStorageObject();
-        if (jsonObject.option.logItemsToDisplay[clickType] === true) {
+        // For 'timed' actions, check if 'timed' is set to display, otherwise default to true
+        var shouldDisplay = clickType === 'timed' 
+            ? (jsonObject.option.logItemsToDisplay.timed !== false)
+            : (jsonObject.option.logItemsToDisplay[clickType] === true);
+            
+        if (shouldDisplay) {
             if (placeBelow) {
                 $(target).append(template);
             } else {
@@ -118,6 +128,7 @@ var ActionLogModule = (function () {
                 e.clickType == "craved" ||
                 e.clickType == "bought" ||
                 e.clickType == "mood" ||
+                e.clickType == "timed" ||
                 (e.clickType == "goal" && (e.status == 2 || e.status == 3));
         });
         allActions = allActions.sort((a, b) => {
@@ -141,7 +152,8 @@ var ActionLogModule = (function () {
                     currGoalEndStamp = -1,
                     currGoalType = "",
                     comment = "",
-                    smiley = -1;
+                    smiley = -1,
+                    duration = null;
 
                 if (currClickType == "used" || currClickType == "craved") {
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
@@ -163,6 +175,10 @@ var ActionLogModule = (function () {
 
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
+                } else if (currClickType == "timed") {
+                    // Timed action - log with duration
+                    duration = allActions[i].duration;
+                    placeActionIntoLog(currClickStamp, currClickType, null, null, null, true, duration);
                 }
 
                 if (i == actionsToAddMin || i == 0) {
@@ -197,7 +213,8 @@ var ActionLogModule = (function () {
                     currGoalEndStamp = -1,
                     currGoalType = "",
                     comment = "",
-                    smiley = -1;
+                    smiley = -1,
+                    duration = null;
 
                 if (currClickType == "used" || currClickType == "craved") {
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
@@ -219,6 +236,10 @@ var ActionLogModule = (function () {
 
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
+                } else if (currClickType == "timed") {
+                    // Timed action - log with duration
+                    duration = allActions[i].duration;
+                    placeActionIntoLog(currClickStamp, currClickType, null, null, null, true, duration);
                 }
 
                 if (i == actionsToAddMin || i == 0) {
