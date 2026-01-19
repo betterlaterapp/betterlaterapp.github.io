@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { 
+  navigateToSettings, 
+  navigateToJournal, 
+  setupUserWithBaseline 
+} from './utils/test-helpers';
 
 /**
  * Test: Edge Cases & Error Handling
@@ -10,102 +15,6 @@ import { test, expect } from '@playwright/test';
  * - Dialog cancel behavior
  * - Timer edge cases
  */
-
-// Helper to navigate to settings via hamburger menu
-async function navigateToSettings(page) {
-  await page.click('.hamburger-toggle');
-  await page.waitForSelector('.hamburger-menu.show');
-  await page.click('.hamburger-menu .settings-tab-toggler');
-  await page.waitForTimeout(300);
-}
-
-// Helper to navigate to journal via hamburger menu
-async function navigateToJournal(page) {
-    await page.click('.hamburger-toggle');
-    await page.waitForSelector('.hamburger-menu.show');
-    await page.click('.hamburger-menu .journal-tab-toggler');
-    await page.waitForTimeout(300);
-}
-
-async function setupUserWithBaseline(page) {
-  const testData = {
-    action: [],
-    behavioralGoals: [],
-    baseline: {
-      specificSubject: true,
-      decreaseHabit: true,
-      increaseHabit: false,
-      neutralHabit: false,
-      userSubmitted: true,
-
-      valuesTimesDone: true,
-      valuesTime: true,
-      valuesMoney: true,
-      valuesHealth: true,
-
-      amountDonePerWeek: 0,
-      goalDonePerWeek: 0,
-      usageTimeline: 'week',
-      amountSpentPerWeek: 0,
-      goalSpentPerWeek: 0,
-      spendingTimeline: 'week',
-      currentTimeHours: 0,
-      currentTimeMinutes: 0,
-      goalTimeHours: 0,
-      goalTimeMinutes: 0,
-      timeTimeline: 'week',
-      statusType: '',
-      wellnessText: '',
-      wellnessMood: 2
-    },
-    option: {
-      activeTab: 'statistics-content',
-      liveStatsToDisplay: {
-        goalButton: true,
-        waitButton: true,
-        undoButton: true,
-        untilGoalEnd: true,
-        longestGoal: true,
-        usedButton: true,
-        usedGoalButton: true,
-        cravedButton: true,
-        spentButton: true,
-        sinceLastDone: true,
-        avgBetweenDone: true,
-        didntPerDid: true,
-        resistedInARow: true,
-        sinceLastSpent: true,
-        avgBetweenSpent: true,
-        timesDone: true,
-        totalSpent: true,
-        moodTracker: true
-      },
-      logItemsToDisplay: {
-        goal: true,
-        used: true,
-        craved: true,
-        bought: true,
-        mood: true
-      },
-      reportItemsToDisplay: {
-        useChangeVsBaseline: false,
-        useChangeVsLastWeek: true,
-        useVsResistsGraph: true,
-        costChangeVsBaseline: false,
-        costChangeVsLastWeek: true,
-        useGoalVsThisWeek: false,
-        costGoalVsThisWeek: false
-      }
-    }
-  };
-
-  await page.addInitScript((data) => {
-    // Only set if not already present, to allow persistence across reloads
-    if (!localStorage.getItem('esCrave')) {
-      localStorage.setItem('esCrave', JSON.stringify(data));
-    }
-  }, testData);
-}
 
 test.describe('Better Later - Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
@@ -294,9 +203,4 @@ test.describe('Better Later - Edge Cases', () => {
     
     console.log('✅ Log entries have timestamps test passed!');
   });
-
-  
-  
 });
-
-
