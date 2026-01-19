@@ -221,13 +221,13 @@ var SettingsModule = (function () {
         var hasCostGoal = baseline.goalSpentPerWeek > 0;
         toggleOption('costGoalVsThisWeekDisplayed', !hasCostGoal, "Requires spending goal amount");
 
-        // 5. Longest Goal completed
-        var hasCompletedGoals = stats.goal.completedGoals > 0;
-        toggleOption('longestGoalDisplayed', !hasCompletedGoals, "Requires at least one completed goal");
+        // 5. Longest Wait completed
+        var hasCompletedWaits = stats.wait.completedWaits > 0;
+        toggleOption('longestGoalDisplayed', !hasCompletedWaits, "Requires at least one completed wait");
 
-        // 6. Time until goal end
-        var hasActiveGoal = stats.goal.activeGoalUse || stats.goal.activeGoalBought || stats.goal.activeGoalBoth;
-        toggleOption('untilGoalEndDisplayed', !hasActiveGoal, "Requires an active goal timer");
+        // 6. Time until wait end
+        var hasActiveWait = stats.wait.activeWaitUse || stats.wait.activeWaitBought || stats.wait.activeWaitBoth;
+        toggleOption('untilGoalEndDisplayed', !hasActiveWait, "Requires an active wait timer");
 
         // 7. Time since last 'did it'
         var hasUsageActions = stats.use.clickCounter > 0;

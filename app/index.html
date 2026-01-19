@@ -275,15 +275,15 @@
             <!--end timepicker div-->
 
             <!-- DATE PICKER -->
-            <div id="goalEndPicker"></div>
+            <div id="waitEndPicker"></div>
             <div style="display:block;text-align:center;">
                 <div>
                     <label for="boughtInput">
-                        <input id="boughtGoalInput" type="checkbox" checked />&nbsp;To Buy it</label>
+                        <input id="boughtWaitInput" type="checkbox" checked />&nbsp;To Buy it</label>
                 </div>
                 <div>
                     <label for="usedInput">
-                        <input id="usedGoalInput" type="checkbox" checked />&nbsp;To Do it</label>
+                        <input id="usedWaitInput" type="checkbox" checked />&nbsp;To Do it</label>
                 </div>
             </div>
 
@@ -297,6 +297,43 @@
                 <div class="col-6" style="padding-left:7px;">
                     <button href="#" class="submit btn btn-dark btn-md btn-block">
                         Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distraction Memes Panel Overlay -->
+        <div class="distraction-overlay" style="display: none;"></div>
+        
+        <!-- Distraction Memes Panel -->
+        <div class="distraction log-more-info">
+            <button class="distraction-close-x" title="Close" aria-label="Close distraction panel">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="distraction-header">
+                <h3 class="text-center">
+                    <i class="fas fa-brain"></i> Distraction Zone
+                </h3>
+                <p class="text-center text-muted">Scroll through some memes while you wait...</p>
+            </div>
+            <div class="distraction-content">
+                <div class="distraction-offline-message" style="display: none;">
+                    <i class="fas fa-wifi-slash"></i>
+                    <p>You need to be online to view distractions.</p>
+                </div>
+                <div class="distraction-memes-container">
+                    <!-- Memes will be lazy loaded here -->
+                </div>
+                <div class="distraction-loading" style="display: none;">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button href="#" class="cancel btn btn-outline-dark btn-md btn-block">
+                        <i class="fas fa-times"></i> Close & Return to Timer
                     </button>
                 </div>
             </div>
@@ -412,7 +449,8 @@
                             <div class="how-much-row">
                                 <input type="number" 
                                        class="how-much-amount" 
-                                       placeholder="0" 
+                                       placeholder="1" 
+                                       value="1"
                                        step="0.1" 
                                        min="0">
                                 <div class="how-much-unit-container">
@@ -446,63 +484,65 @@
 
                     <!-- Tab 3: How long (visible when 'Time spent' is selected) -->
                     <div class="use-dialog-tab-content" data-tab-content="how-long" style="display: none;">
-                        <h3 class="text-center">How long?</h3>
-                        <p class="text-center text-muted" style="font-size: 0.85rem;">Track duration with a timer or manual entry</p>
-                        
-                        <div class="how-long-options">
-                            <!-- Option 1: Start a new timer -->
-                            <div class="how-long-option how-long-timer-option">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="howLongRadios" 
-                                           id="startTimerRadio" value="startTimer">
-                                    <label class="form-check-label" for="startTimerRadio">
-                                        <i class="fas fa-play-circle"></i> Start a timer now
-                                    </label>
+                        <div class="time-picker-container">
+                            <h3 class="text-center">How long?</h3>
+                            <p class="text-center text-muted" style="font-size: 0.85rem;">Track duration with a timer or manual entry</p>
+                            
+                            <div class="how-long-options">
+                                <!-- Option 1: Start a new timer -->
+                                <div class="how-long-option how-long-timer-option">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="howLongRadios" 
+                                               id="startTimerRadio" value="startTimer">
+                                        <label class="form-check-label" for="startTimerRadio">
+                                            Start a timer now
+                                        </label>
+                                    </div>
                                 </div>
-                                <p class="how-long-hint">Creates a timer you can pause/stop later</p>
-                            </div>
 
-                            <!-- Option 2: Enter duration manually -->
-                            <div class="how-long-option how-long-manual-option">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="howLongRadios" 
-                                           id="manualDurationRadio" value="manualDuration" checked>
-                                    <label class="form-check-label" for="manualDurationRadio">
-                                        <i class="fas fa-keyboard"></i> Enter duration
-                                    </label>
-                                </div>
-                                <div class="how-long-manual-inputs">
-                                    <div class="duration-picker-container">
-                                        <select class="duration-picker-hours">
-                                            <option value="0">0</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>
-                                            <option value="6">6</option>
-                                            <option value="7">7</option>
-                                            <option value="8">8</option>
-                                            <option value="9">9</option>
-                                            <option value="10">10</option>
-                                            <option value="11">11</option>
-                                            <option value="12">12</option>
-                                        </select>
-                                        <span class="label">h</span>
-                                        <select class="duration-picker-minutes">
-                                            <option value="0">00</option>
-                                            <option value="5">05</option>
-                                            <option value="10">10</option>
-                                            <option value="15">15</option>
-                                            <option value="20">20</option>
-                                            <option value="25">25</option>
-                                            <option value="30">30</option>
-                                            <option value="35">35</option>
-                                            <option value="45">45</option>
-                                            <option value="50">50</option>
-                                            <option value="55">55</option>
-                                        </select>
-                                        <span class="label">m</span>
+                                <!-- Option 2: Enter duration manually -->
+                                <div class="how-long-option how-long-manual-option">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="howLongRadios" 
+                                               id="manualDurationRadio" value="manualDuration" checked>
+                                        <label class="form-check-label" for="manualDurationRadio">
+                                            Enter duration manually
+                                        </label>
+                                    </div>
+                                    <div class="how-long-manual-inputs">
+                                        <div class="time-picker-container">
+                                            <select class="duration-picker-hours">
+                                                <option value="0">0</option>
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                                <option value="8">8</option>
+                                                <option value="9">9</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                            </select>
+                                            <span class="label">h</span>
+                                            <select class="duration-picker-minutes">
+                                                <option value="0">00</option>
+                                                <option value="5">05</option>
+                                                <option value="10">10</option>
+                                                <option value="15">15</option>
+                                                <option value="20">20</option>
+                                                <option value="25">25</option>
+                                                <option value="30">30</option>
+                                                <option value="35">35</option>
+                                                <option value="40">40</option>
+                                                <option value="45">45</option>
+                                                <option value="50">50</option>
+                                                <option value="55">55</option>
+                                            </select>
+                                            <span class="label">m</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -719,8 +759,8 @@
                         </p>
                     </div>
 
-                    <!-- Start Goal area -->
-                    <div id="goal-content">
+                    <!-- Start Wait area (formerly Goal area) -->
+                    <div id="wait-content">
                         <!--h3 class="text-center">I wanted to...</h3-->
                         <div class="row">
                             <div class="col-12">
@@ -728,14 +768,14 @@
 
                                     <p>
                                         <span class="desires-decrease">
-                                            Until goal ends
+                                            Time remaining
                                         </span>
                                         <span class="desires-increase d-none">
                                             Do it again by:
                                         </span>
                                     </p>
                                     <div class="spacer">
-                                        <div id="goal-timer" class="fibonacci-timer">
+                                        <div id="wait-timer" class="fibonacci-timer">
                                             <div class="boxes">
                                                 <div>
                                                     <span class="timerSpan daysSinceLastClick">0</span>
@@ -767,12 +807,14 @@
                     </div>
                     <!--end goal tab pane-->
 
+                    <!-- Active Wait Timers Container (Delayed Gratification / Procrastination) -->
+                    <div id="wait-timers-container"></div>
+
+                    <!-- Active Activity Timers Container -->
+                    <div id="activity-timers-container"></div>
+
                     <!-- Start Use are -->
                     <div id="use-content">
-                        <!--h3 class="text-center">I wanted to...</h3-->
-                        
-                        <!-- Active Activity Timers Container -->
-                        <div id="activity-timers-container"></div>
 
                         <div class="row no-gutters">
 
@@ -1088,24 +1130,24 @@
                                     </div>
                                 </div>
                                 <div class="stat-recepticle">
-                                    <p>Longest time waited (goal)</p>
+                                    <p>Longest time waited</p>
 
-                                    <div class="stat-group longestGoal goal">
+                                    <div class="stat-group longestWait longestGoal wait">
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
-                                            <span class="statistic goal total longestGoal"> test </span>
+                                            <span class="statistic wait total longestWait longestGoal"> test </span>
                                             <p>Overall</p>
                                         </div>
 
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
-                                            <span class="statistic goal week longestGoal"> test </span>
+                                            <span class="statistic wait week longestWait longestGoal"> test </span>
                                             <p>Past&nbsp;7&nbsp;days</p>
                                         </div>
 
                                         <div class="stat-recepticle">
                                             <div class="white-bg"></div>
-                                            <span class="statistic goal month longestGoal"> test </span>
+                                            <span class="statistic wait month longestWait longestGoal"> test </span>
                                             <p>Past&nbsp;30&nbsp;days</p>
                                         </div>
 
@@ -1422,10 +1464,10 @@
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <label class="form-check-label" for="longestGoalDisplayed">
+                                                <label class="form-check-label" for="longestWaitDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
-                                                        id="longestGoalDisplayed" checked>
-                                                    Longest Goal completed
+                                                        id="longestWaitDisplayed" checked>
+                                                    Longest wait completed
                                                 </label>
                                             </div>
                                             <div class="form-check">
@@ -1959,7 +2001,7 @@
                 <div class="button-bar bg-white">
                     <div class="nav nav-tabs">
                         <div class="button-group">
-                            <div class="clickCounter"><span id="numberOfGoalsCompleted"></span> </div>
+                            <div class="clickCounter"><span id="numberOfWaitsCompleted"></span> </div>
                             <a id="wait-button" href="#">
 
                                 <div class="icon">
@@ -2090,14 +2132,14 @@
         <script type="application/javascript" src="js/timers.js"></script>
         <script type="application/javascript" src="js/notifications.js"></script>
         <script type="application/javascript" src="js/actionLog.js"></script>
-        <script type="application/javascript" src="js/goals.js"></script>
         <script type="application/javascript" src="js/ui.js"></script>
         <script type="application/javascript" src="js/statsCalculations.js"></script>
         <script type="application/javascript" src="js/statsDisplay.js"></script>
         <script type="application/javascript" src="js/baseline.js"></script>
-        <script type="application/javascript" src="js/goals.js"></script>
+        <script type="application/javascript" src="js/wait.js"></script>
         <script type="application/javascript" src="js/behavioralGoals.js"></script>
         <script type="application/javascript" src="js/activityTimer.js"></script>
+        <script type="application/javascript" src="js/waitTimer.js"></script>
         <script type="application/javascript" src="js/tabs.js"></script>
         <script type="application/javascript" src="js/settings.js"></script>
         <script type="application/javascript" src="js/buttons.js"></script>

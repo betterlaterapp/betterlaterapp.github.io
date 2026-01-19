@@ -91,9 +91,9 @@ var StatsDisplayModule = (function () {
             actionGerund = "bought";
         }
 
-        // Total uses
+        // Total uses (filter out null entries)
         var count = jsonObject.action.filter(function (e) {
-            return e.clickType == actionGerund;
+            return e && e.clickType == actionGerund;
         });
         count = count.sort((a, b) => {
             return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
@@ -130,13 +130,24 @@ var StatsDisplayModule = (function () {
      * @param {Object} json - App state object
      */
     function displayLongestGoal(timeIncrement, json) {
-        var longestGoal = json.statistics.goal.longestGoal;
-        if (longestGoal[timeIncrement] !== 0 && longestGoal[timeIncrement] !== "N/A") {
+        // Delegate to displayLongestWait for backward compatibility
+        displayLongestWait(timeIncrement, json);
+    }
+
+    /**
+     * Display longest wait time for a specific time increment
+     * @param {string} timeIncrement - 'week', 'month', or 'year'
+     * @param {Object} json - App state object
+     */
+    function displayLongestWait(timeIncrement, json) {
+        var waitStats = json.statistics.wait;
+        var longestWait = waitStats ? waitStats.longestWait : null;
+        if (longestWait && longestWait[timeIncrement] !== 0 && longestWait[timeIncrement] !== "N/A") {
             var html = StatsCalculationsModule.convertSecondsToDateFormat(
-                json.statistics.goal.longestGoal[timeIncrement], 
+                longestWait[timeIncrement], 
                 true
             );
-            $(".statistic.longestGoal." + timeIncrement).html(html);
+            $(".statistic.longestWait." + timeIncrement + ", .statistic.longestGoal." + timeIncrement).html(html);
         }
     }
 
@@ -183,19 +194,19 @@ var StatsDisplayModule = (function () {
         json.report.activeEndStamp = midnightLastDay;
 
         var boughtThisWeek = jsonObject.action.filter(function (e) {
-            return (e.clickType == "bought")
+            return e && (e.clickType == "bought")
                 && e.timestamp >= reportStartStamp
                 && e.timestamp <= midnightLastDay;
         });
 
         var didLastWeek = jsonObject.action.filter(function (e) {
-            return (e.clickType == "used" || e.clickType == "craved")
+            return e && (e.clickType == "used" || e.clickType == "craved")
                 && e.timestamp >= lastWeekStartStamp
                 && e.timestamp < reportStartStamp;
         });
 
         var boughtLastWeek = jsonObject.action.filter(function (e) {
-            return (e.clickType == "bought")
+            return e && (e.clickType == "bought")
                 && e.timestamp >= lastWeekStartStamp
                 && e.timestamp < reportStartStamp;
         });
@@ -205,7 +216,7 @@ var StatsDisplayModule = (function () {
             var endOfDayTimestamp = reportStartStamp + ((60 * 60 * 24) * (dayIndex + 1));
 
             var actionsInRange = jsonObject.action.filter(function (e) {
-                return (e.clickType == "used" || e.clickType == "craved")
+                return e && (e.clickType == "used" || e.clickType == "craved")
                     && e.timestamp >= startOfDayTimestamp
                     && e.timestamp <= endOfDayTimestamp;
             });
@@ -470,6 +481,7 @@ var StatsDisplayModule = (function () {
         displayAverageTimeBetween: displayAverageTimeBetween,
         recalculateAverageTimeBetween: recalculateAverageTimeBetween,
         displayLongestGoal: displayLongestGoal,
+        displayLongestWait: displayLongestWait,
         calculateReportValues: calculateReportValues,
         createReport: createReport,
         initiateReport: initiateReport,

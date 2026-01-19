@@ -1,5 +1,22 @@
 var version = "v3.14.14::pages";
 
+// Paths that should NOT be cached (always fetch from network)
+var noCachePaths = [
+  '/assets/distraction-memes/',
+  'distraction-memes/'
+];
+
+/**
+ * Check if a URL should skip caching
+ * @param {string} url - The URL to check
+ * @returns {boolean} - True if should skip caching
+ */
+function shouldSkipCache(url) {
+  return noCachePaths.some(function(path) {
+    return url.includes(path);
+  });
+}
+
 self.addEventListener('install', function(event) {
   // No need for empty function, but we can use it for precaching if needed
   console.log('Service Worker: Installed');
@@ -32,6 +49,16 @@ self.addEventListener("fetch", function(event) {
   // Skip chrome-extension and other non-http(s) requests
   const url = new URL(event.request.url);
   if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Skip caching for distraction memes (always network-first)
+  if (shouldSkipCache(event.request.url)) {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return new Response('', { status: 503, statusText: 'Offline' });
+      })
+    );
     return;
   }
 

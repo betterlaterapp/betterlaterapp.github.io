@@ -111,17 +111,20 @@ var UIModule = (function() {
             $("#cravingsResistedInARow").parent().hide();
         }
 
-        // Goal stats
-        if (stat.goal.clickCounter === 0) {
-            $("#goal-content .timer-recepticle").hide();
+        // Wait stats (formerly Goal stats)
+        var waitStats = stat.wait || stat.goal;
+        if (waitStats && waitStats.clickCounter === 0) {
+            $("#wait-content .timer-recepticle").hide();
         } else {
             statisticPresent = true;
         }
-        if (stat.goal.longestGoal.total === 0) {
-            $(".stat-group.longestGoal").parent().hide();
+        var longestWait = waitStats ? (waitStats.longestWait || waitStats.longestGoal) : null;
+        if (longestWait && longestWait.total === 0) {
+            $(".stat-group.longestWait, .stat-group.longestGoal").parent().hide();
         }
-        if (stat.goal.completedGoals === 0) {
-            $("#numberOfGoalsCompleted").parent().hide();
+        var completedWaits = waitStats ? (waitStats.completedWaits || waitStats.completedGoals) : 0;
+        if (completedWaits === 0) {
+            $("#numberOfWaitsCompleted, #numberOfGoalsCompleted").parent().hide();
         }
         if (statisticPresent) {
             $("#statistics-content .initial-instructions").hide();
@@ -189,11 +192,11 @@ var UIModule = (function() {
         if (!display.cravedButton) {
             $("#crave-button").parent().hide();
         }
-        if (!display.longestGoal) {
-            $("#goal-content .longestGoal").parent().hide();
+        if (!display.longestGoal && !display.longestWait) {
+            $("#wait-content .longestWait, #wait-content .longestGoal").parent().hide();
         }
-        if (!display.untilGoalEnd) {
-            $("#goal-content .timer-recepticle").hide();
+        if (!display.untilGoalEnd && !display.untilWaitEnd) {
+            $("#wait-content .timer-recepticle").hide();
         }
         if (!display.undoButton) {
             $("#undoActionButton").parent().hide();
@@ -300,34 +303,34 @@ var UIModule = (function() {
             $("#cravingsResistedInARow").parent().show();
         }
 
-        // Goal page
-        if (display.untilGoalEnd && stat.goal.clickCounter !== 0 && stat.goal.untilTimerEnd.totalSeconds !== 0 &&
-            (stat.goal.activeGoalBoth || stat.goal.activeGoalBought || stat.goal.activeGoalUse)
-        ) {
-            $("#goal-content .timer-recepticle").show();
-            $("#goal-content .fibonacci-timer").show();
-        }
+        // Wait page (formerly Goal page)
+        var waitStats = stat.wait || stat.goal;
+        // Note: The old timer-recepticle for waits is no longer used
+        // Wait timers are now handled by WaitTimerModule which creates panels in #wait-timers-container
+        // The old timer-recepticle remains hidden (handled by hideInactiveStatistics)
 
-        var bestTime = stat.goal.longestGoal;
-        if (display.longestGoal && bestTime.total !== 0) {
-            $(".stat-group.longestGoal").parent().show();
+        var bestTime = waitStats ? (waitStats.longestWait || waitStats.longestGoal) : null;
+        var showLongestWait = display.longestWait || display.longestGoal;
+        if (bestTime && showLongestWait && bestTime.total !== 0) {
+            $(".stat-group.longestWait, .stat-group.longestGoal").parent().show();
 
             if (bestTime.week !== "N/A") {
-                $(".longestGoal.week.statistic").show();
-                StatsDisplayModule.displayLongestGoal("week", json);
+                $(".longestWait.week.statistic, .longestGoal.week.statistic").show();
+                StatsDisplayModule.displayLongestWait("week", json);
             }
             if (bestTime.month !== bestTime.week && bestTime.month !== "N/A") {
-                $(".longestGoal.month.statistic").show();
-                StatsDisplayModule.displayLongestGoal("month", json);
+                $(".longestWait.month.statistic, .longestGoal.month.statistic").show();
+                StatsDisplayModule.displayLongestWait("month", json);
             }
             if (bestTime.year !== bestTime.month && bestTime.year !== "N/A") {
-                $(".longestGoal.year.statistic").show();
-                StatsDisplayModule.displayLongestGoal("year", json);
+                $(".longestWait.year.statistic, .longestGoal.year.statistic").show();
+                StatsDisplayModule.displayLongestWait("year", json);
             }
         }
         
-        if (stat.goal.completedGoals !== 0) {
-            $("#numberOfGoalsCompleted").parent().show();
+        var completedWaits = waitStats ? (waitStats.completedWaits || waitStats.completedGoals) : 0;
+        if (completedWaits !== 0) {
+            $("#numberOfWaitsCompleted, #numberOfGoalsCompleted").parent().show();
         }
 
         if (display.moodTracker) {
@@ -345,34 +348,73 @@ var UIModule = (function() {
         }
     }
 
-    function shootConfetti() {
-        const duration = 2 * 1000,
-            animationEnd = Date.now() + duration,
-            defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    /**
+     * Shoot confetti with configurable intensity
+     * @param {string} intensity - 'normal' or 'super' (2x effect)
+     */
+    function shootConfetti(intensity) {
+        intensity = intensity || 'normal';
+        
+        // Get streak data from storage
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var isDecreaseHabit = jsonObject.baseline.decreaseHabit;
+        
+        // For 'do less' habits: consecutive resists matter
+        // For 'do more' habits: consecutive did-its matter (we'll track this separately)
+        var consecutiveCount = isDecreaseHabit 
+            ? (jsonObject && jsonObject.statistics && jsonObject.statistics.use ? jsonObject.statistics.use.cravingsInARow || 0 : 0)
+            : (jsonObject && jsonObject.statistics && jsonObject.statistics.use ? jsonObject.statistics.use.clickCounter || 0 : 0); // Simplified for now
+        
+        // Intensity multipliers
+        var baseMultiplier = (intensity === 'super') ? 2 : 1;
+        
+        // Streak bonus (1-10 scale, wraps at 10)
+        var streakBonus = Math.min(consecutiveCount, 10);
+        
+        // Randomness factor (0.2 to 0.4)
+        var randomFactor = 0.2 + (Math.random() * 0.2);
+        
+        // Final strength calculation
+        // strength = 3 * randomFactor + 2 * (streakBonus / 10) + baseMultiplier
+        var strength = (3 * randomFactor) + (2 * (streakBonus / 10)) + baseMultiplier;
+        
+        // Apply strength to confetti parameters
+        var duration = Math.round(2000 * strength);
+        var particleMultiplier = Math.round(40 * strength);
+        var velocity = Math.round(30 * (0.8 + (strength * 0.2)));
+        var ticks = Math.round(60 * strength);
+        
+        var animationEnd = Date.now() + duration;
+        var defaults = { 
+            startVelocity: velocity, 
+            spread: 360, 
+            ticks: ticks, 
+            zIndex: 0 
+        };
 
         function randomInRange(min, max) {
             return Math.random() * (max - min) + min;
         }
 
-        const interval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
                 return clearInterval(interval);
             }
 
-            const particleCount = 40 * (timeLeft / duration);
+            var particleCount = particleMultiplier * (timeLeft / duration);
 
             // Since particles fall down, start a bit higher than random
             confetti(
                 Object.assign({}, defaults, {
-                    particleCount,
+                    particleCount: particleCount,
                     origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
                 })
             );
             confetti(
                 Object.assign({}, defaults, {
-                    particleCount,
+                    particleCount: particleCount,
                     origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
                 })
             );

@@ -55,12 +55,101 @@ var ActivityTimerModule = (function () {
             var timerId = $(this).closest('.activity-timer-panel').data('timer-id');
             discardTimer(timerId);
         });
+
+        // Rewind timer button (toggles footer)
+        $(document).on('click', '.activity-timer-rewind-btn', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.activity-timer-panel');
+            panel.find('.activity-timer-footer').slideToggle('fast');
+        });
+
+        // Footer Cancel button
+        $(document).on('click', '.activity-timer-footer .cancel', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.activity-timer-panel');
+            panel.find('.activity-timer-footer').slideUp('fast');
+            // Reset inputs
+            panel.find('.duration-picker-hours').val('0');
+            panel.find('.duration-picker-minutes').val('0');
+        });
+
+        // Footer Submit button (Rewind & Log)
+        $(document).on('click', '.activity-timer-footer .submit', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.activity-timer-panel');
+            var timerId = panel.data('timer-id');
+            submitRewindTimer(timerId);
+        });
+    }
+
+    /**
+     * Submit manual duration for an active timer
+     * Sets the end time to startTime + chosen duration
+     * @param {string} timerId - Timer ID
+     */
+    function submitRewindTimer(timerId) {
+        var panel = $('.activity-timer-panel[data-timer-id="' + timerId + '"]');
+        var hours = parseInt(panel.find('.duration-picker-hours').val()) || 0;
+        var minutes = parseInt(panel.find('.duration-picker-minutes').val()) || 0;
+        var totalSeconds = (hours * 3600) + (minutes * 60);
+
+        if (totalSeconds <= 0) {
+            alert('Please select a duration greater than 0.');
+            return;
+        }
+
+        // Stop the interval
+        if (activeIntervals[timerId]) {
+            clearInterval(activeIntervals[timerId]);
+            delete activeIntervals[timerId];
+        }
+
+        // Get timer from storage to get its original startedAt
+        var activeTimers = StorageModule.getActiveTimers();
+        var timer = activeTimers.find(function(t) { return t.id === timerId; });
+        if (!timer) return;
+
+        // Calculate original start time (accounting for pauses if any)
+        // Note: For rewind, we use the user's manual duration as the total time spent
+        var originalStart = timer.startedAt - timer.accumulatedSeconds;
+
+        // Remove from storage
+        StorageModule.stopActivityTimer(timerId);
+
+        // Create the timed action record with the manual duration
+        StorageModule.updateTimedAction(originalStart, totalSeconds);
+
+        // Add to habit log
+        ActionLogModule.placeActionIntoLog(originalStart, 'timed', null, null, null, false, totalSeconds);
+
+        // Remove the panel
+        removeTimerPanel(timerId);
+
+        // Update time spent stats
+        updateTimeSpentStats();
+
+        // Show notification
+        var durationStr = StatsCalculationsModule.convertSecondsToDateFormat(totalSeconds, false);
+        NotificationsModule.createNotification('Logged manual duration of ' + durationStr + '!', null, { type: 'timer_stopped' });
     }
 
     /**
      * Start a new activity timer
      */
     function startNewTimer() {
+        // Check if there's an active wait timer - starting activity timer ends the wait
+        if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.hasActiveWaitTimer()) {
+            // End the active wait timer using the new method
+            WaitTimerModule.endActiveWaitTimerOnAction('started_timer');
+            
+            // Notify user
+            NotificationsModule.createNotification(
+                'Wait timer ended because you started tracking time.', 
+                null, 
+                { type: 'wait_ended_by_timer' }
+            );
+        }
+
         var now = Math.round(new Date() / 1000);
         var timerId = 'timer_' + now;
         
@@ -176,44 +265,129 @@ var ActivityTimerModule = (function () {
 
         var html = '<div class="activity-timer-panel" data-timer-id="' + timer.id + '">' +
             '<div class="activity-timer-header">' +
-                '<div class="activity-timer-icon"><i class="fas fa-stopwatch"></i></div>' +
-                '<div class="activity-timer-title">Activity Timer</div>' +
+                '<div class="activity-timer-title"><i class="fas fa-stopwatch"></i> Since you started</div>' +
                 '<button class="activity-timer-discard-btn" title="Discard timer">' +
                     '<i class="fas fa-times"></i>' +
                 '</button>' +
             '</div>' +
-            '<div class="activity-timer-display">' +
-                '<span class="timer-hours">' + timeDisplay.hours + '</span>' +
-                '<span class="timer-separator">:</span>' +
-                '<span class="timer-minutes">' + timeDisplay.minutes + '</span>' +
-                '<span class="timer-separator">:</span>' +
-                '<span class="timer-seconds">' + timeDisplay.seconds + '</span>' +
+            '<div class="activity-timer-body">' +
+                '<div class="activity-timer-left">' +
+                    '<div id="' + timer.id + '" class="fibonacci-timer counting">' +
+                        '<div class="boxes">' +
+                            '<div>' +
+                                '<span class="timerSpan daysSinceLastClick">' + timeDisplay.days + '</span>' +
+                                '<span>Days</span>' +
+                            '</div>' +
+                            '<div>' +
+                                '<span class="timerSpan hoursSinceLastClick">' + timeDisplay.hours + '</span>' +
+                                '<span>Hours</span>' +
+                            '</div>' +
+                            '<div>' +
+                                '<span class="timerSpan minutesSinceLastClick">' + timeDisplay.minutes + '</span>' +
+                                '<span>Mins</span>' +
+                            '</div>' +
+                            '<div>' +
+                                '<span class="timerSpan secondsSinceLastClick">' + timeDisplay.seconds + '</span>' +
+                                '<span>Secs</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="activity-timer-status">' +
+                        '<span class="status-indicator ' + timer.status + '"></span>' +
+                        '<span class="status-text">' + (isRunning ? 'Running' : 'Paused') + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="activity-timer-right">' +
+                    '<div class="activity-timer-controls">' +
+                        '<button class="activity-timer-rewind-btn btn-timer-control">' +
+                            '<i class="fas fa-history"></i> Rewind Timer' +
+                        '</button>' +
+                        '<button class="activity-timer-pause-btn btn-timer-control" ' + (isPaused ? 'style="display:none;"' : '') + '>' +
+                            '<i class="fas fa-pause"></i> Pause' +
+                        '</button>' +
+                        '<button class="activity-timer-resume-btn btn-timer-control" ' + (isRunning ? 'style="display:none;"' : '') + '>' +
+                            '<i class="fas fa-play"></i> Resume' +
+                        '</button>' +
+                        '<button class="activity-timer-stop-btn btn-timer-control btn-stop">' +
+                            '<i class="fas fa-stop"></i> Stop & Log' +
+                        '</button>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
-            '<div class="activity-timer-status">' +
-                '<span class="status-indicator ' + timer.status + '"></span>' +
-                '<span class="status-text">' + (isRunning ? 'Running' : 'Paused') + '</span>' +
-            '</div>' +
-            '<div class="activity-timer-controls">' +
-                '<button class="activity-timer-pause-btn btn-timer-control" ' + (isPaused ? 'style="display:none;"' : '') + '>' +
-                    '<i class="fas fa-pause"></i> Pause' +
-                '</button>' +
-                '<button class="activity-timer-resume-btn btn-timer-control" ' + (isRunning ? 'style="display:none;"' : '') + '>' +
-                    '<i class="fas fa-play"></i> Resume' +
-                '</button>' +
-                '<button class="activity-timer-stop-btn btn-timer-control btn-stop">' +
-                    '<i class="fas fa-stop"></i> Stop & Log' +
-                '</button>' +
+            '<div class="activity-timer-footer" style="display: none;">' +
+                '<p class="text-left text-white" style="font-size: 1.25rem;">How long did you do it?</p>' +
+                '<div class="time-picker-container">' +
+                    '<select class="duration-picker-hours">' +
+                        '<option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>' +
+                        '<option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>' +
+                        '<option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>' +
+                        '<option value="12">12</option>' +
+                    '</select>' +
+                    '<span class="label">h</span>' +
+                    '<select class="duration-picker-minutes">' +
+                        '<option value="0">00</option><option value="5">05</option><option value="10">10</option><option value="15">15</option>' +
+                        '<option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>' +
+                        '<option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>' +
+                    '</select>' +
+                    '<span class="label">m</span>' +
+                '</div>' +
+                '<div class="row no-gutters mt-3">' +
+                    '<div class="col-6" style="padding-right:7px;">' +
+                        '<button class="cancel btn btn-outline-light btn-md btn-block">Cancel</button>' +
+                    '</div>' +
+                    '<div class="col-6" style="padding-left:7px;">' +
+                        '<button class="submit btn btn-light btn-md btn-block">Submit</button>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
         '</div>';
 
-        // Insert at the top of the use-content stats area
+        // Use the container already in index.html
         var container = $('#activity-timers-container');
-        if (container.length === 0) {
-            // Create container if it doesn't exist
-            $('#use-content').prepend('<div id="activity-timers-container"></div>');
-            container = $('#activity-timers-container');
+        if (container.length) {
+            container.append(html);
         }
-        container.append(html);
+        
+        // Use standard logic to adjust boxes and sizing
+        adjustTimerBoxVisibility(timer.id);
+        TimersModule.adjustFibonacciTimerToBoxes(timer.id);
+    }
+
+    /**
+     * Update timer display values
+     * @param {string} timerId - Timer ID (also the ID of the fibonacci-timer div)
+     * @param {object} timeDisplay - Formatted time object
+     */
+    function updateTimerUI(timerId, timeDisplay) {
+        var timerEl = $('#' + timerId);
+        if (!timerEl.length) return;
+
+        timerEl.find('.daysSinceLastClick').text(timeDisplay.days);
+        timerEl.find('.hoursSinceLastClick').text(timeDisplay.hours);
+        timerEl.find('.minutesSinceLastClick').text(timeDisplay.minutes);
+        timerEl.find('.secondsSinceLastClick').text(timeDisplay.seconds);
+        
+        // Use standard logic to adjust boxes and sizing
+        adjustTimerBoxVisibility(timerId);
+        TimersModule.adjustFibonacciTimerToBoxes(timerId);
+    }
+
+    /**
+     * Show/hide timer boxes based on values
+     * @param {string} timerId - Timer ID
+     */
+    function adjustTimerBoxVisibility(timerId) {
+        var timerEl = $('#' + timerId);
+        var days = parseInt(timerEl.find('.daysSinceLastClick').text()) || 0;
+        var hours = parseInt(timerEl.find('.hoursSinceLastClick').text()) || 0;
+        var minutes = parseInt(timerEl.find('.minutesSinceLastClick').text()) || 0;
+
+        var boxes = timerEl.find('.boxes > div');
+        
+        // Match standard logic: hide boxes from left to right if they are zero
+        $(boxes[0]).toggle(days > 0);
+        $(boxes[1]).toggle(days > 0 || hours > 0);
+        $(boxes[2]).toggle(days > 0 || hours > 0 || minutes > 0);
     }
 
     /**
@@ -262,27 +436,25 @@ var ActivityTimerModule = (function () {
             }
 
             var timeDisplay = formatTimerDisplay(elapsedSeconds);
-            var panel = $('.activity-timer-panel[data-timer-id="' + timerId + '"]');
-            
-            panel.find('.timer-hours').text(timeDisplay.hours);
-            panel.find('.timer-minutes').text(timeDisplay.minutes);
-            panel.find('.timer-seconds').text(timeDisplay.seconds);
+            updateTimerUI(timerId, timeDisplay);
         }, 1000);
     }
 
     /**
-     * Format seconds into hours:minutes:seconds display
+     * Format seconds into days:hours:minutes:seconds display
      * @param {number} totalSeconds - Total elapsed seconds
-     * @returns {object} Object with hours, minutes, seconds as formatted strings
+     * @returns {object} Object with days, hours, minutes, seconds as strings
      */
     function formatTimerDisplay(totalSeconds) {
-        var hours = Math.floor(totalSeconds / 3600);
+        var days = Math.floor(totalSeconds / 86400);
+        var hours = Math.floor((totalSeconds % 86400) / 3600);
         var minutes = Math.floor((totalSeconds % 3600) / 60);
         var seconds = totalSeconds % 60;
 
         return {
-            hours: hours.toString().padStart(2, '0'),
-            minutes: minutes.toString().padStart(2, '0'),
+            days: days.toString(),
+            hours: hours.toString(),
+            minutes: minutes.toString(),
             seconds: seconds.toString().padStart(2, '0')
         };
     }
@@ -336,7 +508,7 @@ var ActivityTimerModule = (function () {
         
         // Filter timed actions
         var timedActions = jsonObject.action.filter(function(e) {
-            return e.clickType === 'timed';
+            return e && e.clickType === 'timed';
         });
 
         if (timedActions.length === 0) {

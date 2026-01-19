@@ -108,9 +108,75 @@ var StorageModule = (function () {
             jsonObject.version = 2;
         }
 
+        // Migration to v3 - Rename goal → wait terminology
+        if (version < 3) {
+            console.log("Migrating storage to v3 (goal→wait rename)...");
+
+            // Rename statistics.goal to statistics.wait
+            if (jsonObject.statistics && jsonObject.statistics.goal && !jsonObject.statistics.wait) {
+                jsonObject.statistics.wait = JSON.parse(JSON.stringify(jsonObject.statistics.goal));
+                
+                // Rename internal properties
+                var ws = jsonObject.statistics.wait;
+                if (ws.activeGoalUse !== undefined) {
+                    ws.activeWaitUse = ws.activeGoalUse;
+                    delete ws.activeGoalUse;
+                }
+                if (ws.activeGoalBought !== undefined) {
+                    ws.activeWaitBought = ws.activeGoalBought;
+                    delete ws.activeGoalBought;
+                }
+                if (ws.activeGoalBoth !== undefined) {
+                    ws.activeWaitBoth = ws.activeGoalBoth;
+                    delete ws.activeGoalBoth;
+                }
+                if (ws.longestGoal !== undefined) {
+                    ws.longestWait = ws.longestGoal;
+                    delete ws.longestGoal;
+                }
+                if (ws.completedGoals !== undefined) {
+                    ws.completedWaits = ws.completedGoals;
+                    delete ws.completedGoals;
+                }
+            }
+
+            // Update action records: clickType 'goal' → 'wait'
+            if (jsonObject.action && Array.isArray(jsonObject.action)) {
+                jsonObject.action.forEach(function(action) {
+                    if (action.clickType === 'goal') {
+                        action.clickType = 'wait';
+                        // Keep goalType as waitType but also preserve goalType for backward compat
+                        if (action.goalType) {
+                            action.waitType = action.goalType;
+                        }
+                        // Rename timestamps
+                        if (action.goalStamp) {
+                            action.waitStamp = action.goalStamp;
+                        }
+                        if (action.goalStopped) {
+                            action.waitStopped = action.goalStopped;
+                        }
+                    }
+                });
+            }
+
+            // Update option references
+            if (jsonObject.option && jsonObject.option.liveStatsToDisplay) {
+                var live = jsonObject.option.liveStatsToDisplay;
+                if (live.untilGoalEnd !== undefined) {
+                    live.untilWaitEnd = live.untilGoalEnd;
+                }
+                if (live.longestGoal !== undefined) {
+                    live.longestWait = live.longestGoal;
+                }
+            }
+
+            jsonObject.version = 3;
+        }
+
         setStorageObject(jsonObject);
-        if (version < 2) {
-            console.log("Storage migration to v2 complete.");
+        if (version < 3) {
+            console.log("Storage migration to v3 complete.");
         }
     }
 
@@ -122,8 +188,8 @@ var StorageModule = (function () {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            // Check if at latest version (v2)
-            return jsonObject && jsonObject.version >= 2;
+            // Check if at latest version (v3)
+            return jsonObject && jsonObject.version >= 3;
         } catch (e) {
             return false;
         }
@@ -177,18 +243,35 @@ var StorageModule = (function () {
         } else if (ct == "bought") {
             newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, spent: spt.toString() };
 
-        } else if (ct == "goal") {
+        } else if (ct == "wait" || ct == "goal") {
             var st = 1;
-            var goalStopped = -1;
-            newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, goalStamp: gs.toString(), goalType: gt, status: st, goalStopped: goalStopped };
+            var waitStopped = -1;
+            newRecord = { 
+                timestamp: ts.toString(), 
+                clickType: ct, 
+                clickStamp: now, 
+                waitStamp: gs.toString(), 
+                waitType: gt, 
+                status: st, 
+                waitStopped: waitStopped 
+            };
+            // Add backward compat fields for 'wait' type
+            if (ct == "wait") {
+                newRecord.goalStamp = gs.toString();
+                newRecord.goalType = gt;
+                newRecord.goalStopped = waitStopped;
+            }
 
         } else if (ct == "mood") {
             newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, comment: cm, smiley: sm };
 
         }
 
-        jsonObject["action"].push(newRecord);
-        setStorageObject(jsonObject);
+        // Only push if newRecord was actually created
+        if (newRecord) {
+            jsonObject["action"].push(newRecord);
+            setStorageObject(jsonObject);
+        }
     }
 
     /**
@@ -210,7 +293,7 @@ var StorageModule = (function () {
         var jsonObject = retrieveStorageObject();
 
         var goals = jsonObject.action.filter(function (e) {
-            return e.clickType == 'goal' && e.goalType == goalType
+            return e && e.clickType == 'goal' && e.goalType == goalType
         });
         var mostRecentGoal = goals[goals.length - 1];
         mostRecentGoal.status = newGoalStatus;
@@ -246,6 +329,66 @@ var StorageModule = (function () {
             wasExtended: wasExtended,
             totalSecondsUntilGoalEnd: totalSecondsUntilGoalEnd,
             goalWasShorter: goalExtendedTo && mostRecentGoal.goalStamp >= goalExtendedTo
+        };
+    }
+
+    /**
+     * Change wait status in storage (renamed from changeGoalStatus)
+     * Note: This function handles the storage part. UI updates should be done in app.js
+     * @param {number} newWaitStatus - New status value (1=active, 2=partially completed, 3=completed)
+     * @param {string} waitType - Type of wait (use, bought, both)
+     * @param {number} actualEnd - Optional timestamp when wait actually ended
+     * @param {number} waitExtendedTo - Optional new wait end timestamp if extending
+     * @returns {object} Updated wait object and whether it was extended
+     */
+    function changeWaitStatus(newWaitStatus, waitType, actualEnd, waitExtendedTo) {
+        // wait status: 1=active, 2=partially completed, 3=completed
+        var jsonObject = retrieveStorageObject();
+
+        // Support both old 'goal' clickType and new 'wait' clickType during migration
+        var waits = jsonObject.action.filter(function (e) {
+            return e && (e.clickType == 'wait' || e.clickType == 'goal') && 
+                   (e.waitType == waitType || e.goalType == waitType);
+        });
+        var mostRecentWait = waits[waits.length - 1];
+        mostRecentWait.status = newWaitStatus;
+
+        // actual end was passed to function
+        if (actualEnd) {
+            mostRecentWait.waitStopped = actualEnd;
+            mostRecentWait.goalStopped = actualEnd; // backward compat
+        } else {
+            // else set the actual end to end of wait endDate
+            var endStamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
+            mostRecentWait.waitStopped = endStamp;
+            mostRecentWait.goalStopped = endStamp;
+        }
+
+        var wasExtended = false;
+        var totalSecondsUntilWaitEnd = null;
+
+        // user wants to extend current wait
+        if (waitExtendedTo) {
+            var currentEndStamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
+            if (currentEndStamp < waitExtendedTo) {
+                // wait was extended, not shortened
+                mostRecentWait.waitStamp = waitExtendedTo;
+                mostRecentWait.goalStamp = waitExtendedTo; // backward compat
+                setStorageObject(jsonObject);
+
+                var date = new Date();
+                var timestampSeconds = Math.round(date / 1000);
+                totalSecondsUntilWaitEnd = Math.round(waitExtendedTo - timestampSeconds);
+                wasExtended = true;
+            }
+        } else {
+            setStorageObject(jsonObject);
+        }
+
+        return {
+            wasExtended: wasExtended,
+            totalSecondsUntilWaitEnd: totalSecondsUntilWaitEnd,
+            waitWasShorter: waitExtendedTo && (mostRecentWait.waitStamp || mostRecentWait.goalStamp) >= waitExtendedTo
         };
     }
 
@@ -331,6 +474,7 @@ var StorageModule = (function () {
      */
     function startActivityTimer(timerId) {
         var jsonObject = retrieveStorageObject();
+        if (!jsonObject) return null;
         if (!jsonObject.activeTimers) jsonObject.activeTimers = [];
 
         var now = Math.round(new Date() / 1000);
@@ -354,7 +498,7 @@ var StorageModule = (function () {
      */
     function pauseActivityTimer(timerId) {
         var jsonObject = retrieveStorageObject();
-        if (!jsonObject.activeTimers) return null;
+        if (!jsonObject || !jsonObject.activeTimers) return null;
 
         var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
         if (!timer || timer.status !== 'running') return null;
@@ -375,7 +519,7 @@ var StorageModule = (function () {
      */
     function resumeActivityTimer(timerId) {
         var jsonObject = retrieveStorageObject();
-        if (!jsonObject.activeTimers) return null;
+        if (!jsonObject || !jsonObject.activeTimers) return null;
 
         var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
         if (!timer || timer.status !== 'paused') return null;
@@ -396,7 +540,7 @@ var StorageModule = (function () {
      */
     function stopActivityTimer(timerId) {
         var jsonObject = retrieveStorageObject();
-        if (!jsonObject.activeTimers) return null;
+        if (!jsonObject || !jsonObject.activeTimers) return null;
 
         var timerIndex = jsonObject.activeTimers.findIndex(function(t) { return t.id === timerId; });
         if (timerIndex === -1) return null;
@@ -427,6 +571,7 @@ var StorageModule = (function () {
      */
     function getActiveTimers() {
         var jsonObject = retrieveStorageObject();
+        if (!jsonObject) return [];
         return jsonObject.activeTimers || [];
     }
 
@@ -437,7 +582,7 @@ var StorageModule = (function () {
      */
     function getTimerElapsedSeconds(timerId) {
         var jsonObject = retrieveStorageObject();
-        if (!jsonObject.activeTimers) return null;
+        if (!jsonObject || !jsonObject.activeTimers) return null;
 
         var timer = jsonObject.activeTimers.find(function(t) { return t.id === timerId; });
         if (!timer) return null;
@@ -456,6 +601,7 @@ var StorageModule = (function () {
      */
     function addCustomUnit(unit) {
         var jsonObject = retrieveStorageObject();
+        if (!jsonObject) return [];
         if (!jsonObject.customUnits) jsonObject.customUnits = [];
 
         var normalizedUnit = unit.trim().toLowerCase();
@@ -472,6 +618,7 @@ var StorageModule = (function () {
      */
     function getCustomUnits() {
         var jsonObject = retrieveStorageObject();
+        if (!jsonObject) return [];
         return jsonObject.customUnits || [];
     }
 
@@ -483,6 +630,7 @@ var StorageModule = (function () {
         clearStorage,
         updateActionTable,
         changeGoalStatus,
+        changeWaitStatus, // New naming
         undoLastAction,
         performOneTimeMigration,
         isMigrated,

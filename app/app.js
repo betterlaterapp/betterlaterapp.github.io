@@ -99,7 +99,7 @@ $(document).ready(function () {
                     }
 
                 },
-                "goal": {
+                "wait": {
                     "untilTimerEnd": {
                         "totalSeconds": 0,
                         "days": 0,
@@ -109,16 +109,16 @@ $(document).ready(function () {
                     },
                     "clickCounter": 0,
                     "lastClickStamp": 0,
-                    "longestGoal": {
+                    "longestWait": {
                         "total": 0,
                         "week": 0,
                         "month": 0,
                         "year": 0
                     },
-                    "completedGoals": 0,
-                    "activeGoalUse": 0,
-                    "activeGoalBought": 0,
-                    "activeGoalBoth": 0
+                    "completedWaits": 0,
+                    "activeWaitUse": 0,
+                    "activeWaitBought": 0,
+                    "activeWaitBoth": 0
                 }
             },
             "baseline": {
@@ -259,7 +259,7 @@ $(document).ready(function () {
             /* USE STATISTICS */
             //total USE actions
             var useTabActions = jsonObject.action.filter(function (e) {
-                return e.clickType == "used" || e.clickType == "craved";
+                return e && (e.clickType == "used" || e.clickType == "craved");
             });
             useTabActions = useTabActions.sort((a, b) => {
                 return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
@@ -301,7 +301,7 @@ $(document).ready(function () {
 
             //total uses
             var useCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "used";
+                return e && e.clickType == "used";
             });
             useCount = useCount.sort((a, b) => {
                 return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
@@ -362,7 +362,7 @@ $(document).ready(function () {
 
             //total craves
             var craveCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "craved";
+                return e && e.clickType == "craved";
             });
             json.statistics.use.craveCounter = craveCount.length;
 
@@ -421,7 +421,7 @@ $(document).ready(function () {
             /* COST STATISTICS */
             //total boughts
             var costCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "bought";
+                return e && e.clickType == "bought";
             });
             json.statistics.cost.clickCounter = costCount.length;
 
@@ -475,12 +475,12 @@ $(document).ready(function () {
 
 
             var moodCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "mood";
+                return e && e.clickType == "mood";
             });
 
             /* TIME SPENT STATISTICS */
             var timedCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "timed";
+                return e && e.clickType == "timed";
             });
             
             if (timedCount.length > 0 && typeof ActivityTimerModule !== 'undefined') {
@@ -490,7 +490,7 @@ $(document).ready(function () {
 
             /* GOAL STATISTICS*/
             var goalCount = jsonObject.action.filter(function (e) {
-                return e.clickType == "goal";
+                return e && e.clickType == "goal";
             });
             goalCount = goalCount.sort((a, b) => {
                 return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
@@ -523,71 +523,67 @@ $(document).ready(function () {
                 });
 
                 //timestamp of most recent click - to limit clicks in a row
-                json.statistics.goal.lastClickStamp = goalCount[goalCount.length - 1].timestamp;
-                json.statistics.goal.clickCounter = goalCount.length;
+                json.statistics.wait.lastClickStamp = goalCount[goalCount.length - 1].timestamp;
+                json.statistics.wait.clickCounter = goalCount.length;
 
                 if (activeGoals.length > 0) {
                     var mostRecentGoal = activeGoals[activeGoals.length - 1];
 
-                    //set var in json for if there is an active goal of X type - 
-                    //to be used on click of relevant buttons to end goal
+                    //set var in json for if there is an active wait of X type - 
+                    //to be used on click of relevant buttons to end wait
                     if (mostRecentGoal.goalType == "both") {
-                        json.statistics.goal.activeGoalBoth = 1;
+                        json.statistics.wait.activeWaitBoth = 1;
                     } else if (mostRecentGoal.goalType == "use") {
-                        json.statistics.goal.activeGoalUse = 1;
+                        json.statistics.wait.activeWaitUse = 1;
                     } else if (mostRecentGoal.goalType == "bought") {
-                        json.statistics.goal.activeGoalBought = 1;
+                        json.statistics.wait.activeWaitBought = 1;
                     }
 
                     var totalSecondsUntilGoalEnd = mostRecentGoal.goalStamp - timeNow;
-                    if (totalSecondsUntilGoalEnd > 0) {
-                        TimersModule.loadGoalTimerValues(totalSecondsUntilGoalEnd, json);
-                        TimerStateManager.initiate('goal', undefined, json);
-                    } else {
-                        //goal ended while user was away
-                        var mostRecentGoal = goalCount[goalCount.length - 1];
+                    if (totalSecondsUntilGoalEnd <= 0) {
+                        // Goal ended while user was away
                         NotificationsModule.createGoalEndNotification(mostRecentGoal);
-                        //last made goal time has concluded
-                        $("#goal-content .timer-recepticle").hide();
                     }
-                } else {
-                    //hide empty timer when last goal has ended
-                    $("#goal-content .timer-recepticle").hide();
+                    // Note: Active wait timer panels are restored by WaitTimerModule.restoreActiveWaitTimers()
                 }
 
                 if (inactiveGoals.length > 0) {
-                    //number of goals Completed
-                    json.statistics.goal.completedGoals = inactiveGoals.length;
-                    $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
+                    // Use the wait statistics object
+                    var waitStats = json.statistics.wait;
+                    var longestStats = waitStats.longestWait;
+                    
+                    //number of waits completed
+                    waitStats.completedWaits = inactiveGoals.length;
+                    $("#numberOfWaitsCompleted, #numberOfGoalsCompleted").html(inactiveGoals.length);
 
-                    // Calculate longest goals using StatsCalculationsModule
+                    // Calculate longest waits using StatsCalculationsModule
                     var longestTotal = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoals);
-                    json.statistics.goal.longestGoal["total"] = longestTotal;
-                    $(".statistic.longestGoal.total").html(StatsCalculationsModule.convertSecondsToDateFormat(longestTotal, true));
+                    longestStats["total"] = longestTotal;
+                    $(".statistic.longestWait.total, .statistic.longestGoal.total").html(StatsCalculationsModule.convertSecondsToDateFormat(longestTotal, true));
 
                     if (inactiveGoalsWeek.length > 0) {
                         var longestWeek = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsWeek);
-                        json.statistics.goal.longestGoal["week"] = longestWeek;
-                        $(".statistic.longestGoal.week").html(StatsCalculationsModule.convertSecondsToDateFormat(longestWeek, true));
+                        longestStats["week"] = longestWeek;
+                        $(".statistic.longestWait.week, .statistic.longestGoal.week").html(StatsCalculationsModule.convertSecondsToDateFormat(longestWeek, true));
                     } else {
-                        json.statistics.goal.longestGoal["week"] = "N/A";
-                        $(".statistic.longestGoal.week").html("N/A");
+                        longestStats["week"] = "N/A";
+                        $(".statistic.longestWait.week, .statistic.longestGoal.week").html("N/A");
                     }
 
                     if (inactiveGoalsMonth.length > 0) {
                         var longestMonth = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsMonth);
-                        json.statistics.goal.longestGoal["month"] = longestMonth;
-                        $(".statistic.longestGoal.month").html(StatsCalculationsModule.convertSecondsToDateFormat(longestMonth, true));
+                        longestStats["month"] = longestMonth;
+                        $(".statistic.longestWait.month, .statistic.longestGoal.month").html(StatsCalculationsModule.convertSecondsToDateFormat(longestMonth, true));
                     } else {
-                        json.statistics.goal.longestGoal["month"] = "N/A";
+                        longestStats["month"] = "N/A";
                     }
 
                     if (inactiveGoalsYear.length > 0) {
                         var longestYear = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsYear);
-                        json.statistics.goal.longestGoal["year"] = longestYear;
-                        $(".statistic.longestGoal.year").html(StatsCalculationsModule.convertSecondsToDateFormat(longestYear, true));
+                        longestStats["year"] = longestYear;
+                        $(".statistic.longestWait.year, .statistic.longestGoal.year").html(StatsCalculationsModule.convertSecondsToDateFormat(longestYear, true));
                     } else {
-                        json.statistics.goal.longestGoal["year"] = "N/A";
+                        longestStats["year"] = "N/A";
                     }
                 }
             }
@@ -615,7 +611,7 @@ $(document).ready(function () {
         BaselineModule.init(json);
         UIModule.init(json);
         ActionLogModule.init(json);
-        GoalsModule.init(json);
+        WaitModule.init(json);
         BehavioralGoalsModule.init(json);
         ButtonsModule.init(json);
         
@@ -624,6 +620,10 @@ $(document).ready(function () {
             ActivityTimerModule.init(json);
         }
 
+        // Initialize WaitTimerModule for delayed gratification / procrastination tracking
+        if (typeof WaitTimerModule !== 'undefined') {
+            WaitTimerModule.init(json);
+        }
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
         if (StorageModule.hasStorageData()) {
@@ -644,21 +644,22 @@ $(document).ready(function () {
             StatsDisplayModule.displayAverageTimeBetween("cost", "week", json);
             StatsDisplayModule.displayAverageTimeBetween("cost", "month", json);
 
-            $(".longestGoal.statistic").parent().hide();
-            var bestTime = json.statistics.goal.longestGoal;
-            if (bestTime.week !== "N/A") {
-                $(".longestGoal.week.statistic").parent().show();
-                StatsDisplayModule.displayLongestGoal("week", json);
-            } else if (bestTime.month !== "N/A" && bestTime.month !== bestTime.week) {
-                $(".longestGoal.month.statistic").parent().show();
-                StatsDisplayModule.displayLongestGoal("month", json);
+            $(".longestWait.statistic, .longestGoal.statistic").parent().hide();
+            var waitStats = json.statistics.wait;
+            var bestTime = waitStats ? waitStats.longestWait : null;
+            if (bestTime && bestTime.week !== "N/A") {
+                $(".longestWait.week.statistic, .longestGoal.week.statistic").parent().show();
+                StatsDisplayModule.displayLongestWait("week", json);
+            } else if (bestTime && bestTime.month !== "N/A" && bestTime.month !== bestTime.week) {
+                $(".longestWait.month.statistic, .longestGoal.month.statistic").parent().show();
+                StatsDisplayModule.displayLongestWait("month", json);
             }
-            if (bestTime.total !== "N/A"
+            if (bestTime && bestTime.total !== "N/A"
                 && bestTime.total !== bestTime.week
                 && bestTime.total !== bestTime.month) {
 
-                $(".longestGoal.total.statistic").parent().show();
-                StatsDisplayModule.displayLongestGoal("total", json);
+                $(".longestWait.total.statistic, .longestGoal.total.statistic").parent().show();
+                StatsDisplayModule.displayLongestWait("total", json);
             }
 
             TabsModule.returnToActiveTab();
@@ -675,11 +676,11 @@ $(document).ready(function () {
             //replace this with 
             //empty action table
             //basic stat display settings option table
-            var newJsonString = '{ "version": 2, "action": [], "behavioralGoals": [], "activeTimers": [], "customUnits": [], ' +
+            var newJsonString = '{ "version": 3, "action": [], "behavioralGoals": [], "activeTimers": [], "customUnits": [], ' +
                 '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilGoalEnd": true, "longestGoal": true, "usedButton": true, "usedGoalButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "boughtGoalButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
-                '"logItemsToDisplay" : {"goal": true, "used": true, "craved": true,	"bought": true, "mood": true, "timed": true},' +
+                '"liveStatsToDisplay": { "waitButton": true, "undoButton": true, "untilWaitEnd": true, "longestWait": true, "usedButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
+                '"logItemsToDisplay" : {"wait": true, "used": true, "craved": true, "bought": true, "mood": true, "timed": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
                 '} }';
             localStorage.setItem("esCrave", newJsonString);
@@ -692,11 +693,11 @@ $(document).ready(function () {
         }
 
 
-        //Restrict possible dates chosen in goal tab datepicker
+        //Restrict possible dates chosen in wait tab datepicker
         //restrictGoalRange();
-        $("#goalEndPicker").datepicker({ minDate: 0 });
-        //INITIALIZE GOAL DATE TIME PICKER
-        $("#goalEndPicker").datepicker();
+        $("#waitEndPicker").datepicker({ minDate: 0 });
+        //INITIALIZE WAIT DATE TIME PICKER
+        $("#waitEndPicker").datepicker();
 
         $(".wait.log-more-info button.cancel").click(function () {
             UIModule.closeClickDialog(".wait");

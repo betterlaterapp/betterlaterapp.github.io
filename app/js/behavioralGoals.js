@@ -161,7 +161,7 @@ var BehavioralGoalsModule = (function () {
     function getMoodRecordsForGoal(goalId) {
         var jsonObject = StorageModule.retrieveStorageObject();
         var moodRecords = jsonObject.action.filter(function(a) {
-            return a.clickType === 'mood' && a.behavioralGoalId === goalId;
+            return a && a.clickType === 'mood' && a.behavioralGoalId === goalId;
         });
         return moodRecords.sort(function(a, b) {
             return parseInt(b.timestamp) - parseInt(a.timestamp);
@@ -240,7 +240,7 @@ var BehavioralGoalsModule = (function () {
         
         if (goal.unit === 'dollars') {
             var boughtActions = jsonObject.action.filter(function(a) {
-                return a.clickType === 'bought' && 
+                return a && a.clickType === 'bought' && 
                        (parseInt(a.timestamp) * 1000) >= periodStart;
             });
             return boughtActions.reduce(function(sum, a) {
@@ -248,14 +248,14 @@ var BehavioralGoalsModule = (function () {
             }, 0);
         } else if (goal.unit === 'times') {
             var usedActions = jsonObject.action.filter(function(a) {
-                return a.clickType === 'used' && 
+                return a && a.clickType === 'used' && 
                        (parseInt(a.timestamp) * 1000) >= periodStart;
             });
             return usedActions.length;
         } else if (goal.unit === 'minutes') {
             // For time-based goals, estimate from usage frequency
             var usedActions = jsonObject.action.filter(function(a) {
-                return a.clickType === 'used' && 
+                return a && a.clickType === 'used' && 
                        (parseInt(a.timestamp) * 1000) >= periodStart;
             });
             return usedActions.length * 15; // Estimate 15 min per use
@@ -812,6 +812,17 @@ var BehavioralGoalsModule = (function () {
     }
 
     /**
+     * Open create goal dialog with seeded values from baseline
+     * @param {Object} seedData - Data to seed the dialog with
+     * @param {string} seedData.type - Goal type (usage, time, spending, health)
+     * @param {number} seedData.currentAmount - Current amount (for quantifiable)
+     * @param {number} seedData.goalAmount - Goal amount (for quantifiable)
+     * @param {string} seedData.timeline - Measurement timeline (day, week, month)
+     * @param {number} seedData.completionDays - Completion timeline in days
+     * @param {string} seedData.wellnessText - Wellness goal text (for qualitative)
+     * @param {number} seedData.mood - Initial mood value (for qualitative)
+     */
+    /**
      * Close create goal dialog
      */
     function closeCreateGoalDialog() {
@@ -835,51 +846,19 @@ var BehavioralGoalsModule = (function () {
      */
     function handleGoalTypeChange() {
         var selectedType = $('#create-goal-type-select').val();
-        var jsonObject = StorageModule.retrieveStorageObject();
-        var baseline = jsonObject.baseline;
         
         // Hide all input sections
         $('.goal-type-inputs').hide();
         
-        // Show relevant input section and populate baseline values
+        // Show relevant input section
         if (selectedType === 'usage') {
             $('.usage-goal-inputs').show();
-            if (baseline.amountDonePerWeek !== undefined) {
-                $('.create-amountDonePerWeek').val(baseline.amountDonePerWeek);
-                $('.create-goalDonePerWeek').val(baseline.amountDonePerWeek);
-            }
-            if (baseline.usageTimeline) {
-                $('.create-usage-timeline-select').val(baseline.usageTimeline);
-                updateCompletionTimelineFromMeasurement($('.create-usage-timeline-select'));
-            }
         } else if (selectedType === 'time') {
             $('.time-goal-inputs').show();
-            if (baseline.currentTimeHours !== undefined) {
-                $('.create-currentTimeHours').val(baseline.currentTimeHours);
-                $('.create-goalTimeHours').val(baseline.currentTimeHours);
-            }
-            if (baseline.currentTimeMinutes !== undefined) {
-                $('.create-currentTimeMinutes').val(baseline.currentTimeMinutes);
-                $('.create-goalTimeMinutes').val(baseline.currentTimeMinutes);
-            }
-            if (baseline.timeTimeline) {
-                $('.create-time-timeline-select').val(baseline.timeTimeline);
-                updateCompletionTimelineFromMeasurement($('.create-time-timeline-select'));
-            }
         } else if (selectedType === 'spending') {
             $('.spending-goal-inputs').show();
-            if (baseline.amountSpentPerWeek !== undefined) {
-                $('.create-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
-                $('.create-goalSpentPerWeek').val(baseline.amountSpentPerWeek);
-            }
-            if (baseline.spendingTimeline) {
-                $('.create-spending-timeline-select').val(baseline.spendingTimeline);
-                updateCompletionTimelineFromMeasurement($('.create-spending-timeline-select'));
-            }
         } else if (selectedType === 'health') {
             $('.health-goal-inputs').show();
-            // Default completion for health is 30 days
-            $('.create-completion-timeline-input').val(30);
         }
         
         // Show completion timeline if a type is selected
@@ -890,16 +869,6 @@ var BehavioralGoalsModule = (function () {
             $('.goal-completion-timeline').hide();
             $('.create-goal-submit').prop('disabled', true);
         }
-    }
-
-    /**
-     * Update the "Achieve in" (completion timeline) value based on measurement timeline selection
-     * @param {jQuery} $select - The measurement timeline select element
-     */
-    function updateCompletionTimelineFromMeasurement($select) {
-        var timeline = $select.val();
-        var days = timelineToDays(timeline);
-        $('.create-completion-timeline-input').val(days);
     }
 
     /**
@@ -1005,11 +974,6 @@ var BehavioralGoalsModule = (function () {
         
         // Goal type dropdown change
         $(document).on('change', '#create-goal-type-select', handleGoalTypeChange);
-        
-        // Measurement timeline change (sync with completion timeline)
-        $(document).on('change', '.create-usage-timeline-select, .create-time-timeline-select, .create-spending-timeline-select', function() {
-            updateCompletionTimelineFromMeasurement($(this));
-        });
         
         // Cancel button click
         $(document).on('click', '.create-goal-cancel', function(e) {

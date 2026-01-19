@@ -1,7 +1,7 @@
 var TimersModule = (function () {
     var smokeTimer;
     var boughtTimer;
-    var goalTimer;
+    var waitTimer; // Renamed from goalTimer
 
     /**
      * Convert last timestamp to a running timer
@@ -84,10 +84,10 @@ var TimersModule = (function () {
             TimerStateManager.initiate('bought', undefined, json);
         }
 
-        // Note: Goal timer is already initialized in setStatsFromRecords() in app.js
-        // No need to initialize it here - just hide if it's not active
-        if (json.statistics.goal.untilTimerEnd.totalSeconds == 0) {
-            $("#goal-content .fibonacci-timer").toggle();
+        // Wait timer
+        var waitStats = json.statistics.wait;
+        if (waitStats && waitStats.untilTimerEnd.totalSeconds == 0) {
+            $("#wait-content .fibonacci-timer").toggle();
         }
     }
 
@@ -104,6 +104,9 @@ var TimersModule = (function () {
         if (!userWasInactive && relevantPaneIsActive) {
             var visibleBoxes = $("#" + timerId + " .boxes div:visible"),
                 timerElement = document.getElementById(timerId);
+
+            // Check if timer element exists before manipulating
+            if (!timerElement) return;
 
             if (visibleBoxes.length == 1) {
                 timerElement.style.width = "3rem";
@@ -148,54 +151,64 @@ var TimersModule = (function () {
     }
 
     /**
-     * Calculate goal timer values from total seconds
-     * @param {number} totalSecondsUntilGoalEnd - Total seconds until goal ends
+     * Calculate wait timer values from total seconds (renamed from loadGoalTimerValues)
+     * @param {number} totalSecondsUntilWaitEnd - Total seconds until wait ends
      * @param {object} json - JSON object with statistics
      */
-    function loadGoalTimerValues(totalSecondsUntilGoalEnd, json) {
-
-        json.statistics.goal.untilTimerEnd.days = 0;
-        json.statistics.goal.untilTimerEnd.hours = 0;
-        json.statistics.goal.untilTimerEnd.minutes = 0;
-        json.statistics.goal.untilTimerEnd.seconds = 0;
-        json.statistics.goal.untilTimerEnd.totalSeconds = totalSecondsUntilGoalEnd;
+    function loadWaitTimerValues(totalSecondsUntilWaitEnd, json) {
+        var waitStats = json.statistics.wait;
+        
+        waitStats.untilTimerEnd.days = 0;
+        waitStats.untilTimerEnd.hours = 0;
+        waitStats.untilTimerEnd.minutes = 0;
+        waitStats.untilTimerEnd.seconds = 0;
+        waitStats.untilTimerEnd.totalSeconds = totalSecondsUntilWaitEnd;
 
         //calc mins and secs
-        if (totalSecondsUntilGoalEnd > 60) {
-            json.statistics.goal.untilTimerEnd.seconds = totalSecondsUntilGoalEnd % 60;
-            json.statistics.goal.untilTimerEnd.minutes = Math.floor(totalSecondsUntilGoalEnd / 60);
+        if (totalSecondsUntilWaitEnd > 60) {
+            waitStats.untilTimerEnd.seconds = totalSecondsUntilWaitEnd % 60;
+            waitStats.untilTimerEnd.minutes = Math.floor(totalSecondsUntilWaitEnd / 60);
         } else {
-            json.statistics.goal.untilTimerEnd.seconds = totalSecondsUntilGoalEnd;
-            json.statistics.goal.untilTimerEnd.minutes = 0;
+            waitStats.untilTimerEnd.seconds = totalSecondsUntilWaitEnd;
+            waitStats.untilTimerEnd.minutes = 0;
         }
 
         //calc hours
-        if (totalSecondsUntilGoalEnd > (60 * 60)) {
-            json.statistics.goal.untilTimerEnd.minutes = json.statistics.goal.untilTimerEnd.minutes % 60;
-            json.statistics.goal.untilTimerEnd.hours = Math.floor(totalSecondsUntilGoalEnd / (60 * 60));
+        if (totalSecondsUntilWaitEnd > (60 * 60)) {
+            waitStats.untilTimerEnd.minutes = waitStats.untilTimerEnd.minutes % 60;
+            waitStats.untilTimerEnd.hours = Math.floor(totalSecondsUntilWaitEnd / (60 * 60));
         } else {
-            json.statistics.goal.untilTimerEnd.hours = 0;
+            waitStats.untilTimerEnd.hours = 0;
         }
 
         //calc days
-        if (totalSecondsUntilGoalEnd > (60 * 60 * 24)) {
-            json.statistics.goal.untilTimerEnd.hours = json.statistics.goal.untilTimerEnd.hours % 24;
-            json.statistics.goal.untilTimerEnd.days = Math.floor(totalSecondsUntilGoalEnd / (60 * 60 * 24));
+        if (totalSecondsUntilWaitEnd > (60 * 60 * 24)) {
+            waitStats.untilTimerEnd.hours = waitStats.untilTimerEnd.hours % 24;
+            waitStats.untilTimerEnd.days = Math.floor(totalSecondsUntilWaitEnd / (60 * 60 * 24));
         } else {
-            json.statistics.goal.untilTimerEnd.days = 0;
+            waitStats.untilTimerEnd.days = 0;
         }
+    }
 
+    /**
+     * @deprecated Use loadWaitTimerValues instead
+     */
+    function loadGoalTimerValues(totalSecondsUntilGoalEnd, json) {
+        // Backward compatibility - delegate to new function
+        loadWaitTimerValues(totalSecondsUntilGoalEnd, json);
     }
 
     // Public API
     return {
         smokeTimer,
         boughtTimer,
-        goalTimer,
+        waitTimer, // New naming
+        goalTimer: waitTimer, // Backward compatibility
         restartTimerAtValues,
         hideTimersOnLoad,
         adjustFibonacciTimerToBoxes,
-        loadGoalTimerValues
+        loadWaitTimerValues, // New naming
+        loadGoalTimerValues // Backward compatibility
     };
 })();
 

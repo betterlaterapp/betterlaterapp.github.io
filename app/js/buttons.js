@@ -256,7 +256,7 @@ var ButtonsModule = (function() {
         $(".use.log-more-info .time-picker-hour").val(currHours);
         $(".use.log-more-info .time-picker-minute").val(currMinutes);
 
-        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestWait);
     }
 
     function calculateRequestedTimestamp() {
@@ -317,33 +317,33 @@ var ButtonsModule = (function() {
         $(".statistic.use.timeBetween.year").html(betweenClicks.year);
     }
 
-    function handleUseGoalCompletion(requestedTimestamp) {
-        if (json.statistics.goal.activeGoalUse === 0 && json.statistics.goal.activeGoalBoth === 0) {
+    function handleUseWaitCompletion(requestedTimestamp) {
+        if (json.statistics.wait.activeWaitUse === 0 && json.statistics.wait.activeWaitBoth === 0) {
             return;
         }
 
-        var goalType = json.statistics.goal.activeGoalUse !== 0 ? "use" : "both";
+        var waitType = json.statistics.wait.activeWaitUse !== 0 ? "use" : "both";
         var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
         
-        // Reset active goal
-        json.statistics.goal.activeGoalUse = 0;
-        json.statistics.goal.activeGoalBoth = 0;
+        // Reset active wait
+        json.statistics.wait.activeWaitUse = 0;
+        json.statistics.wait.activeWaitBoth = 0;
 
-        StorageModule.changeGoalStatus(2, goalType, requestedTimestamp);
-        NotificationsModule.createNotification(message, null, { type: 'goal_ended_early' });
+        StorageModule.changeWaitStatus(2, waitType, requestedTimestamp);
+        NotificationsModule.createNotification(message, null, { type: 'wait_ended_early' });
 
-        $("#goal-content .timer-recepticle").hide();
+        $("#wait-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
 
-        // Log completed goal
-        var startStamp = json.statistics.goal.lastClickStamp;
+        // Log completed wait
+        var startStamp = json.statistics.wait.lastClickStamp;
         ActionLogModule.placeActionIntoLog(startStamp, "used", null, null, null, false);
-        GoalsModule.replaceLongestGoal(startStamp, requestedTimestamp, json);
+        WaitModule.replaceLongestWait(startStamp, requestedTimestamp, json);
 
-        // Update goal counter
-        json.statistics.goal.completedGoals++;
-        $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
+        // Update wait counter
+        json.statistics.wait.completedWaits++;
+        $("#numberOfWaitsCompleted").html(json.statistics.wait.completedWaits);
     }
 
     function handleUseButtonDialog() {
@@ -368,8 +368,17 @@ var ButtonsModule = (function() {
         if (howLongData && howLongData.type === 'startTimer') {
             UIModule.closeClickDialog(".use");
             $(".statistics-tab-toggler").click();
+            // End any active wait timer since user is starting activity
+            if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.endActiveWaitTimerOnAction) {
+                WaitTimerModule.endActiveWaitTimerOnAction('started_timer');
+            }
             ActivityTimerModule.startNewTimer();
             return;
+        }
+
+        // End any active wait timer since user "did it"
+        if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.endActiveWaitTimerOnAction) {
+            WaitTimerModule.endActiveWaitTimerOnAction('did_it');
         }
 
         // Return to statistics screen
@@ -429,12 +438,12 @@ var ButtonsModule = (function() {
         // Update statistics display
         updateUseStatistics();
 
-        // Handle goal completion
-        handleUseGoalCompletion(requestedTimestamp);
+        // Handle wait completion
+        handleUseWaitCompletion(requestedTimestamp);
 
         // Final updates
         StatsDisplayModule.initiateReport(json, StorageModule.retrieveStorageObject, StatsDisplayModule.createReport);
-        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestWait);
         json.statistics.use.lastClickStamp = timestampSeconds;
         UIModule.closeClickDialog(".use");
     }
@@ -457,33 +466,33 @@ var ButtonsModule = (function() {
         $(".statistic.cost.totals.year").html("$" + json.statistics.cost.totals.year);
     }
 
-    function handleBoughtGoalCompletion(timestampSeconds) {
-        if (json.statistics.goal.activeGoalBought === 0 && json.statistics.goal.activeGoalBoth === 0) {
+    function handleBoughtWaitCompletion(timestampSeconds) {
+        if (json.statistics.wait.activeWaitBought === 0 && json.statistics.wait.activeWaitBoth === 0) {
             return;
         }
 
-        var goalType = json.statistics.goal.activeGoalBought !== 0 ? "bought" : "both";
+        var waitType = json.statistics.wait.activeWaitBought !== 0 ? "bought" : "both";
         var message = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
         
-        // Reset active goal
-        json.statistics.goal.activeGoalBought = 0;
-        json.statistics.goal.activeGoalBoth = 0;
+        // Reset active wait
+        json.statistics.wait.activeWaitBought = 0;
+        json.statistics.wait.activeWaitBoth = 0;
 
-        StorageModule.changeGoalStatus(2, goalType, timestampSeconds);
-        NotificationsModule.createNotification(message, null, { type: 'goal_ended_early' });
+        StorageModule.changeWaitStatus(2, waitType, timestampSeconds);
+        NotificationsModule.createNotification(message, null, { type: 'wait_ended_early' });
 
-        $("#goal-content .timer-recepticle").hide();
+        $("#wait-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
 
-        // Log completed goal
-        var startStamp = json.statistics.goal.lastClickStamp;
-        ActionLogModule.placeGoalIntoLog(startStamp, timestampSeconds, goalType, false, json);
-        GoalsModule.replaceLongestGoal(startStamp, timestampSeconds, json);
+        // Log completed wait
+        var startStamp = json.statistics.wait.lastClickStamp;
+        ActionLogModule.placeWaitIntoLog(startStamp, timestampSeconds, waitType, false, json);
+        WaitModule.replaceLongestWait(startStamp, timestampSeconds, json);
 
-        // Update goal counter
-        json.statistics.goal.completedGoals++;
-        $("#numberOfGoalsCompleted").html(json.statistics.goal.completedGoals);
+        // Update wait counter
+        json.statistics.wait.completedWaits++;
+        $("#numberOfWaitsCompleted").html(json.statistics.wait.completedWaits);
     }
 
     function handleBoughtButtonDialog() {
@@ -516,13 +525,13 @@ var ButtonsModule = (function() {
         // Update cost statistics
         updateCostStatistics(amountSpent);
 
-        // Handle goal completion
-        handleBoughtGoalCompletion(timestampSeconds);
+        // Handle wait completion
+        handleBoughtWaitCompletion(timestampSeconds);
 
         // Final updates
         UIModule.closeClickDialog(".cost");
         TimerStateManager.initiate('bought', undefined, json);
-        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestGoal);
+        UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestWait);
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
         TimersModule.adjustFibonacciTimerToBoxes("bought-timer");

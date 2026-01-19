@@ -81,7 +81,7 @@ var StatsCalculationsModule = (function () {
     function calculateMaxReportHeight(storageObject) {
         var jsonObject = storageObject ? storageObject : StorageModule.retrieveStorageObject();
         var actions = jsonObject.action.filter(function (e) {
-            return e.clickType == "used" || e.clickType == "craved";
+            return e && (e.clickType == "used" || e.clickType == "craved");
         });
 
         var maxHeight = 0;

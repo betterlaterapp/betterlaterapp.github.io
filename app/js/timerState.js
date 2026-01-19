@@ -19,14 +19,34 @@ var TimerStateManager = (function () {
             intervalRef: null,
             countdown: false
         },
-        goal: {
-            id: 'goal-timer',
-            selector: '#goal-content',
-            jsonPath: 'goal',
+        // New naming: 'wait' timer
+        wait: {
+            id: 'wait-timer',
+            selector: '#wait-content',
+            jsonPath: 'wait', // Will fall back to 'goal' if 'wait' doesn't exist
             intervalRef: null,
             countdown: true,
-            stateKey: 'untilTimerEnd' // Different from others
+            stateKey: 'untilTimerEnd'
+        },
+        // Backward compatibility alias
+        goal: {
+            id: 'wait-timer',
+            selector: '#wait-content',
+            jsonPath: 'wait',
+            intervalRef: null,
+            countdown: true,
+            stateKey: 'untilTimerEnd'
         }
+    }
+
+    /**
+     * Get statistics object for a timer, with fallback for wait/goal compatibility
+     * @param {object} json - The app state
+     * @param {string} jsonPath - The path in statistics ('wait', 'goal', 'use', 'cost')
+     * @returns {object} The statistics object
+     */
+    function getStatsForPath(json, jsonPath) {
+        return json.statistics[jsonPath];
     }
 
     /**
@@ -114,13 +134,14 @@ var TimerStateManager = (function () {
 
     function createCountdownInterval(timer, timerSection, json) {
         const stateKey = timer.stateKey || 'untilTimerEnd';
+        const stats = getStatsForPath(json, timer.jsonPath);
 
         // Get initial values from json
-        let days = json.statistics[timer.jsonPath][stateKey].days;
-        let hours = json.statistics[timer.jsonPath][stateKey].hours;
-        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
-        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
-        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
+        let days = stats[stateKey].days;
+        let hours = stats[stateKey].hours;
+        let minutes = stats[stateKey].minutes;
+        let seconds = stats[stateKey].seconds;
+        let totalSeconds = stats[stateKey].totalSeconds;
 
         return setInterval(() => {
             // Decrease seconds
@@ -190,7 +211,7 @@ var TimerStateManager = (function () {
 
                     if (days === 0) {
                         setTimeout(() => {
-                            $($(`#goal-content .boxes div`)[0]).hide();
+                            $($(`#wait-content .boxes div`)[0]).hide();
                             TimersModule.adjustFibonacciTimerToBoxes(timer.id);
                         }, 0);
                     }
@@ -206,24 +227,25 @@ var TimerStateManager = (function () {
             }
 
             // Update json with current values
-            json.statistics[timer.jsonPath][stateKey].totalSeconds = totalSeconds;
-            json.statistics[timer.jsonPath][stateKey].seconds = seconds;
-            json.statistics[timer.jsonPath][stateKey].minutes = minutes;
-            json.statistics[timer.jsonPath][stateKey].hours = hours;
-            json.statistics[timer.jsonPath][stateKey].days = days;
+            stats[stateKey].totalSeconds = totalSeconds;
+            stats[stateKey].seconds = seconds;
+            stats[stateKey].minutes = minutes;
+            stats[stateKey].hours = hours;
+            stats[stateKey].days = days;
 
         }, 1000); // End interval
     }
 
     function createCountupInterval(timer, timerSection, json) {
         const stateKey = timer.stateKey || 'sinceTimerStart';
+        const stats = getStatsForPath(json, timer.jsonPath);
 
         // Get initial values
-        let days = json.statistics[timer.jsonPath][stateKey].days;
-        let hours = json.statistics[timer.jsonPath][stateKey].hours;
-        let minutes = json.statistics[timer.jsonPath][stateKey].minutes;
-        let seconds = json.statistics[timer.jsonPath][stateKey].seconds;
-        let totalSeconds = json.statistics[timer.jsonPath][stateKey].totalSeconds;
+        let days = stats[stateKey].days;
+        let hours = stats[stateKey].hours;
+        let minutes = stats[stateKey].minutes;
+        let seconds = stats[stateKey].seconds;
+        let totalSeconds = stats[stateKey].totalSeconds;
 
         return setInterval(() => {
             // Increment seconds
@@ -231,8 +253,8 @@ var TimerStateManager = (function () {
             seconds++;
 
             // Update json
-            json.statistics[timer.jsonPath][stateKey].totalSeconds++;
-            json.statistics[timer.jsonPath][stateKey].seconds++;
+            stats[stateKey].totalSeconds++;
+            stats[stateKey].seconds++;
 
             // Format seconds
             if (seconds >= 10) {
@@ -247,8 +269,8 @@ var TimerStateManager = (function () {
                 minutes++;
 
                 // Update json
-                json.statistics[timer.jsonPath][stateKey].seconds = 0;
-                json.statistics[timer.jsonPath][stateKey].minutes++;
+                stats[stateKey].seconds = 0;
+                stats[stateKey].minutes++;
 
                 // Handle box visibility
                 if ($(`${timerSection} .boxes div:visible`).length === 1) {
@@ -273,8 +295,8 @@ var TimerStateManager = (function () {
                 hours++;
 
                 // Update json
-                json.statistics[timer.jsonPath][stateKey].minutes = 0;
-                json.statistics[timer.jsonPath][stateKey].hours++;
+                stats[stateKey].minutes = 0;
+                stats[stateKey].hours++;
 
                 // Handle box visibility
                 if ($(`${timerSection} .boxes div:visible`).length === 2) {
@@ -299,8 +321,8 @@ var TimerStateManager = (function () {
                 days++;
 
                 // Update json
-                json.statistics[timer.jsonPath][stateKey].hours = 0;
-                json.statistics[timer.jsonPath][stateKey].days++;
+                stats[stateKey].hours = 0;
+                stats[stateKey].days++;
 
                 // Handle box visibility
                 if ($(`${timerSection} .boxes div:visible`).length === 3) {
@@ -329,6 +351,7 @@ var TimerStateManager = (function () {
         const timerSection = timer.selector;
         const stateKey = timer.stateKey || 'sinceTimerStart';
         const jsonPath = timer.jsonPath;
+        const stats = getStatsForPath(json, jsonPath);
 
         // Clear existing interval
         if (timer.intervalRef) {
@@ -365,18 +388,18 @@ var TimerStateManager = (function () {
                 seconds = timeValues.seconds;
 
                 // Update json with calculated values
-                json.statistics[jsonPath][stateKey].days = days;
-                json.statistics[jsonPath][stateKey].hours = hours;
-                json.statistics[jsonPath][stateKey].minutes = minutes;
-                json.statistics[jsonPath][stateKey].seconds = seconds;
-                json.statistics[jsonPath][stateKey].totalSeconds = requestedTimestamp;
+                stats[stateKey].days = days;
+                stats[stateKey].hours = hours;
+                stats[stateKey].minutes = minutes;
+                stats[stateKey].seconds = seconds;
+                stats[stateKey].totalSeconds = requestedTimestamp;
             } else {
                 // Reset json vars for fresh timer
-                json.statistics[jsonPath][stateKey].days = 0;
-                json.statistics[jsonPath][stateKey].hours = 0;
-                json.statistics[jsonPath][stateKey].minutes = 0;
-                json.statistics[jsonPath][stateKey].seconds = 0;
-                json.statistics[jsonPath][stateKey].totalSeconds = timer.countdown ? totalSeconds : 0;
+                stats[stateKey].days = 0;
+                stats[stateKey].hours = 0;
+                stats[stateKey].minutes = 0;
+                stats[stateKey].seconds = 0;
+                stats[stateKey].totalSeconds = timer.countdown ? totalSeconds : 0;
             }
 
             // Insert initial values into timer display
@@ -392,11 +415,11 @@ var TimerStateManager = (function () {
         // Handle the restart case (loading from saved state)
         else {
             // Get stored timer values
-            days = json.statistics[jsonPath][stateKey].days;
-            hours = json.statistics[jsonPath][stateKey].hours;
-            minutes = json.statistics[jsonPath][stateKey].minutes;
-            seconds = json.statistics[jsonPath][stateKey].seconds;
-            totalSeconds = json.statistics[jsonPath][stateKey].totalSeconds;
+            days = stats[stateKey].days;
+            hours = stats[stateKey].hours;
+            minutes = stats[stateKey].minutes;
+            seconds = stats[stateKey].seconds;
+            totalSeconds = stats[stateKey].totalSeconds;
 
             if (!timer.countdown && requestedTimestamp !== undefined) {
                 const nowTimestamp = Math.floor(new Date().getTime() / 1000);
@@ -417,7 +440,7 @@ var TimerStateManager = (function () {
         if (timerType === 'goal') {
             // Show all boxes first, then hide the zeros
             $(`${timerSection} .boxes div`).show();
-            this.hideZeroValueTimerBoxes('goal-content');
+            this.hideZeroValueTimerBoxes('wait-content');
         }
 
         // Adjust the timer box sizing

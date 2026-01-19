@@ -124,12 +124,13 @@ var ActionLogModule = (function () {
     function populateHabitLogOnLoad() {
         var jsonObject = StorageModule.retrieveStorageObject();
         var allActions = jsonObject.action.filter(function (e) {
-            return e.clickType == "used" ||
+            return e && (e.clickType == "used" ||
                 e.clickType == "craved" ||
                 e.clickType == "bought" ||
                 e.clickType == "mood" ||
                 e.clickType == "timed" ||
-                (e.clickType == "goal" && (e.status == 2 || e.status == 3));
+                (e.clickType == "goal" && (e.status == 2 || e.status == 3)) ||
+                (e.clickType == "wait" && (e.status == 2 || e.status == 3)));
         });
         allActions = allActions.sort((a, b) => {
             return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
@@ -294,6 +295,7 @@ var ActionLogModule = (function () {
     return {
         placeActionIntoLog: placeActionIntoLog,
         placeGoalIntoLog: placeGoalIntoLog,
+        placeWaitIntoLog: placeGoalIntoLog, // Alias for new naming convention
         addMoreIntoHabitLog: addMoreIntoHabitLog,
         populateHabitLogOnLoad: populateHabitLogOnLoad,
         setupMoodTracker: setupMoodTracker,

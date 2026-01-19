@@ -324,7 +324,7 @@ var NotificationsModule = (function () {
         
         var jsonObject = StorageModule.retrieveStorageObject();
         var activeGoals = jsonObject.action.filter(function (e) {
-            return e.clickType == "goal" && e.status == 1;
+            return e && e.clickType == "goal" && e.status == 1;
         });
         var mostRecentGoal = activeGoals[activeGoals.length - 1];
 
@@ -342,14 +342,14 @@ var NotificationsModule = (function () {
             if (id) storeUserResponse(id, 'goal-ended-on-time', { goalType: goalType });
             renderNotificationsLog();
             
-            ActionLogModule.placeGoalIntoLog(startStamp, endStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
+            ActionLogModule.placeWaitIntoLog(startStamp, endStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
             var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
-            createNotification("Congrats on completing your goal! " + affirmation, null, { type: 'goal_completed' });
-            StorageModule.changeGoalStatus(3, goalType);
+            createNotification("Congrats on completing your wait! " + affirmation, null, { type: 'wait_completed' });
+            StorageModule.changeWaitStatus(3, goalType);
 
-            json.statistics.goal.activeGoalBoth = 0;
-            json.statistics.goal.activeGoalUse = 0;
-            json.statistics.goal.activeGoalBought = 0;
+            json.statistics.wait.activeWaitBoth = 0;
+            json.statistics.wait.activeWaitUse = 0;
+            json.statistics.wait.activeWaitBought = 0;
         }
         else if ($this.hasClass("goal-ended-early")) {
             if (id) storeUserResponse(id, 'goal-ended-early', { goalType: goalType });
@@ -389,12 +389,12 @@ var NotificationsModule = (function () {
                     goalType: goalType, 
                     endTimestamp: tempEndStamp 
                 });
-                StorageModule.changeGoalStatus(2, goalType, tempEndStamp);
-                ActionLogModule.placeGoalIntoLog(startStamp, tempEndStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
+                StorageModule.changeWaitStatus(2, goalType, tempEndStamp);
+                ActionLogModule.placeWaitIntoLog(startStamp, tempEndStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
                 renderNotificationsLog();
-                json.statistics.goal.activeGoalBoth = 0;
-                json.statistics.goal.activeGoalUse = 0;
-                json.statistics.goal.activeGoalBought = 0;
+                json.statistics.wait.activeWaitBoth = 0;
+                json.statistics.wait.activeWaitUse = 0;
+                json.statistics.wait.activeWaitBought = 0;
             } else {
                 alert('Please choose a time within your goal range!');
             }
