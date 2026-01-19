@@ -132,6 +132,13 @@ var WaitModule = (function () {
         // Use passed json if provided, otherwise use module-level json
         var jsonToUse = jsonParam || json;
         
+        // Safety check for required structure
+        if (!jsonToUse || !jsonToUse.statistics || !jsonToUse.statistics.wait || 
+            !jsonToUse.statistics.wait.longestWait) {
+            console.warn('replaceLongestWait: Invalid json structure');
+            return;
+        }
+        
         var timeNow = Math.round(new Date() / 1000);
         var timestampLength = {
             week: 7 * 24 * 60 * 60,
@@ -150,7 +157,7 @@ var WaitModule = (function () {
 
         var waitLength = end - start;
 
-        if (waitLength > jsonToUse.statistics.wait.longestWait[timeIncrement]) {
+        if (waitLength > (jsonToUse.statistics.wait.longestWait[timeIncrement] || 0)) {
             // If longest wait just happened
             jsonToUse.statistics.wait.longestWait[timeIncrement] = waitLength;
             $(".statistic.longestWait." + timeIncrement).html(
@@ -240,7 +247,18 @@ var WaitModule = (function () {
             return;
         }
 
-        // Get time selection from form
+        var waitStampSeconds;
+        
+        // Check which radio is selected
+        var selectedOption = $('input[name="waitDurationRadios"]:checked').val();
+        
+        // If "quick" radio is selected, user should use the quick buttons instead
+        if (selectedOption === 'quick') {
+            alert("Please click one of the quick wait buttons, or select 'Choose a time' to set a specific time.");
+            return;
+        }
+        
+        // Custom time selected - use time picker and date picker
         var requestedTimeEndHours = parseInt($(".wait.log-more-info select.time-picker-hour").val());
         var requestedTimeEndMinutes = parseInt($(".wait.log-more-info select.time-picker-minute").val());
 
@@ -257,7 +275,7 @@ var WaitModule = (function () {
             dateFormat: 'yy-mm-dd'
         }).val();
 
-        var waitStampSeconds = Math.round(new Date(requestedWaitEnd).getTime() / 1000);
+        waitStampSeconds = Math.round(new Date(requestedWaitEnd).getTime() / 1000);
 
         var secondsUntilRequestedWait = (requestedTimeEndHours * 60 * 60) + (requestedTimeEndMinutes * 60);
 
@@ -265,16 +283,27 @@ var WaitModule = (function () {
         var nowMinutes = date.getMinutes();
         var secondsUntilNow = (nowHours * 60 * 60) + (nowMinutes * 60);
 
-        if (waitStampSeconds >= timestampSeconds || secondsUntilRequestedWait > secondsUntilNow) {
-            waitStampSeconds += secondsUntilRequestedWait;
+        // Validate custom time is in the future
+        if (waitStampSeconds < timestampSeconds && secondsUntilRequestedWait <= secondsUntilNow) {
+            alert("Please choose a time later than right now!");
+            return;
+        }
+        
+        waitStampSeconds += secondsUntilRequestedWait;
 
+        if (waitStampSeconds > timestampSeconds) {
+
+            // Get wait type from active tab (new UI) or checkboxes (fallback)
             var waitType = "";
-            /* Figure wait type */
-            if ($("#boughtWaitInput").is(":checked") && $("#usedWaitInput").is(":checked")) {
-                // Both are checked
-                waitType = "both";
+            var activeTab = $('.wait-dialog-tab.active').data('wait-type');
+            
+            if (activeTab) {
+                waitType = activeTab;
             } else {
-                if ($("#boughtWaitInput").is(":checked")) {
+                // Fallback to checkboxes for backwards compatibility
+                if ($("#boughtWaitInput").is(":checked") && $("#usedWaitInput").is(":checked")) {
+                    waitType = "both";
+                } else if ($("#boughtWaitInput").is(":checked")) {
                     waitType = "bought";
                 } else if ($("#usedWaitInput").is(":checked")) {
                     waitType = "use";
@@ -336,9 +365,6 @@ var WaitModule = (function () {
             }
 
             UIModule.closeClickDialog(".wait");
-        } else {
-            /* User selected a time on today (equal to or) prior to current time */
-            alert("Please choose a time later than right now!");
         }
     }
 
@@ -367,8 +393,120 @@ var WaitModule = (function () {
         }
         $(".wait.log-more-info .time-picker-minute").val(currMinutesRounded);
         $(".wait.log-more-info .time-picker-hour").val(currHours);
+        
+        // Reset to Quick wait option by default
+        $('#waitQuickRadio').prop('checked', true);
+        $('.wait.log-more-info').removeClass('show-custom');
+        
+        // Reset tabs to default (To Do It)
+        $('.wait-dialog-tab').removeClass('active');
+        $('.wait-dialog-tab[data-wait-type="use"]').addClass('active');
+        $('#usedWaitInput').prop('checked', true);
+        $('#boughtWaitInput').prop('checked', false);
     }
 
+    /**
+     * Handle quick wait with specified minutes
+     * @param {number} minutes - Duration in minutes
+     */
+    function handleQuickWait(minutes) {
+        var date = new Date();
+        var timestampSeconds = Math.round(date / 1000);
+        var waitStampSeconds = timestampSeconds + (minutes * 60);
+        
+        // Get wait type from active tab
+        var waitType = $('.wait-dialog-tab.active').data('wait-type') || 'use';
+        
+        var waitStats = getWaitStats(json);
+        
+        // Check for active wait
+        var hasActiveWait = (waitStats.activeWaitUse || 0) !== 0 ||
+            (waitStats.activeWaitBought || 0) !== 0 ||
+            (waitStats.activeWaitBoth || 0) !== 0;
+            
+        if (hasActiveWait) {
+            var message = "You already have an active wait. Would you like to replace it?";
+            if (!confirm(message)) return;
+        }
+        
+        // Keep lastClickStamp up to date
+        waitStats.lastClickStamp = timestampSeconds;
+        
+        // Return to statistics screen
+        $(".statistics-tab-toggler").click();
+        
+        // Set active wait type
+        var jsonHandle = "activeWait" + waitType.charAt(0).toUpperCase() + waitType.slice(1);
+        waitStats[jsonHandle] = 1;
+        
+        // Update hidden checkboxes for compatibility
+        $('#boughtWaitInput').prop('checked', waitType === 'bought' || waitType === 'both');
+        $('#usedWaitInput').prop('checked', waitType === 'use' || waitType === 'both');
+        
+        StorageModule.updateActionTable(timestampSeconds, "wait", "", waitStampSeconds, waitType);
+        
+        // Increment click counter
+        if (waitStats.clickCounter !== undefined) {
+            waitStats.clickCounter++;
+        }
+        
+        UIModule.showActiveStatistics(json);
+        
+        // Create the wait timer panel
+        if (typeof WaitTimerModule !== 'undefined') {
+            WaitTimerModule.createWaitTimerPanel(waitStampSeconds, waitType);
+        }
+        
+        UIModule.closeClickDialog(".wait");
+    }
+    
+    /**
+     * Setup wait dialog UI event handlers
+     */
+    function setupWaitDialogHandlers() {
+        // Wait type tab switching (styled like use dialog)
+        $(document).on('click', '.wait-dialog-tab', function() {
+            var $this = $(this);
+            var waitType = $this.data('wait-type');
+            
+            // Update active state
+            $('.wait-dialog-tab').removeClass('active');
+            $this.addClass('active');
+            
+            // Update hidden checkboxes for compatibility
+            if (waitType === 'bought') {
+                $('#boughtWaitInput').prop('checked', true);
+                $('#usedWaitInput').prop('checked', false);
+            } else if (waitType === 'use') {
+                $('#boughtWaitInput').prop('checked', false);
+                $('#usedWaitInput').prop('checked', true);
+            }
+        });
+        
+        // Duration radio button selection - toggle between quick and custom
+        $(document).on('change', 'input[name="waitDurationRadios"]', function() {
+            var value = $(this).val();
+            var $dialog = $('.wait.log-more-info');
+            
+            if (value === 'custom') {
+                $dialog.addClass('show-custom');
+            } else {
+                $dialog.removeClass('show-custom');
+            }
+        });
+        
+        // Quick wait buttons - immediately start wait and close dialog
+        $(document).on('click', '.wait-quick-btn', function() {
+            var minutes = parseInt($(this).data('minutes'));
+            handleQuickWait(minutes);
+        });
+        
+        // Clicking on custom time inputs should select the custom radio
+        $(document).on('focus', '.wait-custom-inputs select', function() {
+            $('#waitCustomRadio').prop('checked', true).trigger('change');
+        });
+    }
+    
     /**
      * Initialize the module
      * @param {object} appJson - App state
@@ -380,6 +518,9 @@ var WaitModule = (function () {
         $(".wait.log-more-info button.submit").click(function () {
             handleWaitDialogSubmit(json);
         });
+        
+        // Setup new dialog UI handlers
+        setupWaitDialogHandlers();
     }
 
     // Public API

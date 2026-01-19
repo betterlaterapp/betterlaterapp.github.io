@@ -170,6 +170,14 @@ var StorageModule = (function () {
                     live.longestWait = live.longestGoal;
                 }
             }
+            
+            // Update logItemsToDisplay: goal → wait
+            if (jsonObject.option && jsonObject.option.logItemsToDisplay) {
+                var log = jsonObject.option.logItemsToDisplay;
+                if (log.goal !== undefined && log.wait === undefined) {
+                    log.wait = log.goal;
+                }
+            }
 
             jsonObject.version = 3;
         }

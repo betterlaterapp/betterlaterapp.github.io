@@ -47,11 +47,50 @@ var WaitTimerModule = (function () {
             handleDoItEarly();
         });
 
-        // Cancel/discard wait timer button
+        // X button toggles footer with options (like activity timer)
         $(document).on('click', '.wait-timer-discard-btn', function(e) {
             e.preventDefault();
-            var timerId = $(this).closest('.wait-timer-panel').data('timer-id');
-            discardWaitTimer(timerId);
+            var panel = $(this).closest('.wait-timer-panel');
+            panel.find('.wait-timer-footer').slideToggle('fast');
+        });
+        
+        // Footer cancel button (hide footer)
+        $(document).on('click', '.wait-timer-footer .cancel', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.wait-timer-panel');
+            panel.find('.wait-timer-footer').slideUp('fast');
+        });
+        
+        // End Now button
+        $(document).on('click', '.wait-timer-end-now-btn', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.wait-timer-panel');
+            var timerId = panel.data('timer-id');
+            endWaitTimerNow(timerId);
+        });
+        
+        // End In Past button
+        $(document).on('click', '.wait-timer-end-past-btn', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.wait-timer-panel');
+            var timerId = panel.data('timer-id');
+            showEndInPastDialog(timerId, panel);
+        });
+        
+        // Remove Entirely button
+        $(document).on('click', '.wait-timer-remove-btn', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.wait-timer-panel');
+            var timerId = panel.data('timer-id');
+            removeWaitTimerEntirely(timerId);
+        });
+        
+        // Submit past end time
+        $(document).on('click', '.wait-timer-footer .submit-past-time', function(e) {
+            e.preventDefault();
+            var panel = $(this).closest('.wait-timer-panel');
+            var timerId = panel.data('timer-id');
+            submitPastEndTime(timerId, panel);
         });
 
         // Close distraction panel - both the bottom button and X button
@@ -119,18 +158,18 @@ var WaitTimerModule = (function () {
     }
 
     /**
-     * Start a new wait timer (called from goals.js when user creates a wait)
+     * Start a new wait timer (called from wait.js when user creates a wait)
      * This creates the visual panel in #wait-timers-container
-     * @param {number} goalEndTimestamp - When the wait ends (unix timestamp)
-     * @param {string} goalType - 'use', 'bought', or 'both'
+     * @param {number} waitEndTimestamp - When the wait ends (unix timestamp)
+     * @param {string} waitType - 'use', 'bought', or 'both'
      */
-    function createWaitTimerPanel(goalEndTimestamp, goalType) {
+    function createWaitTimerPanel(waitEndTimestamp, waitType) {
         var jsonObject = StorageModule.retrieveStorageObject();
         var isDecreaseHabit = jsonObject.baseline.decreaseHabit;
         var timerId = 'wait_' + Math.round(new Date() / 1000);
         
         var now = Math.round(new Date() / 1000);
-        var remainingSeconds = Math.max(0, goalEndTimestamp - now);
+        var remainingSeconds = Math.max(0, waitEndTimestamp - now);
         var timeDisplay = formatTimerDisplay(remainingSeconds);
 
         // Determine button configuration based on habit direction
@@ -161,10 +200,11 @@ var WaitTimerModule = (function () {
             ? 'Stay strong! You\'ve got this.' 
             : 'Time until you should do it again';
 
-        var html = '<div class="wait-timer-panel" data-timer-id="' + timerId + '" data-goal-type="' + goalType + '" data-goal-end="' + goalEndTimestamp + '">' +
+        // Note: data attributes still use 'goal' prefix for backward compat with existing panels
+        var html = '<div class="wait-timer-panel" data-timer-id="' + timerId + '" data-goal-type="' + waitType + '" data-goal-end="' + waitEndTimestamp + '">' +
             '<div class="wait-timer-header">' +
                 '<div class="wait-timer-title"><i class="fas fa-hourglass-half"></i> ' + titleText + '</div>' +
-                '<button class="wait-timer-discard-btn" title="Cancel wait">' +
+                '<button class="wait-timer-discard-btn" title="Options">' +
                     '<i class="fas fa-times"></i>' +
                 '</button>' +
             '</div>' +
@@ -200,6 +240,45 @@ var WaitTimerModule = (function () {
                     '</div>' +
                 '</div>' +
             '</div>' +
+            // Footer with end options (hidden by default, toggled by X button)
+            '<div class="wait-timer-footer" style="display: none;">' +
+                '<p class="text-left text-white mb-3" style="font-size: 1.1rem;">How would you like to end this wait?</p>' +
+                '<div class="wait-timer-end-options">' +
+                    '<button class="wait-timer-end-now-btn btn btn-outline-light btn-sm">' +
+                        '<i class="fas fa-stop-circle"></i> End Now' +
+                    '</button>' +
+                    '<button class="wait-timer-end-past-btn btn btn-outline-light btn-sm">' +
+                        '<i class="fas fa-history"></i> End in the Past' +
+                    '</button>' +
+                    '<button class="wait-timer-remove-btn btn btn-outline-danger btn-sm">' +
+                        '<i class="fas fa-trash"></i> Remove Entirely' +
+                    '</button>' +
+                '</div>' +
+                '<div class="wait-timer-past-picker" style="display: none;">' +
+                    '<p class="text-white mt-3 mb-2">How long did you wait?</p>' +
+                    '<div class="time-picker-container">' +
+                        '<select class="past-picker-hours">' +
+                            '<option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>' +
+                            '<option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>' +
+                            '<option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>' +
+                            '<option value="12">12</option>' +
+                        '</select>' +
+                        '<span class="label">h</span>' +
+                        '<select class="past-picker-minutes">' +
+                            '<option value="0">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>' +
+                        '</select>' +
+                        '<span class="label">m</span>' +
+                    '</div>' +
+                    '<div class="row no-gutters mt-3">' +
+                        '<div class="col-6" style="padding-right:7px;">' +
+                            '<button class="cancel btn btn-outline-light btn-md btn-block">Cancel</button>' +
+                        '</div>' +
+                        '<div class="col-6" style="padding-left:7px;">' +
+                            '<button class="submit-past-time btn btn-light btn-md btn-block">Submit</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
         '</div>';
 
         // Insert into wait-timers-container
@@ -209,7 +288,7 @@ var WaitTimerModule = (function () {
         }
 
         // Start countdown interval
-        startCountdownInterval(timerId, goalEndTimestamp);
+        startCountdownInterval(timerId, waitEndTimestamp);
 
         // Adjust fibonacci timer sizing
         adjustTimerBoxVisibility(timerId);
@@ -219,16 +298,16 @@ var WaitTimerModule = (function () {
     /**
      * Start countdown interval for wait timer
      * @param {string} timerId - Timer ID
-     * @param {number} goalEndTimestamp - When the wait ends
+     * @param {number} waitEndTimestamp - When the wait ends
      */
-    function startCountdownInterval(timerId, goalEndTimestamp) {
+    function startCountdownInterval(timerId, waitEndTimestamp) {
         if (activeIntervals[timerId]) {
             clearInterval(activeIntervals[timerId]);
         }
 
         activeIntervals[timerId] = setInterval(function() {
             var now = Math.round(new Date() / 1000);
-            var remainingSeconds = Math.max(0, goalEndTimestamp - now);
+            var remainingSeconds = Math.max(0, waitEndTimestamp - now);
             
             if (remainingSeconds <= 0) {
                 // Timer completed!
@@ -249,11 +328,94 @@ var WaitTimerModule = (function () {
      */
     function handleWaitTimerComplete(timerId) {
         var panel = $('.wait-timer-panel[data-timer-id="' + timerId + '"]');
-        var goalType = panel.data('goal-type');
+        var waitType = panel.data('goal-type'); // data attribute still named goal-type
         
-        // The goal completion is already handled by GoalsModule/TimerStateManager
-        // Just remove the panel
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+        
+        // Get the start timestamp from the action records
+        var waits = jsonObject.action.filter(function(e) {
+            return e && (e.clickType === 'wait') && e.status === 1;
+        });
+        
+        var startStamp = 0;
+        if (waits.length > 0) {
+            startStamp = waits[waits.length - 1].clickStamp;
+        }
+        
+        var actualEnd = Math.round(new Date() / 1000);
+        
+        // Update storage status (3 = completed on time)
+        StorageModule.changeWaitStatus(3, waitType, actualEnd);
+        
+        // Log to action log (pass null to use module-level json)
+        ActionLogModule.placeWaitIntoLog(startStamp, actualEnd, waitType, false, null);
+        
+        // Update longest wait - pass null to use module-level json
+        if (typeof WaitModule !== 'undefined') {
+            WaitModule.replaceLongestWait(startStamp, actualEnd, null);
+        }
+        
+        // Update completed waits counter in storage
+        if (jsonObject.statistics && jsonObject.statistics.wait) {
+            jsonObject.statistics.wait.completedWaits = 
+                (jsonObject.statistics.wait.completedWaits || 0) + 1;
+            $("#numberOfWaitsCompleted").html(jsonObject.statistics.wait.completedWaits);
+            
+            // Reset active wait flags
+            jsonObject.statistics.wait.activeWaitUse = 0;
+            jsonObject.statistics.wait.activeWaitBought = 0;
+            jsonObject.statistics.wait.activeWaitBoth = 0;
+            
+            // Save updated stats back to storage
+            StorageModule.setStorageObject(jsonObject);
+        }
+        
+        // Determine habit direction for messaging
+        var isDecreaseHabit = jsonObject.baseline && jsonObject.baseline.decreaseHabit;
+        
+        // Show completion notification with extend option
+        showWaitCompletionNotification(timerId, waitType, isDecreaseHabit);
+    }
+    
+    /**
+     * Show notification when wait timer completes, offering extension
+     * @param {string} timerId - Timer ID
+     * @param {string} waitType - 'use', 'bought', or 'both'
+     * @param {boolean} isDecreaseHabit - Whether this is a 'do less' habit
+     */
+    function showWaitCompletionNotification(timerId, waitType, isDecreaseHabit) {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var affirmations = jsonObject && jsonObject.affirmations 
+            ? jsonObject.affirmations 
+            : ['Great job!', 'Keep it up!', 'You did it!'];
+        var affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
+        
+        var message = isDecreaseHabit 
+            ? '🎉 Congrats! You made it through the wait! ' + affirmation
+            : '⏰ Time\'s up! Ready to take action? ' + affirmation;
+        
+        var responseTools = 
+            '<button class="notification-response-tool wait-complete-extend" href="#">' +
+                '<i class="fas fa-plus-circle"></i> Extend Wait' +
+            '</button>' +
+            '<button class="notification-response-tool wait-complete-done" href="#">' +
+                '<i class="fas fa-check-circle"></i> I\'m Done' +
+            '</button>';
+        
+        NotificationsModule.createNotification(message, responseTools, { 
+            type: 'wait_completed',
+            waitType: waitType,
+            timerId: timerId
+        });
+        
+        // Remove the panel after showing notification
         removeWaitTimerPanel(timerId);
+        
+        // Play a sound or trigger confetti for celebration
+        if (typeof UIModule !== 'undefined') {
+            UIModule.shootConfetti();
+        }
     }
 
     /**
@@ -329,20 +491,162 @@ var WaitTimerModule = (function () {
     }
 
     /**
-     * Discard a wait timer (user cancelled)
+     * End wait timer now (user chose to end it at current time)
      * @param {string} timerId - Timer ID
      */
-    function discardWaitTimer(timerId) {
-        if (!confirm('Cancel this wait timer? The goal will be marked as incomplete.')) return;
-
+    function endWaitTimerNow(timerId) {
         var panel = $('.wait-timer-panel[data-timer-id="' + timerId + '"]');
-        var goalType = panel.data('goal-type');
-
-        // End the goal early via GoalsModule
-        if (typeof GoalsModule !== 'undefined' && GoalsModule.endActiveGoal) {
-            GoalsModule.endActiveGoal(json);
+        var waitType = panel.data('goal-type'); // data attribute still named goal-type
+        
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+        
+        // Get start timestamp from action records
+        var waits = jsonObject.action.filter(function(e) {
+            return e && e.clickType === 'wait' && e.status === 1;
+        });
+        
+        var startStamp = 0;
+        if (waits.length > 0) {
+            startStamp = waits[waits.length - 1].clickStamp;
         }
-
+        
+        var actualEnd = Math.round(new Date() / 1000);
+        
+        // Update storage status (2 = ended early)
+        StorageModule.changeWaitStatus(2, waitType, actualEnd);
+        
+        // Log to action log (pass null to use module-level json)
+        ActionLogModule.placeWaitIntoLog(startStamp, actualEnd, waitType, false, null);
+        
+        // Update longest wait - pass null to use module-level json
+        if (typeof WaitModule !== 'undefined') {
+            WaitModule.replaceLongestWait(startStamp, actualEnd, null);
+        }
+        
+        // Update completed waits counter in storage
+        if (jsonObject.statistics && jsonObject.statistics.wait) {
+            jsonObject.statistics.wait.completedWaits = 
+                (jsonObject.statistics.wait.completedWaits || 0) + 1;
+            $("#numberOfWaitsCompleted").html(jsonObject.statistics.wait.completedWaits);
+            
+            // Reset active wait flags
+            jsonObject.statistics.wait.activeWaitUse = 0;
+            jsonObject.statistics.wait.activeWaitBought = 0;
+            jsonObject.statistics.wait.activeWaitBoth = 0;
+            
+            // Save updated stats back to storage
+            StorageModule.setStorageObject(jsonObject);
+        }
+        
+        // Show notification
+        var affirmations = ['Great effort!', 'Keep it up!', 'Well done!'];
+        if (jsonObject.affirmations && jsonObject.affirmations.length > 0) {
+            affirmations = jsonObject.affirmations;
+        }
+        var affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
+        NotificationsModule.createNotification('Wait ended. ' + affirmation, null, { type: 'wait_ended_early' });
+        
+        removeWaitTimerPanel(timerId);
+    }
+    
+    /**
+     * Show the "end in past" time picker
+     * @param {string} timerId - Timer ID
+     * @param {jQuery} panel - The panel element
+     */
+    function showEndInPastDialog(timerId, panel) {
+        panel.find('.wait-timer-end-options').hide();
+        panel.find('.wait-timer-past-picker').slideDown('fast');
+    }
+    
+    /**
+     * Submit the past end time (how long did you wait)
+     * @param {string} timerId - Timer ID
+     * @param {jQuery} panel - The panel element
+     */
+    function submitPastEndTime(timerId, panel) {
+        var hoursWaited = parseInt(panel.find('.past-picker-hours').val()) || 0;
+        var minutesWaited = parseInt(panel.find('.past-picker-minutes').val()) || 0;
+        
+        var totalSecondsWaited = (hoursWaited * 3600) + (minutesWaited * 60);
+        
+        var waitType = panel.data('goal-type'); // data attribute still named goal-type
+        
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+        
+        // Get start timestamp
+        var waits = jsonObject.action.filter(function(e) {
+            return e && e.clickType === 'wait' && e.status === 1;
+        });
+        
+        var startStamp = 0;
+        if (waits.length > 0) {
+            startStamp = waits[waits.length - 1].clickStamp;
+        }
+        
+        // Calculate end time based on how long they waited
+        var endTime = startStamp + totalSecondsWaited;
+        
+        // Update storage status (2 = ended early)
+        StorageModule.changeWaitStatus(2, waitType, endTime);
+        
+        // Log to action log (pass null to use module-level json)
+        ActionLogModule.placeWaitIntoLog(startStamp, endTime, waitType, false, null);
+        
+        // Update longest wait - pass null to use module-level json
+        if (typeof WaitModule !== 'undefined') {
+            WaitModule.replaceLongestWait(startStamp, endTime, null);
+        }
+        
+        // Update completed waits counter in storage
+        if (jsonObject.statistics && jsonObject.statistics.wait) {
+            jsonObject.statistics.wait.completedWaits = 
+                (jsonObject.statistics.wait.completedWaits || 0) + 1;
+            $("#numberOfWaitsCompleted").html(jsonObject.statistics.wait.completedWaits);
+            
+            // Reset active wait flags
+            jsonObject.statistics.wait.activeWaitUse = 0;
+            jsonObject.statistics.wait.activeWaitBought = 0;
+            jsonObject.statistics.wait.activeWaitBoth = 0;
+            
+            // Save updated stats back to storage
+            StorageModule.setStorageObject(jsonObject);
+        }
+        
+        // Show notification
+        NotificationsModule.createNotification('Wait logged with adjusted duration.', null, { type: 'wait_ended_past' });
+        
+        removeWaitTimerPanel(timerId);
+    }
+    
+    /**
+     * Remove wait timer entirely (no log entry)
+     * @param {string} timerId - Timer ID
+     */
+    function removeWaitTimerEntirely(timerId) {
+        if (!confirm('Remove this wait entirely? It will not be logged.')) return;
+        
+        var panel = $('.wait-timer-panel[data-timer-id="' + timerId + '"]');
+        var waitType = panel.data('goal-type'); // data attribute still named goal-type
+        
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+        
+        // Update storage status (4 = removed/cancelled without logging)
+        StorageModule.changeWaitStatus(4, waitType);
+        
+        // Reset active wait flags
+        if (jsonObject.statistics && jsonObject.statistics.wait) {
+            jsonObject.statistics.wait.activeWaitUse = 0;
+            jsonObject.statistics.wait.activeWaitBought = 0;
+            jsonObject.statistics.wait.activeWaitBoth = 0;
+            
+            // Save changes to storage
+            StorageModule.setStorageObject(jsonObject);
+        }
+        
         removeWaitTimerPanel(timerId);
     }
 
@@ -516,13 +820,26 @@ var WaitTimerModule = (function () {
     /**
      * End the active wait timer due to user action (did it, started timer, etc.)
      * Called when user performs an action that should end their wait
-     * @param {string} reason - Reason for ending ('did_it', 'started_timer', etc.)
+     * @param {string} reason - Reason for ending ('did_it', 'started_timer', 'spent')
      */
     function endActiveWaitTimerOnAction(reason) {
         if (!hasActiveWaitTimer()) return;
 
         var waitType = getActiveWaitType();
         var jsonObject = StorageModule.retrieveStorageObject();
+        
+        // Check if this action type should end the wait based on wait type
+        // 'use' waits: end on 'did_it' or 'started_timer'
+        // 'bought' waits: only end on 'spent'
+        // 'both' waits: end on any action
+        if (waitType === 'bought' && reason !== 'spent') {
+            // 'To Buy It' waits only end when user spends
+            return;
+        }
+        if (waitType === 'use' && reason === 'spent') {
+            // 'To Do It' waits don't end on spending
+            return;
+        }
         
         // Find the active wait panel and get its timer ID
         var panel = $('.wait-timer-panel');

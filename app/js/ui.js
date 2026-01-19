@@ -111,10 +111,9 @@ var UIModule = (function() {
             $("#cravingsResistedInARow").parent().hide();
         }
 
-        // Wait stats (formerly Goal stats)
         var waitStats = stat.wait || stat.goal;
         if (waitStats && waitStats.clickCounter === 0) {
-            $("#wait-content .timer-recepticle").hide();
+            $("#wait-timers-container .timer-recepticle").hide();
         } else {
             statisticPresent = true;
         }
@@ -193,10 +192,10 @@ var UIModule = (function() {
             $("#crave-button").parent().hide();
         }
         if (!display.longestGoal && !display.longestWait) {
-            $("#wait-content .longestWait, #wait-content .longestGoal").parent().hide();
+            $("#wait-timers-container .longestWait, #wait-timers-container .longestGoal").parent().hide();
         }
         if (!display.untilGoalEnd && !display.untilWaitEnd) {
-            $("#wait-content .timer-recepticle").hide();
+            $("#wait-timers-container .timer-recepticle").hide();
         }
         if (!display.undoButton) {
             $("#undoActionButton").parent().hide();

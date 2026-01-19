@@ -399,6 +399,23 @@ var NotificationsModule = (function () {
                 alert('Please choose a time within your goal range!');
             }
         }
+        // Handle wait completion extension request
+        else if ($this.hasClass("wait-complete-extend")) {
+            if (id) storeUserResponse(id, 'wait-complete-extend', {});
+            renderNotificationsLog();
+            
+            // Open the wait dialog to create a new wait
+            $('#wait-button').click();
+        }
+        // Handle wait completion done (just dismiss)
+        else if ($this.hasClass("wait-complete-done")) {
+            if (id) storeUserResponse(id, 'wait-complete-done', {});
+            renderNotificationsLog();
+            
+            // User is done, just dismiss the notification
+            var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
+            createNotification('Awesome job! ' + affirmation, null, { type: 'wait_acknowledged' });
+        }
     }
 
     return {

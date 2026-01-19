@@ -22,17 +22,8 @@ var TimerStateManager = (function () {
         // New naming: 'wait' timer
         wait: {
             id: 'wait-timer',
-            selector: '#wait-content',
+            selector: '#wait-timers-container',
             jsonPath: 'wait', // Will fall back to 'goal' if 'wait' doesn't exist
-            intervalRef: null,
-            countdown: true,
-            stateKey: 'untilTimerEnd'
-        },
-        // Backward compatibility alias
-        goal: {
-            id: 'wait-timer',
-            selector: '#wait-content',
-            jsonPath: 'wait',
             intervalRef: null,
             countdown: true,
             stateKey: 'untilTimerEnd'
@@ -211,7 +202,7 @@ var TimerStateManager = (function () {
 
                     if (days === 0) {
                         setTimeout(() => {
-                            $($(`#wait-content .boxes div`)[0]).hide();
+                            $($(`#wait-timers-container .boxes div`)[0]).hide();
                             TimersModule.adjustFibonacciTimerToBoxes(timer.id);
                         }, 0);
                     }
@@ -440,7 +431,7 @@ var TimerStateManager = (function () {
         if (timerType === 'goal') {
             // Show all boxes first, then hide the zeros
             $(`${timerSection} .boxes div`).show();
-            this.hideZeroValueTimerBoxes('wait-content');
+            this.hideZeroValueTimerBoxes('wait-timers-container');
         }
 
         // Adjust the timer box sizing

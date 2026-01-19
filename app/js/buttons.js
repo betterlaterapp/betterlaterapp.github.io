@@ -332,7 +332,6 @@ var ButtonsModule = (function() {
         StorageModule.changeWaitStatus(2, waitType, requestedTimestamp);
         NotificationsModule.createNotification(message, null, { type: 'wait_ended_early' });
 
-        $("#wait-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
 
@@ -467,6 +466,12 @@ var ButtonsModule = (function() {
     }
 
     function handleBoughtWaitCompletion(timestampSeconds) {
+        // End any 'bought' type wait timer via WaitTimerModule
+        if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.endActiveWaitTimerOnAction) {
+            WaitTimerModule.endActiveWaitTimerOnAction('spent');
+        }
+        
+        // Also handle in-memory state for backwards compatibility
         if (json.statistics.wait.activeWaitBought === 0 && json.statistics.wait.activeWaitBoth === 0) {
             return;
         }
@@ -481,7 +486,6 @@ var ButtonsModule = (function() {
         StorageModule.changeWaitStatus(2, waitType, timestampSeconds);
         NotificationsModule.createNotification(message, null, { type: 'wait_ended_early' });
 
-        $("#wait-content .timer-recepticle").hide();
         UIModule.toggleActiveStatGroups(json);
         UIModule.hideInactiveStatistics(json);
 

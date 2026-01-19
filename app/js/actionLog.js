@@ -82,14 +82,17 @@ var ActionLogModule = (function () {
     }
 
     /**
-    * Place a goal into the log
+    * Place a wait record into the log
     * @param {number} startStamp - Start timestamp
     * @param {number} endStamp - End timestamp
-    * @param {string} goalType - Goal type
+    * @param {string} waitType - Wait type (use, bought, both)
     * @param {boolean} placeBelow - Whether to place the log entry below others
-    * @param {Object} json - The app state object
+    * @param {Object} jsonParam - Optional app state object override
     */
-    function placeGoalIntoLog(startStamp, endStamp, goalType, placeBelow, json) {
+    function placeWaitIntoLog(startStamp, endStamp, waitType, placeBelow, jsonParam) {
+        // Use passed json if provided, otherwise use module-level json
+        var jsonToUse = jsonParam || json;
+        
         var endDateObj = new Date(parseInt(endStamp + "000"));
         var timeElapsed = StatsCalculationsModule.convertSecondsToDateFormat(endStamp - startStamp, false);
         var dayOfTheWeek = endDateObj.toString().split(' ')[0];
@@ -98,7 +101,7 @@ var ActionLogModule = (function () {
             endDateObj.getDate() + "/" +
             (endDateObj.getFullYear());
 
-        var template = '<div class="item goal-record">' +
+        var template = '<div class="item wait-record">' +
             '<hr/><p class="title"><i class="far fa-calendar-plus"></i>&nbsp;' +
             'You waited <b><span class="timeElapsed">' + timeElapsed + '</span></b>.' +
             '</p>' +
@@ -110,7 +113,11 @@ var ActionLogModule = (function () {
 
         // Assure user has selected to display this log item type
         // Controller is on settings pane
-        if (json.option.logItemsToDisplay.goal === true) {
+        // Support both 'wait' (new) and 'goal' (legacy) settings
+        var shouldDisplay = jsonToUse && jsonToUse.option && jsonToUse.option.logItemsToDisplay && 
+            (jsonToUse.option.logItemsToDisplay.wait === true || jsonToUse.option.logItemsToDisplay.goal === true);
+        
+        if (shouldDisplay) {
             if (placeBelow) {
                 $('#habit-log').append(template);
             } else {
@@ -129,7 +136,6 @@ var ActionLogModule = (function () {
                 e.clickType == "bought" ||
                 e.clickType == "mood" ||
                 e.clickType == "timed" ||
-                (e.clickType == "goal" && (e.status == 2 || e.status == 3)) ||
                 (e.clickType == "wait" && (e.status == 2 || e.status == 3)));
         });
         allActions = allActions.sort((a, b) => {
@@ -150,8 +156,8 @@ var ActionLogModule = (function () {
                 var currClickStamp = allActions[i].timestamp,
                     currClickType = allActions[i].clickType,
                     currClickCost = null,
-                    currGoalEndStamp = -1,
-                    currGoalType = "",
+                    currWaitEndStamp = -1,
+                    currWaitType = "",
                     comment = "",
                     smiley = -1,
                     duration = null;
@@ -161,23 +167,20 @@ var ActionLogModule = (function () {
 
                 } else if (currClickType == "bought") {
                     currClickCost = allActions[i].spent;
-                    //append curr action
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
 
-                } else if (currClickType == "goal") {
-                    currGoalEndStamp = allActions[i].goalStopped,
-                        currGoalType = allActions[i].goalType;
-                    //append 10 new goals
-                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatsCalculationsModule.convertSecondsToDateFormat);
+                } else if (currClickType == "wait") {
+                    // Use new property names, with fallback to legacy names
+                    currWaitEndStamp = allActions[i].waitStopped || allActions[i].goalStopped;
+                    currWaitType = allActions[i].waitType || allActions[i].goalType;
+                    placeWaitIntoLog(currClickStamp, currWaitEndStamp, currWaitType, true, jsonObject);
+                    
                 } else if (currClickType == "mood") {
-                    //append curr action
                     comment = allActions[i].comment;
                     smiley = allActions[i].smiley;
-
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
                 } else if (currClickType == "timed") {
-                    // Timed action - log with duration
                     duration = allActions[i].duration;
                     placeActionIntoLog(currClickStamp, currClickType, null, null, null, true, duration);
                 }
@@ -211,8 +214,8 @@ var ActionLogModule = (function () {
                 var currClickStamp = allActions[i].timestamp,
                     currClickType = allActions[i].clickType,
                     currClickCost = null,
-                    currGoalEndStamp = -1,
-                    currGoalType = "",
+                    currWaitEndStamp = -1,
+                    currWaitType = "",
                     comment = "",
                     smiley = -1,
                     duration = null;
@@ -222,23 +225,20 @@ var ActionLogModule = (function () {
 
                 } else if (currClickType == "bought") {
                     currClickCost = allActions[i].spent;
-                    //append curr action
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
 
-                } else if (currClickType == "goal") {
-                    currGoalEndStamp = allActions[i].goalStopped,
-                        currGoalType = allActions[i].goalType;
-                    //append 10 new goals
-                    placeGoalIntoLog(currClickStamp, currGoalEndStamp, currGoalType, true, jsonObject, StatsCalculationsModule.convertSecondsToDateFormat);
+                } else if (currClickType == "wait") {
+                    // Use new property names, with fallback to legacy names
+                    currWaitEndStamp = allActions[i].waitStopped || allActions[i].goalStopped;
+                    currWaitType = allActions[i].waitType || allActions[i].goalType;
+                    placeWaitIntoLog(currClickStamp, currWaitEndStamp, currWaitType, true, jsonObject);
+                    
                 } else if (currClickType == "mood") {
-                    //append curr action
                     comment = allActions[i].comment;
                     smiley = allActions[i].smiley;
-
                     placeActionIntoLog(currClickStamp, currClickType, null, comment, smiley, true);
 
                 } else if (currClickType == "timed") {
-                    // Timed action - log with duration
                     duration = allActions[i].duration;
                     placeActionIntoLog(currClickStamp, currClickType, null, null, null, true, duration);
                 }
@@ -294,8 +294,7 @@ var ActionLogModule = (function () {
     // Public API
     return {
         placeActionIntoLog: placeActionIntoLog,
-        placeGoalIntoLog: placeGoalIntoLog,
-        placeWaitIntoLog: placeGoalIntoLog, // Alias for new naming convention
+        placeWaitIntoLog: placeWaitIntoLog,
         addMoreIntoHabitLog: addMoreIntoHabitLog,
         populateHabitLogOnLoad: populateHabitLogOnLoad,
         setupMoodTracker: setupMoodTracker,
