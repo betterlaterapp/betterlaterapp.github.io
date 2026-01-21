@@ -801,36 +801,38 @@
                                 <div class="weekly-report d-none">
                                     <div class="row">
                                         <div class="col-12">
-                                            <div class="stat-recepticle">
-                                                <p class="text-center chart-title">
-                                                    Weekly Usage Report
-                                                </p>
+                                            <!-- Report Filter Controls -->
+                                            <div class="report-filters">
+                                                <div class="report-filter-group">
+                                                    <div class="report-filter-wrapper">
+                                                        <select id="reportMetricFilter" class="report-filter-select">
+                                                            <option value="usage">Times Done</option>
+                                                            <option value="time">Time Spent</option>
+                                                            <option value="cost">Money Spent</option>
+                                                        </select>
+                                                        <i class="fas fa-chevron-down"></i>
+                                                    </div>
+                                                    <div class="report-filter-wrapper">
+                                                        <select id="reportPeriodFilter" class="report-filter-select">
+                                                            <option value="day">Daily</option>
+                                                            <option value="week">Weekly</option>
+                                                            <option value="month">Monthly</option>
+                                                        </select>
+                                                        <i class="fas fa-chevron-down"></i>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div class="bar-chart">
-                                                <!-- Uses and resists PER day - one week-->
+                                                <!-- Dynamic legend - updated by JS based on metric and habit direction -->
                                                 <div class="legend">
-                                                    <div class="color-descriptor">
+                                                    <div class="color-descriptor legend-primary-item">
                                                         <div class="color primary"></div>
-                                                        <label>
-                                                            <span class="desires-increase">
-                                                                Didn't
-                                                            </span>
-                                                            <span class="desires-decrease">
-                                                                Resists
-                                                            </span>
-                                                        </label>
+                                                        <label class="legend-primary-label">Resists</label>
                                                     </div>
-                                                    <div class="color-descriptor">
+                                                    <div class="color-descriptor legend-secondary-item">
                                                         <div class="color secondary"></div>
-                                                        <label>
-                                                            <span class="desires-increase">
-                                                                Did it
-                                                            </span>
-                                                            <span class="desires-decrease">
-                                                                Done
-                                                            </span>
-                                                        </label>
+                                                        <label class="legend-secondary-label">Done</label>
                                                     </div>
                                                 </div>
                                                 <!-- the bar chart to be called in js-->
@@ -863,7 +865,7 @@
                                                         <i class="fas fa-caret-down"></i>
                                                         <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
                                                     </div>
-                                                    <label>Done Vs. last week:</label>
+                                                    <label>Done Vs. last period:</label>
                                                 </div>
 
                                                 <div class="statistic">
@@ -880,7 +882,7 @@
                                                         <span
                                                             id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
                                                     </div>
-                                                    <label>Spent Vs. last week:</label>
+                                                    <label>Spent Vs. last period:</label>
 
                                                 </div>
                                                 <div class="statistic">
@@ -899,8 +901,8 @@
                                                     <thead>
                                                         <tr>
                                                             <th scope="col"></th>
-                                                            <th scope="col">Goal / Week</th>
-                                                            <th scope="col">This Week</th>
+                                                            <th scope="col">Goal</th>
+                                                            <th scope="col">This Period</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1398,28 +1400,28 @@
                                                 <label class="form-check-label" for="useVsResistsGraphDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useVsResistsGraphDisplayed" checked>
-                                                    Weekly report: usage vs. resists (graph)
+                                                    Progress report: graph
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="useChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsBaselineDisplayed" checked>
-                                                    Weekly report: usage change vs. baseline
+                                                    Progress report: change vs. baseline
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="useChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsLastWeekDisplayed" checked>
-                                                    Weekly report: usage change vs. last week
+                                                    Progress report: change vs. last period
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="useGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useGoalVsThisWeekDisplayed" checked>
-                                                    Weekly report: usage this week vs. goal
+                                                    Progress report: this period vs. goal
                                                 </label>
                                             </div>
                                         </div>
@@ -1512,21 +1514,21 @@
                                                 <label class="form-check-label" for="costChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsBaselineDisplayed" checked>
-                                                    Weekly report: cost change vs. baseline
+                                                    Progress report: spending vs. baseline
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="costChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsLastWeekDisplayed" checked>
-                                                    Weekly report: cost change vs. last week
+                                                    Progress report: spending vs. last period
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="costGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costGoalVsThisWeekDisplayed" checked>
-                                                    Weekly report: spent this week vs. goal
+                                                    Progress report: spending vs. goal
                                                 </label>
                                             </div>
                                         </div>
@@ -2090,7 +2092,7 @@
             </div>
         </div>
         <footer class="footer">
-            <p class="text-center" style="color:white;">&copy;2024 Corey Boiko</p>
+            <p class="text-center" style="color:white;">&copy;2026 Corey Boiko</p>
         </footer>
 
         <script src="../assets/js/jquery-3.2.1.min.js"></script>

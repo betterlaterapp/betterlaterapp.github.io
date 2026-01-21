@@ -540,6 +540,9 @@ var ButtonsModule = (function() {
         UIModule.hideInactiveStatistics(json);
         TimersModule.adjustFibonacciTimerToBoxes("bought-timer");
         json.statistics.cost.lastClickStamp = timestampSeconds;
+        
+        // Refresh report to show new spending data
+        StatsDisplayModule.initiateReport(json);
     }
     
     function handleGoalButtonClick() {

@@ -290,9 +290,11 @@ var WaitTimerModule = (function () {
         // Start countdown interval
         startCountdownInterval(timerId, waitEndTimestamp);
 
-        // Adjust fibonacci timer sizing
-        adjustTimerBoxVisibility(timerId);
-        TimersModule.adjustFibonacciTimerToBoxes(timerId);
+        // Adjust fibonacci timer sizing - defer to ensure DOM is rendered
+        setTimeout(function() {
+            adjustTimerBoxVisibility(timerId);
+            TimersModule.adjustFibonacciTimerToBoxes(timerId);
+        }, 0);
     }
 
     /**

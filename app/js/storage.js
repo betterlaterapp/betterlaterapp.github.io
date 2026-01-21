@@ -178,6 +178,13 @@ var StorageModule = (function () {
                     log.wait = log.goal;
                 }
             }
+            
+            // Add report filter options
+            if (jsonObject.option && jsonObject.option.reportItemsToDisplay) {
+                var rep = jsonObject.option.reportItemsToDisplay;
+                if (rep.reportMetric === undefined) rep.reportMetric = 'usage'; // 'usage', 'cost', 'time'
+                if (rep.reportPeriod === undefined) rep.reportPeriod = 'week'; // 'day', 'week', 'month'
+            }
 
             jsonObject.version = 3;
         }

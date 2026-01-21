@@ -178,7 +178,9 @@ $(document).ready(function () {
                     "costChangeVsBaseline": false,
                     "costChangeVsLastWeek": true,
                     "useGoalVsThisWeek": false,
-                    "costGoalVsThisWeek": false
+                    "costGoalVsThisWeek": false,
+                    "reportMetric": "usage",
+                    "reportPeriod": "week"
                 }
             },
             "report": {
@@ -670,6 +672,7 @@ $(document).ready(function () {
             UIModule.hideInactiveStatistics(json);
 
             //get them notifcations for useful reports
+            StatsDisplayModule.setupReportFilters(json);
             StatsDisplayModule.initiateReport(json);
 
         } else {

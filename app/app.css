@@ -1180,7 +1180,64 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 
 /* REPORTS */
 
+/* Report Filter Controls */
+.report-filters {
+    margin: 15px 0 20px;
+    display: flex;
+    justify-content: center;
+}
 
+.report-filter-group {
+    display: flex;
+    gap: 10px;
+}
+
+.report-filter-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.report-filter-wrapper i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 0.7rem;
+    color: #666;
+}
+
+.report-filter-select {
+    padding: 8px 30px 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #fff;
+    cursor: pointer;
+    min-width: 120px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.report-filter-select:focus {
+    outline: none;
+    border-color: #8b3a75;
+}
+
+/* Legend label colors */
+.legend .color.primary {
+    background-color: #dc3545;
+}
+
+.legend .color.secondary {
+    background-color: #28a745;
+}
+
+/* Hide secondary legend item when only one series (cost) */
+.legend-secondary-item.d-none {
+    display: none !important;
+}
 
     .weekly-report .week-range {
 		display: flex;
@@ -1232,32 +1289,45 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
             display: inline-block;
             
         }
-        .bar-chart .legend .color.primary {
-            background: #2b922bb7;
+        /* Chart series colors: series-a = primary (red), series-b = secondary (green) */
+        .ct-series-a line,
+        .ct-series-a .ct-bar,
+        .ct-series-a .ct-line,
+        .ct-series-a .ct-area {
+            stroke: #dc3545 !important;
+            fill: rgba(220, 53, 69, 0.2) !important;
+        }
+        .ct-series-b line,
+        .ct-series-b .ct-bar,
+        .ct-series-b .ct-line,
+        .ct-series-b .ct-area {
+            stroke: #28a745 !important;
+            fill: rgba(40, 167, 69, 0.2) !important;
+        }
 
+        /* Cumulative chart increase point markers */
+        .ct-series-a .ct-point.ct-point-increase {
+            stroke: #dc3545 !important;
+            fill: #fff;
         }
-        .bar-chart .legend .color.secondary {
-            background: #c704078c;
-        }
-        .ct-series-a line{
-            stroke: #2b922bb7 !important;
-        }
-        .ct-series-b line{
-            stroke: #c704078c !important;
+        .ct-series-b .ct-point.ct-point-increase {
+            stroke: #28a745 !important;
+            fill: #fff;
         }
 
-
-        .desires-increase .bar-chart .legend .color.primary {
-            background: #c704078c;
+        /* Y-axis label styling for better readability */
+        .ct-label.ct-vertical {
+            font-size: 10px;
+            white-space: nowrap;
+            padding-right: 5px;
         }
-        .desires-increase .bar-chart .legend .color.secondary {
-            background: #2b922bb7;
+        
+        /* Give Y-axis labels more room on line charts */
+        .ct-chart-line {
+            overflow: visible;
         }
-        .desires-increase .ct-series-a line{
-            stroke: #c704078c !important;
-        }
-        .desires-increase .ct-series-b line{
-            stroke: #2b922bb7 !important;
+        .ct-chart-line .ct-labels {
+            overflow: visible;
         }
 
 
@@ -1522,6 +1592,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 /* Cost Dialog Specific */
@@ -1598,6 +1669,7 @@ input[type="number"] {
     margin-bottom: 0;
     cursor: pointer;
     flex: 1;
+    text-align: left;
 }
 
 /* Quick wait buttons */
@@ -1664,9 +1736,7 @@ input[type="number"] {
     display: flex;
 }
 
-.wait.log-more-info.show-custom .wait-quick-buttons {
-    display: none;
-}
+/* Quick buttons always visible */
 
 /* Use Dialog Specific */
 .use.log-more-info .time-picker-container {

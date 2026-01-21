@@ -84,11 +84,6 @@ var TimersModule = (function () {
             TimerStateManager.initiate('bought', undefined, json);
         }
 
-        // Wait timer
-        var waitStats = json.statistics.wait;
-        if (waitStats && waitStats.untilTimerEnd.totalSeconds == 0) {
-            $("#wait-content .fibonacci-timer").toggle();
-        }
     }
 
     /**

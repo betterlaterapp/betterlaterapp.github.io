@@ -348,9 +348,11 @@ var ActivityTimerModule = (function () {
             container.append(html);
         }
         
-        // Use standard logic to adjust boxes and sizing
-        adjustTimerBoxVisibility(timer.id);
-        TimersModule.adjustFibonacciTimerToBoxes(timer.id);
+        // Use standard logic to adjust boxes and sizing - defer to ensure DOM is rendered
+        setTimeout(function() {
+            adjustTimerBoxVisibility(timer.id);
+            TimersModule.adjustFibonacciTimerToBoxes(timer.id);
+        }, 0);
     }
 
     /**
