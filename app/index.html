@@ -82,7 +82,7 @@
             ">Reload App</button>
             <button id="fallback-update-btn" onclick="window.refreshServiceWorker && window.refreshServiceWorker();"
                 style="
-                background: #28a745;
+                background: #1e9039;
                 color: white;
                 border: none;
                 padding: 12px 32px;
@@ -792,6 +792,103 @@
                     <!-- Active Activity Timers Container -->
                     <div id="activity-timers-container"></div>
 
+                    <!-- Brief Stats Bar -->
+                    <div class="brief-stats-container-wrapper">
+                        <div id="brief-stats" class="brief-stats d-none">
+                            <div class="brief-stats-container">
+                                <!-- Last Done Timer (shows if times-done OR time-spent selected) -->
+                                <div class="stat-brief stat-last-done d-none">
+                                    <div class="timer-recepticle">
+                                        <div class="spacer">
+                                            <div id="smoke-timer" class="fibonacci-timer">
+                                                <div class="boxes">
+                                                    <div>
+                                                        <span class="timerSpan daysSinceLastClick">0</span>
+                                                        <span>Days</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan hoursSinceLastClick">0</span>
+                                                        <span>Hours</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan minutesSinceLastClick">0</span>
+                                                        <span>Mins</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan secondsSinceLastClick">00</span>
+                                                        <span>Secs</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-brief-label">Last done</div>
+                                </div>
+                                
+                                <!-- Last Spent Timer (shows if money-spent selected) -->
+                                <div class="stat-brief stat-last-spent d-none">
+                                    <div class="timer-recepticle">
+                                        <div class="spacer">
+                                            <div id="bought-timer" class="fibonacci-timer">
+                                                <div class="boxes">
+                                                    <div>
+                                                        <span class="timerSpan daysSinceLastClick">0</span>
+                                                        <span>Days</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan hoursSinceLastClick">0</span>
+                                                        <span>Hours</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan minutesSinceLastClick">0</span>
+                                                        <span>Mins</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="timerSpan secondsSinceLastClick">00</span>
+                                                        <span>Secs</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-brief-label">Last spent</div>
+                                </div>
+                                
+                                <!-- Do it by / Wait until (milestone-based) -->
+                                <div class="stat-brief stat-next-milestone do-more-only d-none">
+                                    <div class="stat-brief-value" id="brief-do-it-by">--</div>
+                                    <div class="stat-brief-label">Do it by</div>
+                                </div>
+                                <div class="stat-brief stat-next-milestone do-less-only d-none">
+                                    <div class="stat-brief-value" id="brief-wait-until">--</div>
+                                    <div class="stat-brief-label">Wait until</div>
+                                </div>
+                                
+                                <!-- Time today / Wait today (pie chart) -->
+                                <div class="stat-brief stat-time-today do-more-only d-none">
+                                    <div class="stat-brief-chart" id="brief-time-chart"></div>
+                                    <div class="stat-brief-label">Time today</div>
+                                </div>
+                                <div class="stat-brief stat-time-today do-less-only d-none">
+                                    <div class="stat-brief-chart" id="brief-wait-chart"></div>
+                                    <div class="stat-brief-label">Wait today</div>
+                                </div>
+                                
+                                <!-- Did / Didn't pie chart (do-less only) -->
+                                <div class="stat-brief stat-did-didnt do-less-only d-none">
+                                    <div class="stat-brief-chart" id="brief-did-didnt-chart"></div>
+                                    <div class="stat-brief-label">Did / Didn't</div>
+                                </div>
+                                
+                                <!-- Resist streak (do-less only) -->
+                                <div class="stat-brief stat-resist-streak do-less-only d-none">
+                                    <div class="stat-brief-value" id="brief-resist-streak">0</div>
+                                    <div class="stat-brief-label">Streak</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Start Use are -->
                     <div id="use-content">
 
@@ -944,34 +1041,7 @@
                                     </div>
                                     <hr />
                                 </div>
-                                <div class="timer-recepticle">
-                                    <p>Since you've done it</p>
-                                    <div class="spacer">
-                                        <div id="smoke-timer" class="fibonacci-timer">
-                                            <div class="boxes">
-                                                <div>
-                                                    <span class="timerSpan daysSinceLastClick">0</span>
-                                                    <span>Days</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan hoursSinceLastClick">0</span>
-                                                    <span>Hours</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan minutesSinceLastClick">0</span>
-                                                    <span>Mins</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan secondsSinceLastClick">00</span>
-                                                    <span>Secs</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- smoke-timer moved to brief-stats bar -->
 
                                 <div class="stat-recepticle">
                                     <p>Avg time between doing</p>
@@ -1171,34 +1241,7 @@
                         <!--h3 class="text-center">I wanted to...</h3-->
                         <div class="row">
                             <div class="col-12">
-                                <div class="timer-recepticle">
-                                    <p>Since you've bought it</p>
-                                    <div class="spacer">
-                                        <div id="bought-timer" class="fibonacci-timer">
-                                            <div class="boxes">
-                                                <div>
-                                                    <span class="timerSpan daysSinceLastClick">0</span>
-                                                    <span>Days</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan hoursSinceLastClick">0</span>
-                                                    <span>Hours</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan minutesSinceLastClick">0</span>
-                                                    <span>Mins</span>
-                                                </div>
-
-                                                <div>
-                                                    <span class="timerSpan secondsSinceLastClick">00</span>
-                                                    <span>Secs</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- bought-timer moved to brief-stats bar -->
                                 <div class="stat-recepticle">
                                     <p>Avg time between Buying</p>
 
@@ -2110,6 +2153,7 @@
         <script type="application/javascript" src="js/ui.js"></script>
         <script type="application/javascript" src="js/statsCalculations.js"></script>
         <script type="application/javascript" src="js/statsDisplay.js"></script>
+        <script type="application/javascript" src="js/briefStats.js"></script>
         <script type="application/javascript" src="js/baseline.js"></script>
         <script type="application/javascript" src="js/wait.js"></script>
         <script type="application/javascript" src="js/behavioralGoals.js"></script>

@@ -838,12 +838,12 @@ input[type="number"] {
 
     /* Decrease mode: red icons when selected */
     body.desires-decrease .importance-option input:checked + .importance-card .importance-icon .icon-mask {
-        background-color: #dc3545;
+        background-color: #911521;
     }
 
     /* Increase mode: green icons when selected */
     body.desires-increase .importance-option input:checked + .importance-card .importance-icon .icon-mask {
-        background-color: #28a745;
+        background-color: #1e9039;
     }
 
     /* Observe mode: grey icons when selected */
@@ -909,20 +909,20 @@ input[type="number"] {
 
     /* Decrease mode - green down (good), red up (bad) */
     body.desires-decrease .behavior-direction-question .decrease-arrow {
-        color: #28a745;
+        color: #1e9039;
     }
 
     body.desires-decrease .behavior-direction-question .increase-arrow {
-        color: #dc3545;
+        color: #911521;
     }
 
     /* Increase mode - red down (bad), green up (good) */
     body.desires-increase .behavior-direction-question .decrease-arrow {
-        color: #dc3545;
+        color: #911521;
     }
 
     body.desires-increase .behavior-direction-question .increase-arrow {
-        color: #28a745;
+        color: #1e9039;
     }
 
     /* Observe mode - contrasting greys */
@@ -1227,15 +1227,198 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 
 /* Legend label colors */
 .legend .color.primary {
-    background-color: #dc3545;
+    background-color: #911521;
 }
 
 .legend .color.secondary {
-    background-color: #28a745;
+    background-color: #1e9039;
 }
 
 /* Hide secondary legend item when only one series (cost) */
 .legend-secondary-item.d-none {
+    display: none !important;
+}
+
+/* ============================================
+   BRIEF STATS BAR
+   ============================================ */
+
+/* Full-width wrapper - breaks out of parent padding */
+.brief-stats-container-wrapper {
+    position: relative;
+    left: -10px;
+    top: -15px;
+    padding-top: 99px;
+    width: calc(100% + 20px);
+    background: radial-gradient(circle,rgba(23, 23, 23, .3) 23%, rgba(59, 58, 58, .4) 58%, rgba(206, 206, 206, .2) 100%);
+    border-radius: 0;
+}
+
+.brief-stats {
+    position: relative;
+    z-index: 5;
+    background: #171717;
+    background: radial-gradient(circle,rgba(23, 23, 23, 1) 23%, rgba(59, 58, 58, 1) 86%, rgba(193, 193, 193, 1) 100%);
+    backdrop-filter: blur(8px);
+    border-radius: 0 0 16px 16px;
+    padding: 0px 20px 8px 20px;
+    margin: 0;
+    max-height: 35px;
+    display: flex;
+    align-items: flex-end;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.brief-stats-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.stat-brief {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 0 0 30%; /* Default: 30% width for most stats */
+    min-width: 0;
+    justify-content: flex-end;
+}
+
+.stat-brief.stat-last-done,
+.stat-brief.stat-last-spent {
+    flex: 0 0 40%; /* Timer stats: 40% width */
+    align-items: flex-start;  
+    justify-content: flex-start;
+}
+.stat-brief .timer-recepticle {
+    margin: 0;
+    max-height: 95px;
+    max-width: 147px;
+    overflow: hidden;
+    position: absolute;
+    left: -10px;
+    top: -97px;
+    z-index: 0;
+}
+
+.stat-brief.stat-last-time {
+    align-items: flex-start;
+    text-align: left;
+}
+
+/* Base text color - dark enough for light bg, light enough for dark bg */
+.stat-brief-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #6b96c1; /* Dark blue-gray - works on both backgrounds */
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: visible;
+    max-width: 100%;
+}
+
+.stat-brief.stat-last-time .stat-brief-value {
+    font-size: 1.0rem;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+    letter-spacing: -0.5px;
+}
+
+.stat-brief-label {
+    text-align: center;
+    font-size: .8rem;
+    color: #d6d9dd; /* Slightly lighter dark blue-gray */
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 5px;
+    line-height: 1.1;
+    font-weight: 600;
+}
+
+/* Pie chart container - base size (larger) */
+.stat-brief-chart {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+    border-radius: 50%;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Hide ratio label inside pie chart */
+.stat-brief-chart .pie-percentage,
+.stat-brief-chart .pie-ratio {
+    display: none;
+}
+
+/* Resist streak styling */
+.stat-brief.stat-resist-streak .stat-brief-value {
+    color: #1e9039; /* Updated green */
+}
+
+/* ============================================
+   BRIEF STATS - DYNAMIC SIZING BY COUNT (max 3)
+   ============================================ */
+
+/* 3 stats visible */
+.brief-stats-container.stats-count-3 .stat-brief-value {
+    font-size: 2.5rem;
+}
+.brief-stats-container.stats-count-3 .stat-brief.stat-last-time .stat-brief-value {
+    font-size: 2.2rem;
+}
+.brief-stats-container.stats-count-3 .stat-brief-chart {
+    width: 75px;
+    height: 75px;
+}
+.brief-stats-container.stats-count-3 .stat-brief.stat-resist-streak .stat-brief-value {
+    font-size: 3.0rem;
+}
+
+/* 2 stats visible */
+.brief-stats-container.stats-count-2 .stat-brief-value {
+    font-size: 3.0rem;
+}
+.brief-stats-container.stats-count-2 .stat-brief.stat-last-time .stat-brief-value {
+    font-size: 2.7rem;
+}
+.brief-stats-container.stats-count-2 .stat-brief-chart {
+    width: 68px;
+    height: 68px;
+}
+.brief-stats-container.stats-count-2 .stat-brief.stat-resist-streak .stat-brief-value {
+    font-size: 3.5rem;
+}
+
+/* 1 stat visible */
+.brief-stats-container.stats-count-1 .stat-brief-value {
+    font-size: 3.5rem;
+}
+.brief-stats-container.stats-count-1 .stat-brief.stat-last-time .stat-brief-value {
+    font-size: 3.2rem;
+}
+.brief-stats-container.stats-count-1 .stat-brief-chart {
+    width: 80px;
+    height: 80px;
+}
+.brief-stats-container.stats-count-1 .stat-brief.stat-resist-streak .stat-brief-value {
+    font-size: 4.0rem;
+}
+
+/* Show/hide based on habit direction - only apply when not individually hidden */
+body.desires-increase .do-less-only:not(.d-none),
+body.desires-neutral .do-less-only:not(.d-none) {
+    display: none !important;
+}
+
+body.desires-decrease .do-more-only:not(.d-none) {
     display: none !important;
 }
 
@@ -1294,24 +1477,24 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
         .ct-series-a .ct-bar,
         .ct-series-a .ct-line,
         .ct-series-a .ct-area {
-            stroke: #dc3545 !important;
+            stroke: #911521 !important;
             fill: rgba(220, 53, 69, 0.2) !important;
         }
         .ct-series-b line,
         .ct-series-b .ct-bar,
         .ct-series-b .ct-line,
         .ct-series-b .ct-area {
-            stroke: #28a745 !important;
+            stroke: #1e9039 !important;
             fill: rgba(40, 167, 69, 0.2) !important;
         }
 
         /* Cumulative chart increase point markers */
         .ct-series-a .ct-point.ct-point-increase {
-            stroke: #dc3545 !important;
+            stroke: #911521 !important;
             fill: #fff;
         }
         .ct-series-b .ct-point.ct-point-increase {
-            stroke: #28a745 !important;
+            stroke: #1e9039 !important;
             fill: #fff;
         }
 
@@ -1359,11 +1542,11 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
         }
         .desires-decrease .weekly-report .statistic .percent-changed.down,
         .desires-increase .weekly-report .statistic .percent-changed.up {
-            color: #28a745;
+            color: #1e9039;
         }
         .desires-decrease .weekly-report .statistic .percent-changed.up,
         .desires-increase .weekly-report .statistic .percent-changed.down {
-            color: #dc3545;
+            color: #911521;
         }
 
 
@@ -1380,11 +1563,11 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
         } 
         .desires-decrease .weekly-report .goal-report .amount-changed.down,
         .desires-increase .weekly-report .goal-report .amount-changed.up {
-            color: #28a745;
+            color: #1e9039;
         }
         .desires-decrease .weekly-report .goal-report .amount-changed.up,
         .desires-increase .weekly-report .goal-report .amount-changed.down {
-            color: #dc3545;
+            color: #911521;
         }
 
     /* goal report table */
@@ -1604,7 +1787,7 @@ input[type="number"] {
 .cost.log-more-info .input-area label {
     font-weight: 600;
     font-size: 1.25rem;
-    color: #28a745;
+    color: #1e9039;
 }
 
 .cost.log-more-info .input-area input {
@@ -1906,7 +2089,7 @@ input[type="number"] {
 	position: absolute;
 	top: -2px;
 	right: -2px;
-	background: #dc3545;
+	background: #911521;
 	color: white;
 	font-size: 0.65rem;
 	font-weight: 700;
@@ -2245,7 +2428,7 @@ input[type="number"] {
 }
 
 .behavioral-goal-card.behavioral-goal-active {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #1e9039;
 }
 
 .behavioral-goal-card.behavioral-goal-completed {
@@ -2254,7 +2437,7 @@ input[type="number"] {
 }
 
 .behavioral-goal-card.behavioral-goal-abandoned {
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid #911521;
     opacity: 0.6;
 }
 
@@ -2363,7 +2546,7 @@ input[type="number"] {
 }
 
 .behavioral-goal-success-content i {
-    color: #28a745;
+    color: #1e9039;
     margin-bottom: 15px;
 }
 
@@ -2575,7 +2758,7 @@ input[type="number"] {
     align-items: center;
     gap: 6px;
     font-weight: 600;
-    color: #28a745;
+    color: #1e9039;
     font-size: 1.1rem;
 }
 
@@ -2822,11 +3005,11 @@ input[type="number"] {
 
 /* Goal Color Indicators */
 .goal-accordion-item.goal-on-track {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #1e9039;
 }
 
 .goal-accordion-item.goal-behind {
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid #911521;
 }
 
 .goal-accordion-item.goal-neutral {
@@ -2834,11 +3017,11 @@ input[type="number"] {
 }
 
 .goal-accordion-item.goal-good-mood {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #1e9039;
 }
 
 .goal-accordion-item.goal-bad-mood {
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid #911521;
 }
 
 /* Closed State - Summary View (~175px) */
@@ -3050,7 +3233,7 @@ input[type="number"] {
 }
 
 .milestone-item.milestone-past .milestone-check {
-    color: #28a745;
+    color: #1e9039;
 }
 
 .milestone-details {
@@ -3137,11 +3320,11 @@ input[type="number"] {
 }
 
 .goal-progress-fill.on-track {
-    background: linear-gradient(90deg, #28a745, #20c997);
+    background: linear-gradient(90deg, #1e9039, #20c997);
 }
 
 .goal-progress-fill.behind {
-    background: linear-gradient(90deg, #dc3545, #fd7e14);
+    background: linear-gradient(90deg, #911521, #fd7e14);
 }
 
 .goal-progress-text {
@@ -3404,7 +3587,7 @@ input[type="number"] {
    ========================================== */
 
 #activity-timers-container {
-    margin-bottom: 24px;
+    margin-bottom: 0px;
 }
 
 .activity-timer-panel {
@@ -3604,7 +3787,7 @@ input[type="number"] {
    ========================================== */
 
 #wait-timers-container {
-    margin-bottom: 24px;
+    margin-bottom: 0px;
 }
 
 .wait-timer-panel {

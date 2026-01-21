@@ -559,15 +559,25 @@ var StatsDisplayModule = (function () {
         // Create chart - use Line for cumulative day view, Bar otherwise
         if (useCumulativeChart) {
             // For daily view, only show data up to current hour (not future)
-            var timeNow = Math.round(new Date() / 1000);
             var currentHour = new Date().getHours();
-            var hoursToShow = currentHour + 1; // Include current hour
+            // Add 2 to include the interval that contains the current hour 
+            // (interval i covers hour i to i+1, so at 8:50pm we need interval 20 which shows 9pm as end)
+            var hoursToShow = Math.min(currentHour + 2, dataPoints);
             
             // Truncate data to only include past/current hours
             var truncatedLabels = data.labels.slice(0, hoursToShow);
             var truncatedSeries = data.series.map(function(series) {
                 return series.slice(0, hoursToShow);
             });
+            
+            // Ensure the last label is always visible (not skipped)
+            if (truncatedLabels.length > 0 && truncatedLabels[truncatedLabels.length - 1] === '') {
+                var lastTimestamp = reportStart + (intervalDuration * hoursToShow);
+                var lastHour = new Date(lastTimestamp * 1000).getHours();
+                var ampm = lastHour >= 12 ? 'pm' : 'am';
+                lastHour = lastHour % 12 || 12;
+                truncatedLabels[truncatedLabels.length - 1] = lastHour + ampm;
+            }
             
             // Convert to cumulative values for day view
             var cumulativeData = {

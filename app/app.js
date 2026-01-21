@@ -626,6 +626,11 @@ $(document).ready(function () {
         if (typeof WaitTimerModule !== 'undefined') {
             WaitTimerModule.init(json);
         }
+        
+        // Initialize Brief Stats bar
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.init(json);
+        }
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
         if (StorageModule.hasStorageData()) {

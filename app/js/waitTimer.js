@@ -373,6 +373,16 @@ var WaitTimerModule = (function () {
             StorageModule.setStorageObject(jsonObject);
         }
         
+        // Refresh progress report to show new wait data
+        if (typeof StatsDisplayModule !== 'undefined') {
+            StatsDisplayModule.initiateReport(jsonObject);
+        }
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
+        
         // Determine habit direction for messaging
         var isDecreaseHabit = jsonObject.baseline && jsonObject.baseline.decreaseHabit;
         
@@ -541,6 +551,16 @@ var WaitTimerModule = (function () {
             StorageModule.setStorageObject(jsonObject);
         }
         
+        // Refresh progress report to show new wait data
+        if (typeof StatsDisplayModule !== 'undefined') {
+            StatsDisplayModule.initiateReport(jsonObject);
+        }
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
+        
         // Show notification
         var affirmations = ['Great effort!', 'Keep it up!', 'Well done!'];
         if (jsonObject.affirmations && jsonObject.affirmations.length > 0) {
@@ -615,6 +635,16 @@ var WaitTimerModule = (function () {
             
             // Save updated stats back to storage
             StorageModule.setStorageObject(jsonObject);
+        }
+        
+        // Refresh progress report to show new wait data
+        if (typeof StatsDisplayModule !== 'undefined') {
+            StatsDisplayModule.initiateReport(jsonObject);
+        }
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
         }
         
         // Show notification

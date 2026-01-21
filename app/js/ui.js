@@ -239,8 +239,8 @@ var UIModule = (function() {
         // Bought page 
         if (display.sinceLastSpent && stat.cost.clickCounter !== 0) {
             $("#bought-total").show();
-            $("#cost-content .timer-recepticle").show();
-            $("#cost-content .fibonacci-timer").show();
+            $(".stat-last-spent .timer-recepticle").show();
+            $(".stat-last-spent .fibonacci-timer").show();
         }
 
         if (display.avgBetweenSpent && stat.cost.betweenClicks.total !== 0) {
@@ -268,8 +268,8 @@ var UIModule = (function() {
         
         if (display.sinceLastDone && stat.use.clickCounter !== 0) {
             $("#use-total").show();
-            $("#use-content .timer-recepticle").show();
-            $("#use-content .fibonacci-timer").show();
+            $(".stat-last-done .timer-recepticle").show();
+            $(".stat-last-done .fibonacci-timer").show();
         }
 
         if (display.avgBetweenDone && stat.use.betweenClicks.total !== 0) {

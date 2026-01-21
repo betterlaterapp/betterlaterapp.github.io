@@ -222,6 +222,11 @@ var ButtonsModule = (function() {
             json.statistics.use.lastClickStampCrave = timestampSeconds;
     
             StatsDisplayModule.initiateReport(json, StorageModule.retrieveStorageObject, StatsDisplayModule.createReport);
+            
+            // Refresh brief stats
+            if (typeof BriefStatsModule !== 'undefined') {
+                BriefStatsModule.refresh();
+            }
         } else {
             alert("You're awesome.");
         }
@@ -445,6 +450,11 @@ var ButtonsModule = (function() {
         UIModule.showActiveStatistics(json, StatsDisplayModule.recalculateAverageTimeBetween, StatsDisplayModule.displayLongestWait);
         json.statistics.use.lastClickStamp = timestampSeconds;
         UIModule.closeClickDialog(".use");
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
     }
 
     function handleBoughtButtonClick() {
@@ -543,6 +553,11 @@ var ButtonsModule = (function() {
         
         // Refresh report to show new spending data
         StatsDisplayModule.initiateReport(json);
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
     }
     
     function handleGoalButtonClick() {

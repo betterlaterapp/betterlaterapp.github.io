@@ -69,7 +69,7 @@ var TimersModule = (function () {
 
     function hideTimersOnLoad(json) {
         if (json.statistics.use.sinceTimerStart.totalSeconds == 0) {
-            $("#use-content .fibonacci-timer:first-child").toggle();
+            $(".stat-last-done .fibonacci-timer:first-child").toggle();
 
         } else {
             //start timer from json values
@@ -77,7 +77,7 @@ var TimersModule = (function () {
         }
 
         if (json.statistics.cost.sinceTimerStart.totalSeconds == 0) {
-            $("#cost-content .fibonacci-timer:first-child").toggle();
+            $(".stat-last-spent .fibonacci-timer:first-child").toggle();
 
         } else {
             //start timer from json values

@@ -128,6 +128,17 @@ var ActivityTimerModule = (function () {
         // Update time spent stats
         updateTimeSpentStats();
 
+        // Refresh progress report to show new timed data
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (jsonObject && typeof StatsDisplayModule !== 'undefined') {
+            StatsDisplayModule.initiateReport(jsonObject);
+        }
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
+
         // Show notification
         var durationStr = StatsCalculationsModule.convertSecondsToDateFormat(totalSeconds, false);
         NotificationsModule.createNotification('Logged manual duration of ' + durationStr + '!', null, { type: 'timer_stopped' });
@@ -227,6 +238,17 @@ var ActivityTimerModule = (function () {
 
         // Update time spent stats
         updateTimeSpentStats();
+
+        // Refresh progress report to show new timed data
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (jsonObject && typeof StatsDisplayModule !== 'undefined') {
+            StatsDisplayModule.initiateReport(jsonObject);
+        }
+        
+        // Refresh brief stats
+        if (typeof BriefStatsModule !== 'undefined') {
+            BriefStatsModule.refresh();
+        }
 
         // Show notification with duration
         var durationStr = StatsCalculationsModule.convertSecondsToDateFormat(result.totalSeconds, false);

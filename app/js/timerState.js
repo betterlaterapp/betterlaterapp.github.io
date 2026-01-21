@@ -7,14 +7,14 @@ var TimerStateManager = (function () {
     var timers = {
         smoke: {
             id: 'smoke-timer',
-            selector: '#use-content',
+            selector: '.stat-last-done',
             jsonPath: 'use',
             intervalRef: null,
             countdown: false
         },
         bought: {
             id: 'bought-timer',
-            selector: '#cost-content',
+            selector: '.stat-last-spent',
             jsonPath: 'cost',
             intervalRef: null,
             countdown: false
