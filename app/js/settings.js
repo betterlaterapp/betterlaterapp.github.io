@@ -300,6 +300,67 @@ var SettingsModule = (function () {
         $('.baseline-values-settings .baseline-input, .baseline-values-settings .baseline-timeline-select').on('change', function() {
             saveBaselineValuesFromSettings();
         });
+        
+        // Handle settings importance checkboxes
+        $('.settings-importance-option input[type="checkbox"]').on('change', function() {
+            var $checkbox = $(this);
+            var isChecked = $checkbox.is(':checked');
+            
+            // Determine which category this is
+            var categoryKey = '';
+            if ($checkbox.hasClass('settings-valuesTimesDone')) {
+                categoryKey = 'valuesTimesDone';
+            } else if ($checkbox.hasClass('settings-valuesTime')) {
+                categoryKey = 'valuesTime';
+            } else if ($checkbox.hasClass('settings-valuesMoney')) {
+                categoryKey = 'valuesMoney';
+            } else if ($checkbox.hasClass('settings-valuesHealth')) {
+                categoryKey = 'valuesHealth';
+            }
+            
+            if (!categoryKey) return;
+            
+            // Update storage
+            var jsonObject = StorageModule.retrieveStorageObject();
+            if (!jsonObject.option) jsonObject.option = {};
+            if (!jsonObject.option.baseline) jsonObject.option.baseline = {};
+            jsonObject.option.baseline[categoryKey] = isChecked;
+            StorageModule.setStorageObject(jsonObject);
+            
+            // Sync baseline questionnaire checkbox
+            $('input.' + categoryKey).prop('checked', isChecked);
+            
+            // Update category state in settings
+            syncCategoryFromBaseline(categoryKey, isChecked);
+            
+            // Update baseline values UI visibility
+            syncBaselineValuesUI(jsonObject);
+            
+            // Update conditional options (buttons, stats, etc)
+            updateConditionalOptions();
+            
+            // Toggle related goal question-set in baseline questionnaire
+            var togglesMap = {
+                'valuesTimesDone': '.usage-goal-questions',
+                'valuesTime': '.time-goal-questions',
+                'valuesMoney': '.spending-goal-questions',
+                'valuesHealth': '.wellness-goal-questions'
+            };
+            if (togglesMap[categoryKey]) {
+                if (isChecked) {
+                    $(togglesMap[categoryKey]).slideDown();
+                } else {
+                    $(togglesMap[categoryKey]).slideUp();
+                }
+            }
+            
+            // Update UI
+            if (json) {
+                UIModule.showActiveStatistics(json);
+                UIModule.toggleActiveStatGroups(json);
+                UIModule.hideInactiveStatistics(json);
+            }
+        });
     }
     
     /**
@@ -310,6 +371,12 @@ var SettingsModule = (function () {
         
         // Track if any category is enabled
         var anyEnabled = false;
+        
+        // Sync settings importance checkboxes
+        $('.settings-valuesTimesDone').prop('checked', baseline.valuesTimesDone === true);
+        $('.settings-valuesTime').prop('checked', baseline.valuesTime === true);
+        $('.settings-valuesMoney').prop('checked', baseline.valuesMoney === true);
+        $('.settings-valuesHealth').prop('checked', baseline.valuesHealth === true);
         
         // Times Done baseline
         if (baseline.valuesTimesDone) {

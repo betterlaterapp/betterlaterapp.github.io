@@ -242,13 +242,13 @@ input[type="number"] {
 
 .app-background {
 	background: url('../assets/images/lake-reflect-background.jpg');
-    background-position: 0px -137px;
-    animation: animatedBackground 24s ease-in-out infinite alternate;
+    background-position: 0px -140px;
+    animation: animatedBackground 26s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
     from {
-        background-position: 0px -137px;
+        background-position: 0px -140px;
     }
     to {
         background-position: 300px -137px;
@@ -1379,7 +1379,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     left: -10px;
     padding-top: 82px;
     width: calc(100% + 20px);
-    background: radial-gradient(circle, rgba(107, 107, 107, 0.1) 0%, rgba(111, 111, 111, 0.5) 30%, rgba(20, 20, 20, .5) 100%);
+    background: rgba(0,0,0,0.2);
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 16px;
     border: 2px solid;
@@ -1532,7 +1532,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     display: flex;
     align-items: center;
     flex-direction: row;
-    gap: 8px;
+    gap: 2px;
 }
 
 .stat-comparison-box {
@@ -1583,6 +1583,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     color: #5a6a7a;
     font-weight: 500;
     text-transform: lowercase;
+    display: none;
 }
 
 /* Animation when current exceeds best/avg */
@@ -1637,7 +1638,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
    MILESTONE STAT - Alarm Clock Style
    ============================================ */
 .stat-brief.stat-milestone {
-    flex: 0 0 35%;
+    flex: 0 0 45%;
     align-items: center;
     justify-content: center;
 }
@@ -1722,6 +1723,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 /* Milestone on-track / off-track styling */
 .stat-brief.stat-milestone.milestone-on-track .stat-milestone-countdown {
     color: #ffffff;
+    font-size: .6rem;
 }
 .stat-brief.stat-milestone.milestone-off-track .stat-milestone-time {
     color: #ff3333;
@@ -4219,11 +4221,11 @@ input[type="number"] {
 }
 
 .wait-timer-left {
-    max-width: 50%;
+    max-width: 55%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-right: 15px;
+    padding-right: 7px;
     border-right: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -4240,7 +4242,7 @@ input[type="number"] {
 
 .wait-timer-right {
     flex: 1;
-    padding-left: 15px;
+    padding-left: 7px;
     display: flex;
     flex-direction: column;
     justify-content: center;

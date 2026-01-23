@@ -677,7 +677,11 @@ var StatsDisplayModule = (function () {
         // Uses vs baseline
         var weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        var beenAWeek = weekAgo.getTime() / 1000 > parseInt(json.statistics.use.firstClickStamp);
+        // Defensive check - json.statistics may not exist when called with storage object
+        var firstClickStamp = (json.statistics && json.statistics.use) 
+            ? json.statistics.use.firstClickStamp 
+            : (jsonObject.action && jsonObject.action[0] ? jsonObject.action[0].timestamp : 0);
+        var beenAWeek = weekAgo.getTime() / 1000 > parseInt(firstClickStamp);
 
         if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && metric === 'usage') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
@@ -784,6 +788,15 @@ var StatsDisplayModule = (function () {
     function initiateReport(json) {
         if (!json || !json.option || !json.option.reportItemsToDisplay || !json.option.reportItemsToDisplay.useVsResistsGraph) {
             return false;
+        }
+
+        // Ensure json.statistics exists - it may not when called before full initialization
+        if (!json.statistics) {
+            json.statistics = {
+                use: { firstClickStamp: 0, lastClickStamp: 0, clickCounter: 0, betweenClicks: {}, resistStreak: {}, totals: {} },
+                cost: { firstClickStamp: 0, lastClickStamp: 0, clickCounter: 0, betweenClicks: {}, totals: {} },
+                wait: { longestWait: {}, completedWaits: 0 }
+            };
         }
 
         var jsonObject = StorageModule.retrieveStorageObject();

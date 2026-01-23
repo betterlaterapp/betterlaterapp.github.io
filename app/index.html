@@ -1334,9 +1334,49 @@
                             <!-- Baseline Values Section -->
                             <div class="baseline-values-settings">
                                 <h3>Baseline Values</h3>
-                                <p class="d-none text-muted baseline-values-description">
-                                    Self-reported baseline values used for goal calculations and progress tracking.
+                                <p class="text-muted baseline-values-description" style="font-size: 0.85rem; margin-bottom: 12px;">
+                                    Which of these metrics matter to you?
                                 </p>
+                                
+                                <!-- Importance checkboxes (duplicated from baseline questionnaire) -->
+                                <div class="importance-grid settings-importance-grid">
+                                    <label class="importance-option settings-importance-option">
+                                        <input type="checkbox" class="settings-valuesTimesDone">
+                                        <div class="importance-card">
+                                            <div class="importance-icon">
+                                                <div class="icon-mask icon-tally"></div>
+                                            </div>
+                                            <span class="importance-label">Times done</span>
+                                        </div>
+                                    </label>
+                                    <label class="importance-option settings-importance-option">
+                                        <input type="checkbox" class="settings-valuesTime">
+                                        <div class="importance-card">
+                                            <div class="importance-icon">
+                                                <div class="icon-mask icon-clock"></div>
+                                            </div>
+                                            <span class="importance-label">Time spent</span>
+                                        </div>
+                                    </label>
+                                    <label class="importance-option settings-importance-option">
+                                        <input type="checkbox" class="settings-valuesMoney">
+                                        <div class="importance-card">
+                                            <div class="importance-icon">
+                                                <div class="icon-mask icon-dollar"></div>
+                                            </div>
+                                            <span class="importance-label">Money spent</span>
+                                        </div>
+                                    </label>
+                                    <label class="importance-option settings-importance-option">
+                                        <input type="checkbox" class="settings-valuesHealth">
+                                        <div class="importance-card">
+                                            <div class="importance-icon">
+                                                <div class="icon-mask icon-heart"></div>
+                                            </div>
+                                            <span class="importance-label">How it feels</span>
+                                        </div>
+                                    </label>
+                                </div>
                                 
                                 <!-- Times Done Baseline (shown when valuesTimesDone is enabled) -->
                                 <div class="baseline-value-row" data-baseline-category="valuesTimesDone" style="display: none;">

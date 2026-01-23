@@ -88,6 +88,7 @@ var BehavioralGoalsModule = (function () {
 
     /**
      * Save behavioral goal to storage
+     * Also updates baseline values based on goal's currentAmount
      */
     function saveBehavioralGoal(behavioralGoal) {
         var jsonObject = StorageModule.retrieveStorageObject();
@@ -98,6 +99,41 @@ var BehavioralGoalsModule = (function () {
         }
         
         jsonObject.behavioralGoals.push(behavioralGoal);
+        
+        // Update baseline values based on goal type
+        // This ensures baseline reflects the currentAmount from the goal
+        if (behavioralGoal.type === 'quantitative' && jsonObject.option && jsonObject.option.baseline) {
+            var baseline = jsonObject.option.baseline;
+            var measurementDays = behavioralGoal.measurementTimeline || 7;
+            
+            if (behavioralGoal.unit === 'times') {
+                // Convert to weekly equivalent for baseline
+                var weeklyEquivalent = (behavioralGoal.currentAmount / measurementDays) * 7;
+                baseline.timesDone = Math.round(weeklyEquivalent);
+                baseline.usageTimeline = measurementDays === 1 ? 'day' : measurementDays === 7 ? 'week' : 'month';
+                baseline.valuesTimesDone = true;
+            } else if (behavioralGoal.unit === 'minutes') {
+                // Store as hours and minutes
+                var weeklyMinutes = (behavioralGoal.currentAmount / measurementDays) * 7;
+                baseline.timeSpentHours = Math.floor(weeklyMinutes / 60);
+                baseline.timeSpentMinutes = Math.round(weeklyMinutes % 60);
+                baseline.timeTimeline = measurementDays === 1 ? 'day' : measurementDays === 7 ? 'week' : 'month';
+                baseline.valuesTime = true;
+            } else if (behavioralGoal.unit === 'dollars') {
+                // Convert to weekly equivalent for baseline
+                var weeklyEquivalent = (behavioralGoal.currentAmount / measurementDays) * 7;
+                baseline.moneySpent = Math.round(weeklyEquivalent);
+                baseline.spendingTimeline = measurementDays === 1 ? 'day' : measurementDays === 7 ? 'week' : 'month';
+                baseline.valuesMoney = true;
+            }
+            
+            console.log('[BehavioralGoals] Updated baseline from goal:', {
+                unit: behavioralGoal.unit,
+                currentAmount: behavioralGoal.currentAmount,
+                baseline: baseline
+            });
+        }
+        
         StorageModule.setStorageObject(jsonObject);
         
         return behavioralGoal;

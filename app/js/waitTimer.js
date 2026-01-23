@@ -178,7 +178,7 @@ var WaitTimerModule = (function () {
             // 'Do less' habit: Delayed Gratification language
             buttonsHtml = 
                 '<button class="wait-timer-distract-btn btn-timer-control">' +
-                    '<i class="fas fa-gamepad"></i> Distract Me!' +
+                    'Distract Me!' +
                 '</button>' +
                 '<button class="wait-timer-resist-btn btn-timer-control btn-super">' +
                     '<i class="fas fa-fist-raised"></i> Super Resist!' +
@@ -187,7 +187,7 @@ var WaitTimerModule = (function () {
             // 'Do more' habit: Procrastination language
             buttonsHtml = 
                 '<button class="wait-timer-distract-btn btn-timer-control">' +
-                    '<i class="fas fa-gamepad"></i> Distract Me!' +
+                    'Distract Me!' +
                 '</button>' +
                 '<button class="wait-timer-do-early-btn btn-timer-control btn-action">' +
                     '<i class="fas fa-bolt"></i> Do It Early!' +
@@ -374,8 +374,8 @@ var WaitTimerModule = (function () {
         }
         
         // Refresh progress report to show new wait data
-        if (typeof StatsDisplayModule !== 'undefined') {
-            StatsDisplayModule.initiateReport(jsonObject);
+        if (typeof StatsDisplayModule !== 'undefined' && json) {
+            StatsDisplayModule.initiateReport(json);
         }
         
         // Refresh brief stats
@@ -552,8 +552,8 @@ var WaitTimerModule = (function () {
         }
         
         // Refresh progress report to show new wait data
-        if (typeof StatsDisplayModule !== 'undefined') {
-            StatsDisplayModule.initiateReport(jsonObject);
+        if (typeof StatsDisplayModule !== 'undefined' && json) {
+            StatsDisplayModule.initiateReport(json);
         }
         
         // Refresh brief stats
@@ -593,6 +593,12 @@ var WaitTimerModule = (function () {
         
         var totalSecondsWaited = (hoursWaited * 3600) + (minutesWaited * 60);
         
+        // Validate: must wait at least some time
+        if (totalSecondsWaited <= 0) {
+            alert('Please select how long you waited.');
+            return;
+        }
+        
         var waitType = panel.data('goal-type'); // data attribute still named goal-type
         
         var jsonObject = StorageModule.retrieveStorageObject();
@@ -610,6 +616,13 @@ var WaitTimerModule = (function () {
         
         // Calculate end time based on how long they waited
         var endTime = startStamp + totalSecondsWaited;
+        
+        // Validate: end time must not be in the future
+        var currentTime = Math.round(new Date() / 1000);
+        if (endTime > currentTime) {
+            alert('The duration entered would result in an end time in the future. Please enter a shorter duration or end the wait now.');
+            return;
+        }
         
         // Update storage status (2 = ended early)
         StorageModule.changeWaitStatus(2, waitType, endTime);
@@ -638,8 +651,8 @@ var WaitTimerModule = (function () {
         }
         
         // Refresh progress report to show new wait data
-        if (typeof StatsDisplayModule !== 'undefined') {
-            StatsDisplayModule.initiateReport(jsonObject);
+        if (typeof StatsDisplayModule !== 'undefined' && json) {
+            StatsDisplayModule.initiateReport(json);
         }
         
         // Refresh brief stats
@@ -788,9 +801,15 @@ var WaitTimerModule = (function () {
      * Uses hardcoded MEME_COUNT - images are named 1.jpg through N.jpg
      */
     function loadMemes() {
-        if (isLoadingMemes) return; // Prevent multiple loads
+        console.log('[WaitTimer] loadMemes called', { isLoadingMemes, MEME_COUNT, loadedMemeIndices });
+        
+        if (isLoadingMemes) {
+            console.log('[WaitTimer] Already loading memes, skipping');
+            return;
+        }
         
         if (MEME_COUNT === 0) {
+            console.log('[WaitTimer] MEME_COUNT is 0, showing no memes message');
             $('.distraction-memes-container').html(
                 '<div class="no-memes-message">' +
                     '<i class="fas fa-image"></i>' +
@@ -807,6 +826,8 @@ var WaitTimerModule = (function () {
                 availableIndices.push(i);
             }
         }
+        
+        console.log('[WaitTimer] Available indices:', availableIndices);
 
         // Shuffle and take first 3 (fewer for larger images)
         availableIndices.sort(function() { return 0.5 - Math.random(); });
@@ -814,12 +835,14 @@ var WaitTimerModule = (function () {
 
         if (toLoad.length === 0) {
             // All memes loaded, reset for infinite scroll
+            console.log('[WaitTimer] All memes loaded, resetting');
             loadedMemeIndices = [];
             loadMemes();
             return;
         }
 
         var container = $('.distraction-memes-container');
+        console.log('[WaitTimer] Container found:', container.length > 0, 'Loading:', toLoad);
         
         // Show loading indicator
         isLoadingMemes = true;
@@ -836,9 +859,10 @@ var WaitTimerModule = (function () {
             
             toLoad.forEach(function(index) {
                 var imgSrc = '../assets/distraction-memes/' + index + '.' + MEME_EXTENSION;
+                console.log('[WaitTimer] Loading meme:', imgSrc);
                 
                 var memeHtml = '<div class="meme-item">' +
-                    '<img src="' + imgSrc + '" alt="Distraction meme" />' +
+                    '<img src="' + imgSrc + '" alt="Distraction meme" onerror="console.error(\'[WaitTimer] Failed to load:\', this.src)" />' +
                 '</div>';
                 
                 container.append(memeHtml);
@@ -846,6 +870,7 @@ var WaitTimerModule = (function () {
             });
             
             isLoadingMemes = false;
+            console.log('[WaitTimer] Finished loading memes');
         }, 300); // Small delay for smooth UX
     }
 
