@@ -108,6 +108,9 @@ var SettingsModule = (function () {
             // Update conditional options (buttons, log items, report items)
             updateConditionalOptions();
             
+            // Update baseline values UI visibility
+            syncBaselineValuesUI(jsonObject);
+            
             UIModule.showActiveStatistics(json);
             UIModule.toggleActiveStatGroups(json);
             UIModule.hideInactiveStatistics(json);
@@ -280,6 +283,142 @@ var SettingsModule = (function () {
         
         // Disable options with missing prerequisites
         updatePrerequisiteToggles(jsonObject);
+        
+        // Sync baseline values UI
+        syncBaselineValuesUI(jsonObject);
+    }
+    
+    /**
+     * Initialize baseline values settings UI and event handlers
+     */
+    function setupBaselineValuesHandlers() {
+        // Handle baseline value input changes
+        $('.baseline-values-settings .baseline-input, .baseline-values-settings .baseline-timeline-select').on('change', function() {
+            saveBaselineValuesFromSettings();
+        });
+    }
+    
+    /**
+     * Sync baseline values UI with stored values
+     */
+    function syncBaselineValuesUI(jsonObject) {
+        var baseline = jsonObject.baseline || {};
+        
+        // Track if any category is enabled
+        var anyEnabled = false;
+        
+        // Times Done baseline
+        if (baseline.valuesTimesDone) {
+            anyEnabled = true;
+            $('[data-baseline-category="valuesTimesDone"]').show();
+            $('.settings-amountDonePerWeek').val(baseline.amountDonePerWeek || '');
+            $('.settings-usage-timeline-select').val(baseline.usageTimeline || 'week');
+        } else {
+            $('[data-baseline-category="valuesTimesDone"]').hide();
+        }
+        
+        // Time Spent baseline
+        if (baseline.valuesTime) {
+            anyEnabled = true;
+            $('[data-baseline-category="valuesTime"]').show();
+            $('.settings-currentTimeHours').val(baseline.currentTimeHours || '');
+            $('.settings-currentTimeMinutes').val(baseline.currentTimeMinutes || '');
+            $('.settings-time-timeline-select').val(baseline.timeTimeline || 'week');
+        } else {
+            $('[data-baseline-category="valuesTime"]').hide();
+        }
+        
+        // Money Spent baseline
+        if (baseline.valuesMoney) {
+            anyEnabled = true;
+            $('[data-baseline-category="valuesMoney"]').show();
+            $('.settings-amountSpentPerWeek').val(baseline.amountSpentPerWeek || '');
+            $('.settings-spending-timeline-select').val(baseline.spendingTimeline || 'week');
+        } else {
+            $('[data-baseline-category="valuesMoney"]').hide();
+        }
+        
+        // Show/hide empty message
+        if (anyEnabled) {
+            $('.baseline-values-empty-message').hide();
+        } else {
+            $('.baseline-values-empty-message').show();
+        }
+    }
+    
+    /**
+     * Save baseline values from settings UI to storage
+     */
+    function saveBaselineValuesFromSettings() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+        
+        // Times Done
+        if (jsonObject.baseline.valuesTimesDone) {
+            var amountDone = parseInt($('.settings-amountDonePerWeek').val()) || 0;
+            var usageTimeline = $('.settings-usage-timeline-select').val();
+            jsonObject.baseline.amountDonePerWeek = amountDone;
+            jsonObject.baseline.usageTimeline = usageTimeline;
+        }
+        
+        // Time Spent
+        if (jsonObject.baseline.valuesTime) {
+            var timeHours = parseInt($('.settings-currentTimeHours').val()) || 0;
+            var timeMinutes = parseInt($('.settings-currentTimeMinutes').val()) || 0;
+            var timeTimeline = $('.settings-time-timeline-select').val();
+            jsonObject.baseline.currentTimeHours = timeHours;
+            jsonObject.baseline.currentTimeMinutes = timeMinutes;
+            jsonObject.baseline.timeTimeline = timeTimeline;
+        }
+        
+        // Money Spent
+        if (jsonObject.baseline.valuesMoney) {
+            var amountSpent = parseInt($('.settings-amountSpentPerWeek').val()) || 0;
+            var spendingTimeline = $('.settings-spending-timeline-select').val();
+            jsonObject.baseline.amountSpentPerWeek = amountSpent;
+            jsonObject.baseline.spendingTimeline = spendingTimeline;
+        }
+        
+        // Save to storage
+        StorageModule.setStorageObject(jsonObject);
+        
+        // Keep in-memory json in sync
+        json.baseline = jsonObject.baseline;
+        
+        // Also sync the baseline questionnaire inputs
+        syncBaselineQuestionnaireFromSettings(jsonObject.baseline);
+    }
+    
+    /**
+     * Sync baseline questionnaire inputs with settings values
+     */
+    function syncBaselineQuestionnaireFromSettings(baseline) {
+        // Times Done
+        if (baseline.amountDonePerWeek !== undefined) {
+            $('.baseline-amountDonePerWeek').val(baseline.amountDonePerWeek);
+        }
+        if (baseline.usageTimeline) {
+            $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
+        }
+        
+        // Time Spent
+        if (baseline.currentTimeHours !== undefined) {
+            $('.baseline-currentTimeHours').val(baseline.currentTimeHours);
+        }
+        if (baseline.currentTimeMinutes !== undefined) {
+            $('.baseline-currentTimeMinutes').val(baseline.currentTimeMinutes);
+        }
+        if (baseline.timeTimeline) {
+            $('.baseline-time-timeline-select').val(baseline.timeTimeline);
+        }
+        
+        // Money Spent
+        if (baseline.amountSpentPerWeek !== undefined) {
+            $('.baseline-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+        }
+        if (baseline.spendingTimeline) {
+            $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);
+        }
     }
 
     // (Habit log + report handlers consolidated into setupDisplayedOptionHandlers)
@@ -364,6 +503,7 @@ var SettingsModule = (function () {
         initializeCategoryStates();
         setupReportNavigationHandlers();
         setupSettingsMenuHandlers();
+        setupBaselineValuesHandlers();
     }
 
     // Public API
@@ -377,6 +517,7 @@ var SettingsModule = (function () {
         setupReportNavigationHandlers: setupReportNavigationHandlers,
         undoLastAction: undoLastAction,
         clearActions: clearActions,
+        syncBaselineValuesUI: syncBaselineValuesUI,
         init: init
     };
 })();
