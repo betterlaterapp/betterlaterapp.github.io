@@ -68,8 +68,8 @@ var BriefStatsModule = (function () {
         
         // Update did/didn't pie chart (do-less only)
         if (isDecreaseHabit) {
-            var didDidntVisible = updateDidDidntStat(jsonObject);
-            if (didDidntVisible) visibleStats.push('did-didnt');
+            // var didDidntVisible = updateDidDidntStat(jsonObject);
+            // if (didDidntVisible) visibleStats.push('did-didnt');
             
             // Update resist streak
             var streakVisible = updateResistStreakStat(jsonObject);
@@ -164,9 +164,10 @@ var BriefStatsModule = (function () {
         var $stat = isDecreaseHabit ? $('.stat-brief.stat-next-milestone.do-less-only') : $('.stat-brief.stat-next-milestone.do-more-only');
         
         // Check if user has a times-done goal
-        var hasGoal = baseline.goalDonePerWeek && parseInt(baseline.goalDonePerWeek) > 0;
+        var hasGoal = jsonObject.behavioralGoals.length > 0;
         
         if (!hasGoal || !baseline.valuesTimesDone) {
+            console.log('updateMilestone hiding, hasGoal: ', hasGoal, baseline)
             $stat.addClass('d-none');
             return false;
         }
@@ -185,71 +186,168 @@ var BriefStatsModule = (function () {
     }
     
     /**
-     * Calculate the next milestone time
+     * Calculate the next milestone time based on behavioral goal
+     * Milestones are equally spaced from goal start to goal end
      * @param {Object} jsonObject - Storage object
      * @param {Object} baseline - Baseline settings
      * @returns {Object|null} - Milestone info or null
      */
     function calculateNextMilestone(jsonObject, baseline) {
         var isDecreaseHabit = baseline.decreaseHabit;
-        var currentPerWeek = parseInt(baseline.amountDonePerWeek) || 0;
-        var goalPerWeek = parseInt(baseline.goalDonePerWeek) || 0;
-        var achieveInWeeks = parseInt(baseline.achieveGoalInWeeks) || 1;
         
-        // Get actions from the current week
-        var now = Math.round(new Date() / 1000);
-        var weekStart = now - (7 * 24 * 60 * 60);
-        var actionsThisWeek = (jsonObject.action || []).filter(function(a) {
+        // Find the active quantitative goal for times-done
+        var goals = jsonObject.behavioralGoals || [];
+        var activeGoal = goals.find(function(g) {
+            return g.status === 'active' && g.type === 'quantitative' && g.unit === 'times';
+        });
+        
+        if (!activeGoal) {
+            return null;
+        }
+        
+        var now = Date.now();
+        var goalStartMs = activeGoal.createdAt;
+        var goalEndMs = goalStartMs + (activeGoal.completionTimeline * 24 * 60 * 60 * 1000);
+        var totalDurationMs = goalEndMs - goalStartMs;
+        
+        // If goal has ended, show completion status
+        if (now >= goalEndMs) {
+            return { display: 'Complete', urgent: false };
+        }
+        
+        var currentAmount = activeGoal.currentAmount; // Starting baseline
+        var goalAmount = activeGoal.goalAmount;       // Target
+        var measurementDays = activeGoal.measurementTimeline || 7;
+        
+        // Calculate total actions expected over the goal's completion timeline
+        // Convert per-period amounts to total over completion timeline
+        var periodsInGoal = activeGoal.completionTimeline / measurementDays;
+        var totalStartingActions = currentAmount * periodsInGoal;
+        var totalGoalActions = goalAmount * periodsInGoal;
+        
+        // Get actions since goal started
+        var goalStartSec = Math.floor(goalStartMs / 1000);
+        var actionsSinceGoalStart = (jsonObject.action || []).filter(function(a) {
             return a && (a.clickType === 'used' || a.clickType === 'timed') && 
-                   parseInt(a.timestamp) > weekStart;
+                   parseInt(a.timestamp) >= goalStartSec;
         }).length;
         
-        // Calculate expected progress for today
-        var dayOfWeek = new Date().getDay(); // 0 = Sunday
-        var daysIntoWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+        // Time elapsed since goal start
+        var elapsedMs = now - goalStartMs;
+        var remainingMs = goalEndMs - now;
         
         if (isDecreaseHabit) {
-            // For "do less": calculate how long they should wait before next action
-            // If goal is 7/week and they've done 5, they have 2 "allowances" left for the week
-            var allowancesLeft = Math.max(0, goalPerWeek - actionsThisWeek);
-            var daysLeft = 7 - daysIntoWeek;
-            
-            if (allowancesLeft === 0) {
-                return { display: 'Wait!', urgent: true };
-            }
-            
-            if (daysLeft > 0 && allowancesLeft > 0) {
-                // Calculate hours until they can do it again
-                var hoursUntilNext = Math.floor((daysLeft * 24) / allowancesLeft);
-                if (hoursUntilNext < 24) {
-                    return { display: hoursUntilNext + 'h', urgent: false };
-                } else {
-                    var daysUntil = Math.floor(hoursUntilNext / 24);
-                    return { display: daysUntil + 'd', urgent: false };
-                }
-            }
-            
-            return { display: 'OK now', urgent: false };
-            
+            // DO LESS: User wants to reduce from currentAmount to goalAmount
+            // Milestones represent when they can next do the action
+            return calculateDoLessMilestone(
+                actionsSinceGoalStart, totalStartingActions, totalGoalActions,
+                elapsedMs, remainingMs, totalDurationMs, now
+            );
         } else {
-            // For "do more": calculate when they should do the next action
-            // Linear interpolation from current to goal over achieve period
-            var targetForToday = Math.ceil((goalPerWeek / 7) * daysIntoWeek);
-            var behind = targetForToday - actionsThisWeek;
+            // DO MORE: User wants to increase from currentAmount to goalAmount
+            // Milestones represent deadlines to complete actions by
+            return calculateDoMoreMilestone(
+                actionsSinceGoalStart, totalStartingActions, totalGoalActions,
+                elapsedMs, remainingMs, totalDurationMs, now
+            );
+        }
+    }
+    
+    /**
+     * Calculate milestone for "do less" habit
+     * User should wait until milestone time before doing action
+     */
+    function calculateDoLessMilestone(actionsDone, totalStart, totalGoal, elapsedMs, remainingMs, totalDurationMs, now) {
+        // For do less: totalStart > totalGoal (e.g., 40 → 20 over 30 days)
+        // We need to calculate when they can next do the action
+        
+        // Calculate expected actions at current time point (linear interpolation)
+        var progressRatio = elapsedMs / totalDurationMs;
+        var expectedActionsNow = totalStart - ((totalStart - totalGoal) * progressRatio);
+        
+        // Remaining allowances
+        var remainingAllowances = Math.floor(totalGoal - actionsDone);
+        
+        if (remainingAllowances <= 0) {
+            // User has used all allowances for the goal period
+            return { display: 'Wait!', urgent: true };
+        }
+        
+        if (actionsDone >= expectedActionsNow) {
+            // User is on track or ahead (good for do-less - they're doing less)
+            // Calculate when they can next do it based on equally spacing remaining allowances
+            var msPerAllowance = remainingMs / remainingAllowances;
+            var nextMilestoneMs = now + msPerAllowance;
             
-            if (behind <= 0) {
-                return null; // On track or ahead
-            }
+            return formatTimeUntil(nextMilestoneMs - now, false);
+        } else {
+            // User is behind (bad for do-less - they should have waited longer)
+            // They can do it now since they're under the expected amount
+            return { display: 'OK now', urgent: false };
+        }
+    }
+    
+    /**
+     * Calculate milestone for "do more" habit
+     * User should complete action before milestone time
+     */
+    function calculateDoMoreMilestone(actionsDone, totalStart, totalGoal, elapsedMs, remainingMs, totalDurationMs, now) {
+        // For do more: totalGoal > totalStart (e.g., 10 → 30 over 30 days)
+        // We need to calculate when they should do the next action by
+        
+        // Calculate expected actions at current time point (linear interpolation)
+        var progressRatio = elapsedMs / totalDurationMs;
+        var expectedActionsNow = totalStart + ((totalGoal - totalStart) * progressRatio);
+        
+        // How many actions they still need to complete
+        var remainingActions = Math.ceil(totalGoal - actionsDone);
+        
+        if (remainingActions <= 0) {
+            // User has completed all required actions
+            return null; // On track / goal met
+        }
+        
+        if (actionsDone >= expectedActionsNow) {
+            // User is on track or ahead
+            // Calculate next milestone (when they should do the next action by)
+            var msPerAction = remainingMs / remainingActions;
+            var nextMilestoneMs = now + msPerAction;
             
-            // Calculate when they need to do it
-            var hoursLeftToday = 24 - new Date().getHours();
-            var actionsNeededToday = Math.max(1, behind);
+            return formatTimeUntil(nextMilestoneMs - now, false);
+        } else {
+            // User is behind - they need to catch up
+            var behindBy = Math.ceil(expectedActionsNow - actionsDone);
             
-            if (actionsNeededToday === 1) {
-                return { display: 'Today', urgent: hoursLeftToday < 6 };
+            if (behindBy === 1) {
+                return { display: 'Today', urgent: true };
             } else {
-                return { display: actionsNeededToday + ' today', urgent: true };
+                return { display: behindBy + ' to catch up', urgent: true };
             }
+        }
+    }
+    
+    /**
+     * Format milliseconds until milestone as display string
+     */
+    function formatTimeUntil(ms, urgent) {
+        if (ms <= 0) {
+            return { display: 'Now', urgent: true };
+        }
+        
+        var hours = Math.floor(ms / (60 * 60 * 1000));
+        var days = Math.floor(hours / 24);
+        var remainingHours = hours % 24;
+        
+        if (days > 0) {
+            if (remainingHours > 0) {
+                return { display: days + 'd ' + remainingHours + 'h', urgent: urgent };
+            }
+            return { display: days + 'd', urgent: urgent };
+        } else if (hours > 0) {
+            return { display: hours + 'h', urgent: urgent };
+        } else {
+            var minutes = Math.floor(ms / (60 * 1000));
+            return { display: minutes + 'm', urgent: urgent };
         }
     }
     

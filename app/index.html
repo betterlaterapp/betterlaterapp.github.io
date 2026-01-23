@@ -779,19 +779,6 @@
 
                     <h2 class="d-none">Live Statistics</h2>
 
-                    <div class="initial-instructions">
-                        <p>
-                            This area will become populated with statistics as you interact more with the app's action
-                            buttons, located in the side bar to the right.
-                        </p>
-                    </div>
-
-                    <!-- Active Wait Timers Container (Delayed Gratification / Procrastination) -->
-                    <div id="wait-timers-container"></div>
-
-                    <!-- Active Activity Timers Container -->
-                    <div id="activity-timers-container"></div>
-
                     <!-- Brief Stats Bar -->
                     <div class="brief-stats-container-wrapper">
                         <div id="brief-stats" class="brief-stats d-none">
@@ -889,411 +876,429 @@
                         </div>
                     </div>
 
-                    <!-- Start Use are -->
-                    <div id="use-content">
 
-                        <div class="row no-gutters">
+                    <div class="bg-white">
+                        <div class="initial-instructions">
+                            <p>
+                                This area will become populated with statistics as you interact more with the app's action
+                                buttons, located in the side bar to the right.
+                            </p>
+                        </div>
 
-                            <div class="col-12">
-                                <div class="weekly-report d-none">
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <!-- Report Filter Controls -->
-                                            <div class="report-filters">
-                                                <div class="report-filter-group">
-                                                    <div class="report-filter-wrapper">
-                                                        <select id="reportMetricFilter" class="report-filter-select">
-                                                            <option value="usage">Times Done</option>
-                                                            <option value="time">Time Spent</option>
-                                                            <option value="cost">Money Spent</option>
-                                                        </select>
-                                                        <i class="fas fa-chevron-down"></i>
+                        
+
+                        <!-- Active Wait Timers Container (Delayed Gratification / Procrastination) -->
+                        <div id="wait-timers-container"></div>
+
+                        <!-- Active Activity Timers Container -->
+                        <div id="activity-timers-container"></div>
+
+
+                        <!-- Start Use are -->
+                        <div id="use-content">
+
+                            <div class="row no-gutters">
+
+                                <div class="col-12">
+                                    <div class="weekly-report d-none">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <!-- Report Filter Controls -->
+                                                <div class="report-filters">
+                                                    <div class="report-filter-group">
+                                                        <div class="report-filter-wrapper">
+                                                            <select id="reportMetricFilter" class="report-filter-select">
+                                                                <option value="usage">Times Done</option>
+                                                                <option value="time">Time Spent</option>
+                                                                <option value="cost">Money Spent</option>
+                                                            </select>
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </div>
+                                                        <div class="report-filter-wrapper">
+                                                            <select id="reportPeriodFilter" class="report-filter-select">
+                                                                <option value="day">Daily</option>
+                                                                <option value="week">Weekly</option>
+                                                                <option value="month">Monthly</option>
+                                                            </select>
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </div>
                                                     </div>
-                                                    <div class="report-filter-wrapper">
-                                                        <select id="reportPeriodFilter" class="report-filter-select">
-                                                            <option value="day">Daily</option>
-                                                            <option value="week">Weekly</option>
-                                                            <option value="month">Monthly</option>
-                                                        </select>
-                                                        <i class="fas fa-chevron-down"></i>
+                                                </div>
+
+                                                <div class="bar-chart">
+                                                    <!-- Dynamic legend - updated by JS based on metric and habit direction -->
+                                                    <div class="legend">
+                                                        <div class="color-descriptor legend-primary-item">
+                                                            <div class="color primary"></div>
+                                                            <label class="legend-primary-label">Resists</label>
+                                                        </div>
+                                                        <div class="color-descriptor legend-secondary-item">
+                                                            <div class="color secondary"></div>
+                                                            <label class="legend-secondary-label">Done</label>
+                                                        </div>
                                                     </div>
+                                                    <!-- the bar chart to be called in js-->
+                                                    <div class="ct-chart"></div>
+                                                </div>
+                                                <div class="week-range">
+                                                    <!-- Icon left (previous) selector-->
+                                                    <button class="previous-report btn btn-outline-info">
+                                                        <i class="fas fa-caret-left"></i>
+                                                    </button>
+                                                    <!-- Current week selected -->
+                                                    <div class="current-week">
+                                                        <div class="start">
+                                                            <span id="reportStartDate">2/14/2019</span>
+                                                        </div>
+                                                        <div class="seperator">&nbsp;&nbsp;-&nbsp;&nbsp;</div>
+                                                        <div class="end">
+                                                            <span id="reportEndDate">2/21/2019</span>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Icon right (next) selector-->
+                                                    <button class="next-report btn btn-outline-info" disabled>
+                                                        <i class="fas fa-caret-right"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="report-statistics">
+                                                    <div class="statistic">
+                                                        <div class="percent-changed down">
+                                                            <i class="fas fa-caret-down"></i>
+                                                            <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
+                                                        </div>
+                                                        <label>Done Vs. last period:</label>
+                                                    </div>
+
+                                                    <div class="statistic">
+                                                        <div class="percent-changed down">
+                                                            <i class="fas fa-caret-down"></i>
+                                                            <span id="useChangeVsBaseline">&nbsp;&nbsp;50%</span>
+                                                        </div>
+                                                        <label>Done Vs. baseline:</label>
+                                                    </div>
+
+                                                    <div class="statistic">
+                                                        <div class="percent-changed up">
+                                                            <i class="fas fa-caret-up"></i>
+                                                            <span
+                                                                id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
+                                                        </div>
+                                                        <label>Spent Vs. last period:</label>
+
+                                                    </div>
+                                                    <div class="statistic">
+                                                        <div class="percent-changed down">
+                                                            <i class="fas fa-caret-down"></i>
+                                                            <span
+                                                                id="costChangeVsBaseline">&nbsp;&nbsp;&nbsp;&nbsp;7%</span>
+                                                        </div>
+
+                                                        <label>Spent Vs. baseline:</label>
+
+                                                    </div>
+                                                </div>
+                                                <div class="goal-report">
+                                                    <table class="table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th scope="col"></th>
+                                                                <th scope="col">Goal</th>
+                                                                <th scope="col">This Period</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <th scope="row">Done</th>
+                                                                <td>
+
+                                                                    <span id="goalDonePerWeek" class="amount-changed goal">
+                                                                        5
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <span id="actualDoneThisWeek" class="amount-changed up">
+                                                                        14
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th scope="row">Spent</th>
+                                                                <td>
+                                                                    <span id="goalSpentPerWeek" class="amount-changed goal">
+                                                                        0$
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+
+                                                                    <span id="actualSpentThisWeek"
+                                                                        class="amount-changed up">
+                                                                        10$
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+
+                                                        </tbody>
+                                                    </table>
+
                                                 </div>
                                             </div>
+                                        </div>
+                                        <hr />
+                                    </div>
+                                    <!-- smoke-timer moved to brief-stats bar -->
 
-                                            <div class="bar-chart">
-                                                <!-- Dynamic legend - updated by JS based on metric and habit direction -->
-                                                <div class="legend">
-                                                    <div class="color-descriptor legend-primary-item">
-                                                        <div class="color primary"></div>
-                                                        <label class="legend-primary-label">Resists</label>
-                                                    </div>
-                                                    <div class="color-descriptor legend-secondary-item">
-                                                        <div class="color secondary"></div>
-                                                        <label class="legend-secondary-label">Done</label>
-                                                    </div>
-                                                </div>
-                                                <!-- the bar chart to be called in js-->
-                                                <div class="ct-chart"></div>
-                                            </div>
-                                            <div class="week-range">
-                                                <!-- Icon left (previous) selector-->
-                                                <button class="previous-report btn btn-outline-info">
-                                                    <i class="fas fa-caret-left"></i>
-                                                </button>
-                                                <!-- Current week selected -->
-                                                <div class="current-week">
-                                                    <div class="start">
-                                                        <span id="reportStartDate">2/14/2019</span>
-                                                    </div>
-                                                    <div class="seperator">&nbsp;&nbsp;-&nbsp;&nbsp;</div>
-                                                    <div class="end">
-                                                        <span id="reportEndDate">2/21/2019</span>
-                                                    </div>
-                                                </div>
-                                                <!-- Icon right (next) selector-->
-                                                <button class="next-report btn btn-outline-info" disabled>
-                                                    <i class="fas fa-caret-right"></i>
-                                                </button>
+                                    <div class="stat-recepticle">
+                                        <p>Avg time between doing</p>
+
+                                        <div class="stat-group betweenClicks use">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use total betweenClicks"> test </span>
+                                                <p>Overall</p>
                                             </div>
 
-                                            <div class="report-statistics">
-                                                <div class="statistic">
-                                                    <div class="percent-changed down">
-                                                        <i class="fas fa-caret-down"></i>
-                                                        <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
-                                                    </div>
-                                                    <label>Done Vs. last period:</label>
-                                                </div>
-
-                                                <div class="statistic">
-                                                    <div class="percent-changed down">
-                                                        <i class="fas fa-caret-down"></i>
-                                                        <span id="useChangeVsBaseline">&nbsp;&nbsp;50%</span>
-                                                    </div>
-                                                    <label>Done Vs. baseline:</label>
-                                                </div>
-
-                                                <div class="statistic">
-                                                    <div class="percent-changed up">
-                                                        <i class="fas fa-caret-up"></i>
-                                                        <span
-                                                            id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
-                                                    </div>
-                                                    <label>Spent Vs. last period:</label>
-
-                                                </div>
-                                                <div class="statistic">
-                                                    <div class="percent-changed down">
-                                                        <i class="fas fa-caret-down"></i>
-                                                        <span
-                                                            id="costChangeVsBaseline">&nbsp;&nbsp;&nbsp;&nbsp;7%</span>
-                                                    </div>
-
-                                                    <label>Spent Vs. baseline:</label>
-
-                                                </div>
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use week betweenClicks"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
                                             </div>
-                                            <div class="goal-report">
-                                                <table class="table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th scope="col"></th>
-                                                            <th scope="col">Goal</th>
-                                                            <th scope="col">This Period</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <th scope="row">Done</th>
-                                                            <td>
 
-                                                                <span id="goalDonePerWeek" class="amount-changed goal">
-                                                                    5
-                                                                </span>
-                                                            </td>
-                                                            <td>
-                                                                <span id="actualDoneThisWeek" class="amount-changed up">
-                                                                    14
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <th scope="row">Spent</th>
-                                                            <td>
-                                                                <span id="goalSpentPerWeek" class="amount-changed goal">
-                                                                    0$
-                                                                </span>
-                                                            </td>
-                                                            <td>
-
-                                                                <span id="actualSpentThisWeek"
-                                                                    class="amount-changed up">
-                                                                    10$
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-
-                                                    </tbody>
-                                                </table>
-
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use month betweenClicks"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <hr />
-                                </div>
-                                <!-- smoke-timer moved to brief-stats bar -->
 
-                                <div class="stat-recepticle">
-                                    <p>Avg time between doing</p>
+                                    <div class="stat-recepticle">
+                                        <p>Times done</p>
+                                        <div class="stat-group totals use">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use totals total"> test </span>
+                                                <p>Total</p>
+                                            </div>
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use totals week"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
 
-                                    <div class="stat-group betweenClicks use">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use total betweenClicks"> test </span>
-                                            <p>Overall</p>
-                                        </div>
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use totals month"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
 
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use week betweenClicks"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use month betweenClicks"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="stat-recepticle">
-                                    <p>Times done</p>
-                                    <div class="stat-group totals use">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use totals total"> test </span>
-                                            <p>Total</p>
-                                        </div>
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use totals week"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use totals month"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                <div class="stat-recepticle">
-                                    <p>
-                                        <span class="desires-decrease">
-                                            Resists / done ratio
-                                        </span>
-                                        <span class="desires-increase d-none">
-                                            Didn't / did ratio
-                                        </span>
-
-                                    </p>
-                                    <div class="stat-group didntPerDid use">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use total didntPerDid"> test </span>
-                                            <p>Total</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use week didntPerDid"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use month didntPerDid"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="stat-recepticle highlighted">
-
-                                    <p>
-                                        <span class="desires-decrease">
-                                            Resists in a row
-                                        </span>
-                                        <span class="desires-increase d-none">
-                                            Procrastinated in a row
-                                        </span>
-
-                                    </p>
-                                    <div class="stat-group resistStreak use">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span id="cravingsResistedInARow" class="statistic">
-                                                test
+                                    <div class="stat-recepticle">
+                                        <p>
+                                            <span class="desires-decrease">
+                                                Resists / done ratio
                                             </span>
-                                            <p>
-                                                <span class="desires-decrease">
-                                                    Current Streak
+                                            <span class="desires-increase d-none">
+                                                Didn't / did ratio
+                                            </span>
+
+                                        </p>
+                                        <div class="stat-group didntPerDid use">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use total didntPerDid"> test </span>
+                                                <p>Total</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use week didntPerDid"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use month didntPerDid"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stat-recepticle highlighted">
+
+                                        <p>
+                                            <span class="desires-decrease">
+                                                Resists in a row
+                                            </span>
+                                            <span class="desires-increase d-none">
+                                                Procrastinated in a row
+                                            </span>
+
+                                        </p>
+                                        <div class="stat-group resistStreak use">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span id="cravingsResistedInARow" class="statistic">
+                                                    test
                                                 </span>
-                                                <span class="desires-increase d-none">
-                                                    Current
-                                                </span>
-                                            </p>
+                                                <p>
+                                                    <span class="desires-decrease">
+                                                        Current Streak
+                                                    </span>
+                                                    <span class="desires-increase d-none">
+                                                        Current
+                                                    </span>
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
 
 
-                                <div class="stat-recepticle">
-                                    <div class="stat-group resistStreak use">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use total resistStreak"> test </span>
-                                            <p>
-                                                <span class="desires-decrease">
-                                                    Best Streak
-                                                </span>
-                                                <span class="desires-increase d-none">
-                                                    Most times
-                                                </span>
-                                            </p>
-                                        </div>
+                                    <div class="stat-recepticle">
+                                        <div class="stat-group resistStreak use">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use total resistStreak"> test </span>
+                                                <p>
+                                                    <span class="desires-decrease">
+                                                        Best Streak
+                                                    </span>
+                                                    <span class="desires-increase d-none">
+                                                        Most times
+                                                    </span>
+                                                </p>
+                                            </div>
 
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use week resistStreak"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use week resistStreak"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
 
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic use month resistStreak"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="stat-recepticle">
-                                    <p>Longest time waited</p>
-
-                                    <div class="stat-group longestWait longestGoal wait">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic wait total longestWait longestGoal"> test </span>
-                                            <p>Overall</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic wait week longestWait longestGoal"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic wait month longestWait longestGoal"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                <!-- Time spent doing (visible when valuesTime is selected) -->
-                                <div class="stat-recepticle time-spent-stat" style="display: none;">
-                                    <p>Time spent doing</p>
-
-                                    <div class="stat-group timeSpentDoing time">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic time total timeSpentDoing"> — </span>
-                                            <p>Overall</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic time week timeSpentDoing"> — </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic time month timeSpentDoing"> — </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Start cost area -->
-                    <div id="cost-content">
-                        <!--h3 class="text-center">I wanted to...</h3-->
-                        <div class="row">
-                            <div class="col-12">
-                                <!-- bought-timer moved to brief-stats bar -->
-                                <div class="stat-recepticle">
-                                    <p>Avg time between Buying</p>
-
-                                    <div class="stat-group betweenClicks cost">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost total betweenClicks"> test </span>
-                                            <p>Overall</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost week betweenClicks"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
-                                        </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost month betweenClicks"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic use month resistStreak"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                    <div class="stat-recepticle">
+                                        <p>Longest time waited</p>
 
-                                <div class="stat-recepticle">
-                                    <p>Amount spent</p>
-                                    <div class="stat-group totals cost">
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost totals total"> test </span>
-                                            <p>Total</p>
+                                        <div class="stat-group longestWait longestGoal wait">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic wait total longestWait longestGoal"> test </span>
+                                                <p>Overall</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic wait week longestWait longestGoal"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic wait month longestWait longestGoal"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
+
                                         </div>
+                                    </div>
 
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost totals week"> test </span>
-                                            <p>Past&nbsp;7&nbsp;days</p>
+                                    <!-- Time spent doing (visible when valuesTime is selected) -->
+                                    <div class="stat-recepticle time-spent-stat" style="display: none;">
+                                        <p>Time spent doing</p>
+
+                                        <div class="stat-group timeSpentDoing time">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic time total timeSpentDoing"> — </span>
+                                                <p>Overall</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic time week timeSpentDoing"> — </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic time month timeSpentDoing"> — </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
+
                                         </div>
-
-                                        <div class="stat-recepticle">
-                                            <div class="white-bg"></div>
-                                            <span class="statistic cost totals month"> test </span>
-                                            <p>Past&nbsp;30&nbsp;days</p>
-                                        </div>
-
 
                                     </div>
+
                                 </div>
                             </div>
                         </div>
-                    </div>
 
+                        <!-- Start cost area -->
+                        <div id="cost-content">
+                            <!--h3 class="text-center">I wanted to...</h3-->
+                            <div class="row">
+                                <div class="col-12">
+                                    <!-- bought-timer moved to brief-stats bar -->
+                                    <div class="stat-recepticle">
+                                        <p>Avg time between Buying</p>
+
+                                        <div class="stat-group betweenClicks cost">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost total betweenClicks"> test </span>
+                                                <p>Overall</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost week betweenClicks"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost month betweenClicks"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="stat-recepticle">
+                                        <p>Amount spent</p>
+                                        <div class="stat-group totals cost">
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost totals total"> test </span>
+                                                <p>Total</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost totals week"> test </span>
+                                                <p>Past&nbsp;7&nbsp;days</p>
+                                            </div>
+
+                                            <div class="stat-recepticle">
+                                                <div class="white-bg"></div>
+                                                <span class="statistic cost totals month"> test </span>
+                                                <p>Past&nbsp;30&nbsp;days</p>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!--start settings tab area-->
@@ -1322,6 +1327,76 @@
 
                             <br />
                             
+                            <!-- Baseline Values Section -->
+                            <div class="baseline-values-settings">
+                                <h3>Baseline Values</h3>
+                                <p class="d-none text-muted baseline-values-description">
+                                    Self-reported baseline values used for goal calculations and progress tracking.
+                                </p>
+                                
+                                <!-- Times Done Baseline (shown when valuesTimesDone is enabled) -->
+                                <div class="baseline-value-row" data-baseline-category="valuesTimesDone" style="display: none;">
+                                    <label class="baseline-value-label">
+                                        Times done baseline
+                                    </label>
+                                    <div class="baseline-value-input-group">
+                                        <input type="number" min="0" max="500" 
+                                            class="form-control baseline-input settings-amountDonePerWeek" 
+                                            placeholder="0">
+                                        <select class="form-control baseline-timeline-select settings-usage-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Time Spent Baseline (shown when valuesTime is enabled) -->
+                                <div class="baseline-value-row" data-baseline-category="valuesTime" style="display: none;">
+                                    <label class="baseline-value-label">
+                                        Time spent baseline
+                                    </label>
+                                    <div class="baseline-value-input-group time-inputs">
+                                        <input type="number" min="0" max="23" 
+                                            class="form-control baseline-input settings-currentTimeHours" 
+                                            placeholder="0">
+                                        <span class="time-separator">h</span>
+                                        <input type="number" min="0" max="59" 
+                                            class="form-control baseline-input settings-currentTimeMinutes" 
+                                            placeholder="0">
+                                        <span class="time-separator">m</span>
+                                        <select class="form-control baseline-timeline-select settings-time-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Money Spent Baseline (shown when valuesMoney is enabled) -->
+                                <div class="baseline-value-row" data-baseline-category="valuesMoney" style="display: none;">
+                                    <label class="baseline-value-label">
+                                        Money spent baseline
+                                    </label>
+                                    <div class="baseline-value-input-group">
+                                        <span class="currency-prefix">$</span>
+                                        <input type="number" min="0" 
+                                            class="form-control baseline-input settings-amountSpentPerWeek" 
+                                            placeholder="0">
+                                        <select class="form-control baseline-timeline-select settings-spending-timeline-select">
+                                            <option value="day">per day</option>
+                                            <option value="week" selected>per week</option>
+                                            <option value="month">per month</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <p class="baseline-values-empty-message text-muted" style="display: none;">
+                                    Enable tracking categories in the Baseline questionnaire to set baseline values.
+                                </p>
+                            </div>
+                            
+                            <br />
 
                             <div class="displayed-statistics">
                                 <h3>Displayed Statistics</h3>

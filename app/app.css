@@ -243,7 +243,7 @@ input[type="number"] {
 .app-background {
 	background: url('../assets/images/lake-reflect-background.jpg');
     background-position: 0px -147px;
-    animation: animatedBackground 30s ease-in-out infinite alternate;
+    animation: animatedBackground 18s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
@@ -251,7 +251,7 @@ input[type="number"] {
         background-position: 0px -147px;
     }
     to {
-        background-position: 300px -147px;
+        background-position: 300px -114px;
     }
   }
 
@@ -544,6 +544,10 @@ input[type="number"] {
     -khtml-border-radius: 5px;
     border-radius: 5px;
 
+}
+
+.tab-pane#statistics-content {
+    background: none;
 }
 
 .tab-pane .btn {
@@ -976,6 +980,130 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     color: #6c757d;
 }
 
+/* Baseline Values Settings Section */
+.baseline-values-settings {
+    margin-top: 20px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.baseline-values-settings h3 {
+    font-size: 1.75rem;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.baseline-values-settings .baseline-values-description {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.baseline-value-row {
+    margin-bottom: 18px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.baseline-value-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.baseline-value-label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.baseline-value-label i {
+    margin-right: 8px;
+    color: #4d83b5;
+    width: 18px;
+    text-align: center;
+}
+
+.baseline-value-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.baseline-value-input-group .baseline-input {
+    width: 80px;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+
+.baseline-value-input-group .baseline-input:focus {
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+    outline: none;
+}
+
+.baseline-value-input-group.time-inputs .baseline-input {
+    width: 60px;
+}
+
+.baseline-value-input-group .time-separator {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.baseline-value-input-group .currency-prefix {
+    font-size: 1rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+.baseline-value-input-group .baseline-timeline-select {
+    width: auto;
+    min-width: 100px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.baseline-value-input-group .baseline-timeline-select:focus {
+    border-color: #4d83b5;
+    box-shadow: 0 0 0 2px rgba(77, 131, 181, 0.15);
+    outline: none;
+}
+
+.baseline-values-empty-message {
+    text-align: center;
+    font-style: italic;
+    padding: 15px;
+    margin: 0;
+}
+
+/* Category-specific colors for baseline value rows */
+.baseline-value-row[data-baseline-category="valuesTimesDone"] .baseline-value-label i {
+    color: #6b96c1;
+}
+
+.baseline-value-row[data-baseline-category="valuesTime"] .baseline-value-label i {
+    color: #17a2b8;
+}
+
+.baseline-value-row[data-baseline-category="valuesMoney"] .baseline-value-label i {
+    color: #28a745;
+}
+
 /* Displayed Statistics Section */
 .displayed-statistics {
     margin-top: 20px;
@@ -1248,22 +1376,25 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     position: relative;
     left: -10px;
     top: -15px;
-    padding-top: 99px;
+    padding-top: 82px;
     width: calc(100% + 20px);
-    background: radial-gradient(circle,rgba(23, 23, 23, .3) 23%, rgba(59, 58, 58, .4) 58%, rgba(206, 206, 206, .2) 100%);
-    border-radius: 0;
+    background: radial-gradient(circle, rgba(107, 107, 107, 0.1) 0%, rgba(111, 111, 111, 0.2) 30%, rgba(20, 20, 20, .5) 100%);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border: 2px solid;
+    border-top: none;
 }
 
 .brief-stats {
     position: relative;
     z-index: 5;
     background: #171717;
-    background: radial-gradient(circle,rgba(23, 23, 23, 1) 23%, rgba(59, 58, 58, 1) 86%, rgba(193, 193, 193, 1) 100%);
+    background: radial-gradient(circle,rgba(23, 23, 23, .8) 23%, rgba(59, 58, 58, .7) 86%, rgba(193, 193, 193, .6) 100%);
     backdrop-filter: blur(8px);
     border-radius: 0 0 16px 16px;
     padding: 0px 20px 8px 20px;
     margin: 0;
-    max-height: 35px;
+    max-height: 55px;
     display: flex;
     align-items: flex-end;
     border: 1px solid rgba(255, 255, 255, 0.7);
@@ -1299,8 +1430,8 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     max-width: 147px;
     overflow: hidden;
     position: absolute;
-    left: -10px;
-    top: -97px;
+    left: 7px;
+    top: -75px;
     z-index: 0;
 }
 
@@ -3794,7 +3925,7 @@ input[type="number"] {
     background: linear-gradient(135deg, #4a1942 0%, #6b2d5c 50%, #8b3a75 100%);
     border-radius: 16px;
     padding: 16px 20px;
-    margin-bottom: 16px;
+    margin-bottom: 32px;
     color: #fff;
     position: relative;
     overflow: hidden;
