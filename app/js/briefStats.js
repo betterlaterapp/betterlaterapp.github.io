@@ -1,6 +1,14 @@
 /**
  * BriefStatsModule - Quick summary stats bar
- * Shows key metrics at a glance: last time, next milestone, time today, resist streak
+ * Shows key metrics at a glance in a compact bar format
+ * 
+ * Stat 1 (Left side - Fibonacci timer):
+ * - "since last done" (focusTimesDone or focusTimeSpent)
+ * - "since last spent" (focusMoneySpent)
+ * 
+ * Stat 2 (Right side - Comparison stat):
+ * - [stat vs best/avg] comparisons when no goal is set
+ * - [milestone] date/time targets when goal is set (future implementation)
  */
 var BriefStatsModule = (function () {
     var json;
@@ -11,38 +19,70 @@ var BriefStatsModule = (function () {
      */
     function init(appJson) {
         json = appJson;
-        // Only update if we have storage data
         if (StorageModule.hasStorageData()) {
             updateAllStats();
         }
     }
     
     /**
-     * Show the brief stats bar
+     * Show the brief stats bar (and its wrapper)
      */
     function show() {
         $('#brief-stats').removeClass('d-none');
+        $('.brief-stats-container-wrapper').removeClass('d-none');
     }
     
     /**
-     * Hide the brief stats bar
+     * Hide the brief stats bar (and its wrapper)
      */
     function hide() {
         $('#brief-stats').addClass('d-none');
+        $('.brief-stats-container-wrapper').addClass('d-none');
     }
     
     /**
      * Update all stats in the bar
      */
     function updateAllStats() {
+        console.group('[BriefStats] updateAllStats');
+        
         var jsonObject = StorageModule.retrieveStorageObject();
         if (!jsonObject) {
+            console.log('No storage data - hiding brief stats');
+            console.groupEnd();
             hide();
             return;
         }
         
-        var baseline = jsonObject.baseline || {};
-        var isDecreaseHabit = baseline.decreaseHabit;
+        var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
+        var actions = jsonObject.action || [];
+        
+        // REQUIREMENT: Timer must be started (at least one 'used' or 'bought' action)
+        // before the brief-stats bar can display
+        var hasStartedTimer = hasTimerStarted(actions, baseline);
+        if (!hasStartedTimer) {
+            console.log('Timer not started yet - hiding brief stats');
+            console.groupEnd();
+            hide();
+            return;
+        }
+        
+        // Log conditions for debugging
+        var focus = determineFocus(baseline);
+        var doLess = isDoLess(baseline);
+        var doMore = isDoMore(baseline);
+        console.log('CONDITIONS:', {
+            focus: focus,
+            doLess: doLess,
+            doMore: doMore,
+            hasStartedTimer: hasStartedTimer,
+            hasBaselineTimesDone: hasBaselineTimesDone(baseline),
+            hasBaselineTimeSpent: hasBaselineTimeSpent(baseline),
+            hasBaselineMoneySpent: hasBaselineMoneySpent(baseline),
+            hasGoalTimesDone: hasGoalTimesDone(jsonObject),
+            hasGoalTimeSpent: hasGoalTimeSpent(jsonObject),
+            hasGoalMoneySpent: hasGoalMoneySpent(jsonObject)
+        });
         
         // Track which stats are visible
         var visibleStats = [];
@@ -50,46 +90,15 @@ var BriefStatsModule = (function () {
         // Reset d-none on all stats before recalculating
         $('.stat-brief').addClass('d-none');
         
-        // Update last done timer (shows if times-done OR time-spent selected)
-        var lastDoneVisible = updateLastDoneStat(baseline);
-        if (lastDoneVisible) visibleStats.push('last-done');
+        // Stat 1: Fibonacci timer (last done OR last spent based on focus)
+        var fibonacciTimerVisible = updateFibonacciTimerStat(baseline);
+        if (fibonacciTimerVisible) visibleStats.push('fibonacci-timer');
+        console.log('Stat 1 (Fibonacci):', fibonacciTimerVisible ? 'VISIBLE' : 'hidden');
         
-        // Update last spent timer (shows if money-spent selected)
-        var lastSpentVisible = updateLastSpentStat(baseline);
-        if (lastSpentVisible) visibleStats.push('last-spent');
-        
-        // Update milestone stat (if user has goals)
-        var milestoneVisible = updateMilestoneStat(jsonObject, baseline);
-        if (milestoneVisible) visibleStats.push('milestone');
-        
-        // Update time today stat
-        var timeTodayVisible = updateTimeTodayStat(jsonObject, baseline);
-        if (timeTodayVisible) visibleStats.push('time-today');
-        
-        // Update did/didn't pie chart (do-less only)
-        if (isDecreaseHabit) {
-            // var didDidntVisible = updateDidDidntStat(jsonObject);
-            // if (didDidntVisible) visibleStats.push('did-didnt');
-            
-            // Update resist streak
-            var streakVisible = updateResistStreakStat(jsonObject);
-            if (streakVisible) visibleStats.push('resist-streak');
-        }
-        
-        // Max number of items per row is 3 - hide any more than 3
-        if (visibleStats.length > 3) {
-            // Keep only the first 3
-            for (var i = 3; i < visibleStats.length; i++) {
-                var statId = visibleStats[i];
-                if (statId === 'last-done') $('.stat-brief.stat-last-done').addClass('d-none');
-                if (statId === 'last-spent') $('.stat-brief.stat-last-spent').addClass('d-none');
-                if (statId === 'time-today') $('.stat-brief.stat-time-today').addClass('d-none');
-                if (statId === 'did-didnt') $('.stat-brief.stat-did-didnt').addClass('d-none');
-                if (statId === 'resist-streak') $('.stat-brief.stat-resist-streak').addClass('d-none');
-                if (statId === 'milestone') $('.stat-brief.stat-next-milestone').addClass('d-none');
-            }
-            visibleStats = visibleStats.slice(0, 3);
-        }
+        // Stat 2: Comparison stat (based on conditions from brief-stats-logic.txt)
+        var comparisonStatVisible = updateComparisonStat(jsonObject, baseline, actions);
+        if (comparisonStatVisible) visibleStats.push('comparison');
+        console.log('Stat 2 (Comparison):', comparisonStatVisible ? 'VISIBLE' : 'hidden');
         
         // Show/hide the bar based on whether we have any stats to display
         if (visibleStats.length > 0) {
@@ -98,6 +107,40 @@ var BriefStatsModule = (function () {
         } else {
             hide();
         }
+        
+        console.log('Visible stats:', visibleStats);
+        console.groupEnd();
+    }
+    
+    /**
+     * Check if the timer has been started (at least one relevant action exists)
+     * For timesDone/timeSpent focus: needs 'used' or 'timed' action
+     * For moneySpent focus: needs 'bought' action
+     * @param {Array} actions - Array of actions
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean}
+     */
+    function hasTimerStarted(actions, baseline) {
+        if (!actions || actions.length === 0) return false;
+        
+        var focus = determineFocus(baseline);
+        
+        if (focus === 'moneySpent') {
+            // For money focus, need at least one 'bought' action
+            return actions.some(function(a) {
+                return a && a.clickType === 'bought';
+            });
+        } else if (focus === 'timesDone' || focus === 'timeSpent') {
+            // For usage/time focus, need at least one 'used' or 'timed' action
+            return actions.some(function(a) {
+                return a && (a.clickType === 'used' || a.clickType === 'timed');
+            });
+        }
+        
+        // For neutral/wellness, check for any action
+        return actions.some(function(a) {
+            return a && (a.clickType === 'used' || a.clickType === 'bought' || a.clickType === 'timed');
+        });
     }
     
     /**
@@ -106,509 +149,713 @@ var BriefStatsModule = (function () {
      */
     function updateStatSizeClass(count) {
         var $container = $('.brief-stats-container');
-        
-        // Remove all count classes
         $container.removeClass('stats-count-1 stats-count-2 stats-count-3');
-        
-        // Add appropriate class (max 3 stats)
         $container.addClass('stats-count-' + Math.min(count, 3));
     }
     
+    // ============================================
+    // Condition Checking Functions
+    // ============================================
+    
     /**
-     * Update the "Last done" timer visibility
-     * Shows if user has times-done OR time-spent selected
+     * Determine user's primary focus based on baseline selections
+     * Priority: timesDone > timeSpent > moneySpent > wellness > neutral
      * @param {Object} baseline - Baseline settings
-     * @returns {boolean} - Whether stat should be visible
+     * @returns {string} - 'timesDone' | 'timeSpent' | 'moneySpent' | 'wellness' | 'neutral'
      */
-    function updateLastDoneStat(baseline) {
-        var $stat = $('.stat-brief.stat-last-done');
-        
-        // Show if times-done OR time-spent is selected
-        if (baseline.valuesTimesDone || baseline.valuesTime) {
-            $stat.removeClass('d-none');
-            return true;
-        }
-        
-        $stat.addClass('d-none');
-        return false;
+    function determineFocus(baseline) {
+        if (baseline.valuesTimesDone) return 'timesDone';
+        if (baseline.valuesTime) return 'timeSpent';
+        if (baseline.valuesMoney) return 'moneySpent';
+        if (baseline.valuesHealth) return 'wellness';
+        return 'neutral';
     }
     
     /**
-     * Update the "Last spent" timer visibility
-     * Shows if user has money-spent selected
+     * Check if user is in "do less" mode
      * @param {Object} baseline - Baseline settings
-     * @returns {boolean} - Whether stat should be visible
+     * @returns {boolean}
      */
-    function updateLastSpentStat(baseline) {
-        var $stat = $('.stat-brief.stat-last-spent');
-        
-        // Show if money-spent is selected
-        if (baseline.valuesMoney && !baseline.valuesTime && !baseline.valuesTimesDone) {
-            $stat.removeClass('d-none');
-            return true;
-        }
-        
-        $stat.addClass('d-none');
-        return false;
+    function isDoLess(baseline) {
+        return baseline.decreaseHabit === true;
     }
     
     /**
-     * Update the milestone stat ("Do it by" / "Wait until")
+     * Check if user is in "do more" mode
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean}
+     */
+    function isDoMore(baseline) {
+        return baseline.increaseHabit === true;
+    }
+    
+    /**
+     * Check if user has baseline value for times done
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean}
+     */
+    function hasBaselineTimesDone(baseline) {
+        return (parseInt(baseline.timesDone) || 0) > 0;
+    }
+    
+    /**
+     * Check if user has baseline value for time spent
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean}
+     */
+    function hasBaselineTimeSpent(baseline) {
+        var hours = parseInt(baseline.timeSpentHours) || 0;
+        var minutes = parseInt(baseline.timeSpentMinutes) || 0;
+        return (hours > 0 || minutes > 0);
+    }
+    
+    /**
+     * Check if user has baseline value for money spent
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean}
+     */
+    function hasBaselineMoneySpent(baseline) {
+        return (parseFloat(baseline.moneySpent) || 0) > 0;
+    }
+    
+    /**
+     * Check if user has a goal for times done
      * @param {Object} jsonObject - Storage object
-     * @param {Object} baseline - Baseline settings
-     * @returns {boolean} - Whether stat has displayable value
+     * @returns {boolean}
      */
-    function updateMilestoneStat(jsonObject, baseline) {
-        var isDecreaseHabit = baseline.decreaseHabit;
-        var goalElement = isDecreaseHabit ? '#brief-wait-until' : '#brief-do-it-by';
-        var $stat = isDecreaseHabit ? $('.stat-brief.stat-next-milestone.do-less-only') : $('.stat-brief.stat-next-milestone.do-more-only');
+    function hasGoalTimesDone(jsonObject) {
+        var goals = jsonObject.behavioralGoals || [];
+        return goals.some(function(g) {
+            return g.status === 'active' && g.type === 'quantitative' && g.unit === 'times';
+        });
+    }
+    
+    /**
+     * Check if user has a goal for time spent
+     * @param {Object} jsonObject - Storage object
+     * @returns {boolean}
+     */
+    function hasGoalTimeSpent(jsonObject) {
+        var goals = jsonObject.behavioralGoals || [];
+        return goals.some(function(g) {
+            return g.status === 'active' && g.type === 'quantitative' && g.unit === 'minutes';
+        });
+    }
+    
+    /**
+     * Check if user has a goal for money spent
+     * @param {Object} jsonObject - Storage object
+     * @returns {boolean}
+     */
+    function hasGoalMoneySpent(jsonObject) {
+        var goals = jsonObject.behavioralGoals || [];
+        return goals.some(function(g) {
+            return g.status === 'active' && g.type === 'quantitative' && g.unit === 'dollars';
+        });
+    }
+    
+    // ============================================
+    // Stat 1: Fibonacci Timer Functions
+    // ============================================
+    
+    /**
+     * Update fibonacci timer stat based on focus
+     * @param {Object} baseline - Baseline settings
+     * @returns {boolean} - Whether a fibonacci timer is visible
+     */
+    function updateFibonacciTimerStat(baseline) {
+        var focus = determineFocus(baseline);
         
-        // Check if user has a times-done goal
-        var hasGoal = jsonObject.behavioralGoals.length > 0;
-        
-        if (!hasGoal || !baseline.valuesTimesDone) {
-            console.log('updateMilestone hiding, hasGoal: ', hasGoal, baseline)
-            $stat.addClass('d-none');
-            return false;
+        if (focus === 'timesDone' || focus === 'timeSpent') {
+            return updateLastDoneStat();
+        } else if (focus === 'moneySpent') {
+            return updateLastSpentStat();
         }
         
-        // Calculate next milestone
-        var milestone = calculateNextMilestone(jsonObject, baseline);
-        
-        if (milestone) {
-            $(goalElement).text(milestone.display);
-        } else {
-            $(goalElement).text('On track');
-        }
-        
+        // No focus - hide both timers
+        $('.stat-brief.stat-last-done').addClass('d-none');
+        $('.stat-brief.stat-last-spent').addClass('d-none');
+        return false;
+    }
+    
+    /**
+     * Show the "Last done" fibonacci timer
+     * @returns {boolean} - Always true
+     */
+    function updateLastDoneStat() {
+        var $stat = $('.stat-brief.stat-last-done');
         $stat.removeClass('d-none');
+        $('.stat-brief.stat-last-spent').addClass('d-none');
         return true;
     }
     
     /**
-     * Calculate the next milestone time based on behavioral goal
-     * Milestones are equally spaced from goal start to goal end
+     * Show the "Last spent" fibonacci timer
+     * @returns {boolean} - Always true
+     */
+    function updateLastSpentStat() {
+        var $stat = $('.stat-brief.stat-last-spent');
+        $stat.removeClass('d-none');
+        $('.stat-brief.stat-last-done').addClass('d-none');
+        return true;
+    }
+    
+    // ============================================
+    // Stat 2: Comparison Stat Functions
+    // ============================================
+    
+    /**
+     * Determine which comparison stat to show based on conditions
+     * Returns null if no stat should be shown, or object with stat type and data
+     * Priority: milestone stats (when goal exists) > comparison stats
      * @param {Object} jsonObject - Storage object
      * @param {Object} baseline - Baseline settings
-     * @returns {Object|null} - Milestone info or null
+     * @param {Array} actions - Array of actions
+     * @returns {Object|null} - Stat configuration or null
      */
-    function calculateNextMilestone(jsonObject, baseline) {
-        var isDecreaseHabit = baseline.decreaseHabit;
+    function determineComparisonStat(jsonObject, baseline, actions) {
+        var focus = determineFocus(baseline);
+        var doLess = isDoLess(baseline);
+        var doMore = isDoMore(baseline);
         
-        // Find the active quantitative goal for times-done
-        var goals = jsonObject.behavioralGoals || [];
-        var activeGoal = goals.find(function(g) {
-            return g.status === 'active' && g.type === 'quantitative' && g.unit === 'times';
-        });
-        
-        if (!activeGoal) {
+        // Base case: no focus = no stat 2
+        if (focus === 'neutral' || focus === 'wellness') {
+            console.log('[BriefStats] Stat 2 decision: NONE (focus is neutral/wellness)');
             return null;
         }
         
-        var now = Date.now();
-        var goalStartMs = activeGoal.createdAt;
-        var goalEndMs = goalStartMs + (activeGoal.completionTimeline * 24 * 60 * 60 * 1000);
-        var totalDurationMs = goalEndMs - goalStartMs;
+        // Get timeline setting for the focus area
+        var timeline = getTimelineForFocus(focus, baseline);
+        var Calc = StatsCalculationsModule;
+        var behavioralGoals = jsonObject.behavioralGoals || [];
         
-        // If goal has ended, show completion status
-        if (now >= goalEndMs) {
-            return { display: 'Complete', urgent: false };
+        // Check for goals first - milestone stats take priority
+        // Per brief-stats-logic.txt: milestones require BOTH hasBaseline AND hasGoal
+        if (focus === 'timesDone' && hasBaselineTimesDone(baseline) && hasGoalTimesDone(jsonObject)) {
+            var goal = Calc.getActiveGoalForUnit(behavioralGoals, 'times');
+            var milestone = Calc.calculateNextMilestone(goal, actions, doLess);
+            if (milestone && !milestone.complete) {
+                return getMilestoneStatConfig(milestone, doLess);
+            }
+        }
+        if (focus === 'timeSpent' && hasBaselineTimeSpent(baseline) && hasGoalTimeSpent(jsonObject)) {
+            var goal = Calc.getActiveGoalForUnit(behavioralGoals, 'minutes');
+            // For time spent, show allotment status (current vs allotted)
+            var allotment = Calc.getTimeAllotmentStatus(goal, actions);
+            if (allotment) {
+                return getTimeAllotmentStatConfig(allotment, doLess);
+            }
+        }
+        if (focus === 'moneySpent' && hasBaselineMoneySpent(baseline) && hasGoalMoneySpent(jsonObject)) {
+            var goal = Calc.getActiveGoalForUnit(behavioralGoals, 'dollars');
+            // For money spent, show allotment status (spent vs allotted)
+            var allotment = Calc.getTimeAllotmentStatus(goal, actions);
+            if (allotment) {
+                return getMoneyAllotmentStatConfig(allotment, doLess);
+            }
         }
         
-        var currentAmount = activeGoal.currentAmount; // Starting baseline
-        var goalAmount = activeGoal.goalAmount;       // Target
-        var measurementDays = activeGoal.measurementTimeline || 7;
+        // Fall back to comparison stat based on focus, baseline, and habit direction
+        var result = null;
+        if (focus === 'timesDone') {
+            result = getTimesDoneComparisonStat(baseline, actions, doLess, doMore, timeline);
+        } else if (focus === 'timeSpent') {
+            result = getTimeSpentComparisonStat(baseline, actions, doLess, doMore, timeline);
+        } else if (focus === 'moneySpent') {
+            result = getMoneySpentComparisonStat(baseline, actions, doLess, doMore, timeline);
+        }
         
-        // Calculate total actions expected over the goal's completion timeline
-        // Convert per-period amounts to total over completion timeline
-        var periodsInGoal = activeGoal.completionTimeline / measurementDays;
-        var totalStartingActions = currentAmount * periodsInGoal;
-        var totalGoalActions = goalAmount * periodsInGoal;
-        
-        // Get actions since goal started
-        var goalStartSec = Math.floor(goalStartMs / 1000);
-        var actionsSinceGoalStart = (jsonObject.action || []).filter(function(a) {
-            return a && (a.clickType === 'used' || a.clickType === 'timed') && 
-                   parseInt(a.timestamp) >= goalStartSec;
-        }).length;
-        
-        // Time elapsed since goal start
-        var elapsedMs = now - goalStartMs;
-        var remainingMs = goalEndMs - now;
-        
-        if (isDecreaseHabit) {
-            // DO LESS: User wants to reduce from currentAmount to goalAmount
-            // Milestones represent when they can next do the action
-            return calculateDoLessMilestone(
-                actionsSinceGoalStart, totalStartingActions, totalGoalActions,
-                elapsedMs, remainingMs, totalDurationMs, now
-            );
+        if (result) {
+            console.log('[BriefStats] Stat 2 decision: COMPARISON (' + result.label + ')', result);
         } else {
-            // DO MORE: User wants to increase from currentAmount to goalAmount
-            // Milestones represent deadlines to complete actions by
-            return calculateDoMoreMilestone(
-                actionsSinceGoalStart, totalStartingActions, totalGoalActions,
-                elapsedMs, remainingMs, totalDurationMs, now
-            );
+            console.log('[BriefStats] Stat 2 decision: NONE (no matching condition)');
         }
+        
+        return result;
     }
     
     /**
-     * Calculate milestone for "do less" habit
-     * User should wait until milestone time before doing action
+     * Get stat config for milestone (Wait until / Do it by)
+     * @param {Object} milestone - Milestone data from calculateNextMilestone
+     * @param {boolean} doLess - Whether this is a "do less" habit
+     * @returns {Object} - Stat configuration
      */
-    function calculateDoLessMilestone(actionsDone, totalStart, totalGoal, elapsedMs, remainingMs, totalDurationMs, now) {
-        // For do less: totalStart > totalGoal (e.g., 40 → 20 over 30 days)
-        // We need to calculate when they can next do the action
+    function getMilestoneStatConfig(milestone, doLess) {
+        var Calc = StatsCalculationsModule;
         
-        // Calculate expected actions at current time point (linear interpolation)
-        var progressRatio = elapsedMs / totalDurationMs;
-        var expectedActionsNow = totalStart - ((totalStart - totalGoal) * progressRatio);
-        
-        // Remaining allowances
-        var remainingAllowances = Math.floor(totalGoal - actionsDone);
-        
-        if (remainingAllowances <= 0) {
-            // User has used all allowances for the goal period
-            return { display: 'Wait!', urgent: true };
+        // Build status label based on tracking
+        var milestoneInfo = '';
+        if (milestone.milestoneIndex && milestone.totalMilestones) {
+            milestoneInfo = ' (' + milestone.milestoneIndex + '/' + milestone.totalMilestones + ')';
         }
         
-        if (actionsDone >= expectedActionsNow) {
-            // User is on track or ahead (good for do-less - they're doing less)
-            // Calculate when they can next do it based on equally spacing remaining allowances
-            var msPerAllowance = remainingMs / remainingAllowances;
-            var nextMilestoneMs = now + msPerAllowance;
-            
-            return formatTimeUntil(nextMilestoneMs - now, false);
-        } else {
-            // User is behind (bad for do-less - they should have waited longer)
-            // They can do it now since they're under the expected amount
-            return { display: 'OK now', urgent: false };
+        console.log('[BriefStats] Milestone config:', {
+            type: milestone.type,
+            timestamp: new Date(milestone.timestamp).toLocaleString(),
+            onTrack: milestone.onTrack,
+            actualCount: milestone.actualCount,
+            targetAmount: milestone.targetAmount,
+            catchUp: milestone.catchUp || false
+        });
+        
+        if (milestone.type === 'waitUntil') {
+            return {
+                type: 'milestone',
+                subtype: 'waitUntil',
+                label: 'Wait until',
+                value: Calc.formatMilestoneClockTime(milestone.timestamp),
+                countdown: Calc.formatMilestoneTime(milestone.timestamp),
+                format: 'datetime',
+                onTrack: milestone.onTrack,
+                milestoneInfo: milestoneInfo
+            };
+        } else if (milestone.type === 'doItBy') {
+            return {
+                type: 'milestone',
+                subtype: 'doItBy',
+                label: 'Do it by',
+                value: Calc.formatMilestoneClockTime(milestone.timestamp),
+                countdown: Calc.formatMilestoneTime(milestone.timestamp),
+                format: 'datetime',
+                onTrack: milestone.onTrack,
+                milestoneInfo: milestoneInfo
+            };
         }
+        
+        return null;
     }
     
     /**
-     * Calculate milestone for "do more" habit
-     * User should complete action before milestone time
+     * Get stat config for time allotment (time spent today vs allotted)
+     * Per logic: [milestone: amount of time] time spent today VS. allotted time / day
+     * @param {Object} allotment - {current, allotted, unit}
+     * @param {boolean} doLess - Whether this is a "do less" habit
+     * @returns {Object} - Stat configuration
      */
-    function calculateDoMoreMilestone(actionsDone, totalStart, totalGoal, elapsedMs, remainingMs, totalDurationMs, now) {
-        // For do more: totalGoal > totalStart (e.g., 10 → 30 over 30 days)
-        // We need to calculate when they should do the next action by
-        
-        // Calculate expected actions at current time point (linear interpolation)
-        var progressRatio = elapsedMs / totalDurationMs;
-        var expectedActionsNow = totalStart + ((totalGoal - totalStart) * progressRatio);
-        
-        // How many actions they still need to complete
-        var remainingActions = Math.ceil(totalGoal - actionsDone);
-        
-        if (remainingActions <= 0) {
-            // User has completed all required actions
-            return null; // On track / goal met
+    function getTimeAllotmentStatConfig(allotment, doLess) {
+        return {
+            type: 'milestone',
+            subtype: 'timeAllotment',
+            label: 'Time vs allotted',
+            current: allotment.current,
+            comparison: allotment.allotted,
+            format: 'timeMinutes'
+        };
+    }
+    
+    /**
+     * Get stat config for money allotment (spent today vs allotted)
+     * Per logic: [milestone: number] Spent today vs allotted spend / day
+     * @param {Object} allotment - {current, allotted, unit}
+     * @param {boolean} doLess - Whether this is a "do less" habit
+     * @returns {Object} - Stat configuration
+     */
+    function getMoneyAllotmentStatConfig(allotment, doLess) {
+        return {
+            type: 'milestone',
+            subtype: 'moneyAllotment',
+            label: 'Spent vs allotted',
+            current: allotment.current,
+            comparison: allotment.allotted,
+            format: 'money'
+        };
+    }
+    
+    /**
+     * Get timeline setting for a focus area
+     * @param {string} focus - Focus type
+     * @param {Object} baseline - Baseline settings
+     * @returns {string} - 'day', 'week', or 'month'
+     */
+    function getTimelineForFocus(focus, baseline) {
+        if (focus === 'timesDone') {
+            return baseline.usageTimeline || 'week';
+        } else if (focus === 'timeSpent') {
+            return baseline.timeTimeline || 'week';
+        } else if (focus === 'moneySpent') {
+            return baseline.spendingTimeline || 'week';
         }
+        return 'day';
+    }
+    
+    /**
+     * Get comparison stat for timesDone focus
+     */
+    function getTimesDoneComparisonStat(baseline, actions, doLess, doMore, timeline) {
+        var hasBaseline = hasBaselineTimesDone(baseline);
+        var Calc = StatsCalculationsModule;
         
-        if (actionsDone >= expectedActionsNow) {
-            // User is on track or ahead
-            // Calculate next milestone (when they should do the next action by)
-            var msPerAction = remainingMs / remainingActions;
-            var nextMilestoneMs = now + msPerAction;
-            
-            return formatTimeUntil(nextMilestoneMs - now, false);
-        } else {
-            // User is behind - they need to catch up
-            var behindBy = Math.ceil(expectedActionsNow - actionsDone);
-            
-            if (behindBy === 1) {
-                return { display: 'Today', urgent: true };
+        console.log('[BriefStats] getTimesDoneComparisonStat:', { doLess, doMore, hasBaseline, timeline });
+        
+        if (doLess) {
+            if (hasBaseline) {
+                // times done today vs baseline done / day
+                var current = Calc.getCountForPeriod(actions, 'day');
+                var baselinePerDay = Calc.baselineToPerDay(baseline.timesDone, timeline);
+                console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline', { current, baselinePerDay });
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs baseline',
+                    current: current,
+                    comparison: Math.round(baselinePerDay),
+                    format: 'number'
+                };
             } else {
-                return { display: behindBy + ' to catch up', urgent: true };
+                // streak: resists VS. longest streak
+                var currentStreak = Calc.getCurrentResistStreak(actions);
+                var longestStreak = Calc.calculateResistStreak(actions);
+                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
+                return {
+                    type: 'statVsBest',
+                    label: 'Resist streak',
+                    current: currentStreak,
+                    comparison: longestStreak,
+                    format: 'number'
+                };
             }
-        }
-    }
-    
-    /**
-     * Format milliseconds until milestone as display string
-     */
-    function formatTimeUntil(ms, urgent) {
-        if (ms <= 0) {
-            return { display: 'Now', urgent: true };
-        }
-        
-        var hours = Math.floor(ms / (60 * 60 * 1000));
-        var days = Math.floor(hours / 24);
-        var remainingHours = hours % 24;
-        
-        if (days > 0) {
-            if (remainingHours > 0) {
-                return { display: days + 'd ' + remainingHours + 'h', urgent: urgent };
+        } else if (doMore) {
+            if (hasBaseline) {
+                // done today vs baseline done / day
+                var current = Calc.getCountForPeriod(actions, 'day');
+                var baselinePerDay = Calc.baselineToPerDay(baseline.timesDone, timeline);
+                console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline', { current, baselinePerDay });
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs baseline',
+                    current: current,
+                    comparison: Math.round(baselinePerDay),
+                    format: 'number'
+                };
+            } else {
+                // times done today vs average done / day
+                var current = Calc.getCountForPeriod(actions, 'day');
+                var avgPerDay = Calc.getAverageCountPerDay(actions);
+                console.log('[BriefStats] → doMore + noBaseline: Today vs avg', { current, avgPerDay });
+                return {
+                    type: 'statVsAvg',
+                    label: 'Today vs avg',
+                    current: current,
+                    comparison: avgPerDay,
+                    format: 'number'
+                };
             }
-            return { display: days + 'd', urgent: urgent };
-        } else if (hours > 0) {
-            return { display: hours + 'h', urgent: urgent };
         } else {
-            var minutes = Math.floor(ms / (60 * 1000));
-            return { display: minutes + 'm', urgent: urgent };
+            // Neutral habit direction - show streak by default
+            var currentStreak = Calc.getCurrentResistStreak(actions);
+            var longestStreak = Calc.calculateResistStreak(actions);
+            console.log('[BriefStats] → neutral: Streak fallback', { currentStreak, longestStreak });
+            if (longestStreak > 0) {
+                return {
+                    type: 'statVsBest',
+                    label: 'Resist streak',
+                    current: currentStreak,
+                    comparison: longestStreak,
+                    format: 'number'
+                };
+            }
         }
+        
+        return null;
     }
     
     /**
-     * Update the "Time today" pie chart stat
+     * Get comparison stat for timeSpent focus
+     */
+    function getTimeSpentComparisonStat(baseline, actions, doLess, doMore, timeline) {
+        var hasBaseline = hasBaselineTimeSpent(baseline);
+        var Calc = StatsCalculationsModule;
+        
+        console.log('[BriefStats] getTimeSpentComparisonStat:', { doLess, doMore, hasBaseline, timeline });
+        
+        if (doLess) {
+            if (hasBaseline) {
+                // time spent today vs baseline time spent / day
+                var current = Calc.getTimeSpentForPeriod(actions, 'day');
+                var baselineHours = parseInt(baseline.timeSpentHours) || 0;
+                var baselineMinutes = parseInt(baseline.timeSpentMinutes) || 0;
+                var baselineSeconds = (baselineHours * 3600) + (baselineMinutes * 60);
+                var baselinePerDay = Calc.baselineToPerDay(baselineSeconds, timeline);
+                console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline (time)', { current, baselinePerDay });
+                return {
+                    type: 'statVsAvg',
+                    label: 'Today vs baseline',
+                    current: current,
+                    comparison: Math.round(baselinePerDay),
+                    format: 'time'
+                };
+            } else {
+                // streak: resists VS. longest streak
+                var currentStreak = Calc.getCurrentResistStreak(actions);
+                var longestStreak = Calc.calculateResistStreak(actions);
+                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
+                return {
+                    type: 'statVsBest',
+                    label: 'Resist streak',
+                    current: currentStreak,
+                    comparison: longestStreak,
+                    format: 'number'
+                };
+            }
+        } else if (doMore) {
+            if (hasBaseline) {
+                // time spent today vs baseline time spent / day
+                var current = Calc.getTimeSpentForPeriod(actions, 'day');
+                var baselineHours = parseInt(baseline.timeSpentHours) || 0;
+                var baselineMinutes = parseInt(baseline.timeSpentMinutes) || 0;
+                var baselineSeconds = (baselineHours * 3600) + (baselineMinutes * 60);
+                var baselinePerDay = Calc.baselineToPerDay(baselineSeconds, timeline);
+                console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline (time)', { current, baselinePerDay });
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs baseline',
+                    current: current,
+                    comparison: Math.round(baselinePerDay),
+                    format: 'time'
+                };
+            } else {
+                // time spent today vs best time spent / day
+                var current = Calc.getTimeSpentForPeriod(actions, 'day');
+                var bestPerDay = Calc.getBestTimePerDay(actions);
+                console.log('[BriefStats] → doMore + noBaseline: Today vs best (time)', { current, bestPerDay });
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs best',
+                    current: current,
+                    comparison: bestPerDay,
+                    format: 'time'
+                };
+            }
+        } else {
+            // Neutral - show today vs best
+            var current = Calc.getTimeSpentForPeriod(actions, 'day');
+            var bestPerDay = Calc.getBestTimePerDay(actions);
+            console.log('[BriefStats] → neutral: Today vs best fallback (time)', { current, bestPerDay });
+            if (bestPerDay > 0) {
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs best',
+                    current: current,
+                    comparison: bestPerDay,
+                    format: 'time'
+                };
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get comparison stat for moneySpent focus
+     */
+    function getMoneySpentComparisonStat(baseline, actions, doLess, doMore, timeline) {
+        var hasBaseline = hasBaselineMoneySpent(baseline);
+        var Calc = StatsCalculationsModule;
+        
+        console.log('[BriefStats] getMoneySpentComparisonStat:', { doLess, doMore, hasBaseline, timeline });
+        
+        if (doLess) {
+            if (hasBaseline) {
+                // money spent today vs baseline money spent / day
+                var current = Calc.getAmountSpentForPeriod(actions, 'day');
+                var baselinePerDay = Calc.baselineToPerDay(baseline.moneySpent, timeline);
+                console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline ($)', { current, baselinePerDay });
+                return {
+                    type: 'statVsAvg',
+                    label: 'Today vs baseline',
+                    current: Math.round(current),
+                    comparison: Math.round(baselinePerDay),
+                    format: 'money'
+                };
+            } else {
+                // streak: resists VS. longest streak
+                var currentStreak = Calc.getCurrentResistStreak(actions);
+                var longestStreak = Calc.calculateResistStreak(actions);
+                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
+                return {
+                    type: 'statVsBest',
+                    label: 'Resist streak',
+                    current: currentStreak,
+                    comparison: longestStreak,
+                    format: 'number'
+                };
+            }
+        } else if (doMore) {
+            if (hasBaseline) {
+                // money spent today vs baseline money spent / day
+                var current = Calc.getAmountSpentForPeriod(actions, 'day');
+                var baselinePerDay = Calc.baselineToPerDay(baseline.moneySpent, timeline);
+                console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline ($)', { current, baselinePerDay });
+                return {
+                    type: 'statVsAvg',
+                    label: 'Today vs baseline',
+                    current: Math.round(current),
+                    comparison: Math.round(baselinePerDay),
+                    format: 'money'
+                };
+            } else {
+                // money spent today vs best money spent / day
+                var current = Calc.getAmountSpentForPeriod(actions, 'day');
+                var bestPerDay = Calc.getBestAmountPerDay(actions);
+                console.log('[BriefStats] → doMore + noBaseline: Today vs best ($)', { current, bestPerDay });
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs best',
+                    current: Math.round(current),
+                    comparison: Math.round(bestPerDay),
+                    format: 'money'
+                };
+            }
+        } else {
+            // Neutral - show today vs best
+            var current = Calc.getAmountSpentForPeriod(actions, 'day');
+            var bestPerDay = Calc.getBestAmountPerDay(actions);
+            console.log('[BriefStats] → neutral: Today vs best fallback ($)', { current, bestPerDay });
+            if (bestPerDay > 0) {
+                return {
+                    type: 'statVsBest',
+                    label: 'Today vs best',
+                    current: Math.round(current),
+                    comparison: Math.round(bestPerDay),
+                    format: 'money'
+                };
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Update the comparison stat display
+     * Handles both comparison stats and milestone stats
      * @param {Object} jsonObject - Storage object
      * @param {Object} baseline - Baseline settings
-     * @returns {boolean} - Whether stat has displayable value
+     * @param {Array} actions - Array of actions
+     * @returns {boolean} - Whether stat is visible
      */
-    function updateTimeTodayStat(jsonObject, baseline) {
-        var isDecreaseHabit = baseline.decreaseHabit;
-        var chartElement = isDecreaseHabit ? '#brief-wait-chart' : '#brief-time-chart';
-        var $stat = isDecreaseHabit ? $('.stat-brief.stat-time-today.do-less-only') : $('.stat-brief.stat-time-today.do-more-only');
+    function updateComparisonStat(jsonObject, baseline, actions) {
+        var statConfig = determineComparisonStat(jsonObject, baseline, actions);
         
-        // Only show if valuesTime is set
-        if (!baseline.valuesTime) {
-            $stat.addClass('d-none');
+        if (!statConfig) {
+            $('.stat-brief.stat-comparison').addClass('d-none');
+            $('.stat-brief.stat-milestone').addClass('d-none');
             return false;
         }
         
-        // Calculate time spent today
-        var now = Math.round(new Date() / 1000);
-        var todayStart = getStartOfDay(now);
-        
-        var timedToday = 0;
-        var waitedToday = 0;
-        
-        (jsonObject.action || []).forEach(function(action) {
-            if (!action || parseInt(action.timestamp) < todayStart) return;
-            
-            if (action.clickType === 'timed' && action.duration) {
-                timedToday += parseInt(action.duration) || 0;
-            }
-            
-            if ((action.clickType === 'wait' || action.clickType === 'goal') && action.status >= 2) {
-                var start = parseInt(action.clickStamp || action.timestamp);
-                var end = parseInt(action.waitStopped || action.goalStopped || action.timestamp);
-                waitedToday += Math.max(0, end - start);
-            }
-        });
-        
-        var relevantTime = isDecreaseHabit ? waitedToday : timedToday;
-        
-        // Only show if there's time recorded
-        if (relevantTime === 0) {
-            $stat.addClass('d-none');
-            return false;
+        // Handle milestone stats differently from comparison stats
+        if (statConfig.type === 'milestone') {
+            return updateMilestoneStat(statConfig);
         }
         
-        // Get goal time or use max as baseline
-        var goalSeconds = getGoalTimeForToday(jsonObject, baseline);
+        // Hide milestone stat if showing comparison
+        $('.stat-brief.stat-milestone').addClass('d-none');
         
-        // Calculate percentage (cap at 100%)
-        var percentage = goalSeconds > 0 ? Math.min(100, (relevantTime / goalSeconds) * 100) : 0;
+        // Format the values based on format type
+        var currentDisplay = formatStatValue(statConfig.current, statConfig.format);
+        var comparisonDisplay = formatStatValue(statConfig.comparison, statConfig.format);
         
-        // Render pie chart
-        renderMiniPieChart(chartElement, percentage, isDecreaseHabit);
+        // Update the DOM with new structure
+        var $stat = $('.stat-brief.stat-comparison');
+        $stat.find('.stat-current').text(currentDisplay);
+        $stat.find('.stat-vs').text(comparisonDisplay);
+        $stat.find('.stat-label').text(statConfig.label);
+        
+        // Update the vs label based on stat type
+        var vsLabel = statConfig.type === 'statVsAvg' ? 'Avg' : 'Best';
+        $stat.find('.stat-vs-label').text(vsLabel);
+        
+        // Add type class for styling
+        $stat.removeClass('stat-vs-best stat-vs-avg stat-stat-vs-best stat-stat-vs-avg stat-exceeds');
+        $stat.addClass('stat-' + statConfig.type.replace(/([A-Z])/g, '-$1').toLowerCase());
+        
+        // Check if current exceeds the comparison (celebration!)
+        var currentVal = parseFloat(statConfig.current) || 0;
+        var comparisonVal = parseFloat(statConfig.comparison) || 0;
+        if (currentVal > comparisonVal && comparisonVal > 0) {
+            $stat.addClass('stat-exceeds');
+            console.log('[BriefStats] 🎉 Current exceeds ' + vsLabel + '!', { current: currentVal, comparison: comparisonVal });
+        }
+        
         $stat.removeClass('d-none');
         return true;
     }
     
     /**
-     * Update the "Did / Didn't" pie chart stat (do-less only)
-     * @param {Object} jsonObject - Storage object
-     * @returns {boolean} - Whether stat has displayable value
+     * Update milestone stat display
+     * @param {Object} statConfig - Milestone stat configuration
+     * @returns {boolean} - Whether stat is visible
      */
-    function updateDidDidntStat(jsonObject) {
-        var $stat = $('.stat-brief.stat-did-didnt');
-        var baseline = jsonObject.baseline || {};
+    function updateMilestoneStat(statConfig) {
+        // Hide comparison stat if showing milestone
+        $('.stat-brief.stat-comparison').addClass('d-none');
         
-        // Only for do-less habits with times-done tracking
-        if (!baseline.decreaseHabit || !baseline.valuesTimesDone) {
-            $stat.addClass('d-none');
-            return false;
+        var $stat = $('.stat-brief.stat-milestone');
+        
+        if (statConfig.format === 'datetime') {
+            // Date/time milestone (Wait until / Do it by)
+            $stat.find('.stat-milestone-time').text(statConfig.value);
+            $stat.find('.stat-milestone-countdown').text(statConfig.countdown);
+            
+            // Build label with milestone info if available
+            var labelText = statConfig.label;
+            if (statConfig.milestoneInfo) {
+                labelText += ' ' + statConfig.milestoneInfo;
+            }
+            $stat.find('.stat-label').text(labelText);
+            
+            // Show time display, hide comparison display
+            $stat.find('.stat-milestone-datetime').removeClass('d-none');
+            $stat.find('.stat-milestone-comparison').addClass('d-none');
+        } else {
+            // Comparison milestone (time/money allotment)
+            var currentDisplay = formatStatValue(statConfig.current, statConfig.format);
+            var comparisonDisplay = formatStatValue(statConfig.comparison, statConfig.format);
+            
+            $stat.find('.stat-current').text(currentDisplay);
+            $stat.find('.stat-vs').text(comparisonDisplay);
+            $stat.find('.stat-label').text(statConfig.label);
+            
+            // Show comparison display, hide time display
+            $stat.find('.stat-milestone-datetime').addClass('d-none');
+            $stat.find('.stat-milestone-comparison').removeClass('d-none');
         }
         
-        // Count uses and resists
-        var uses = 0;
-        var resists = 0;
+        // Add subtype class for styling
+        $stat.removeClass('stat-wait-until stat-do-it-by stat-time-allotment stat-money-allotment');
+        $stat.addClass('stat-' + statConfig.subtype.replace(/([A-Z])/g, '-$1').toLowerCase());
         
-        (jsonObject.action || []).forEach(function(action) {
-            if (!action) return;
-            if (action.clickType === 'used') uses++;
-            if (action.clickType === 'craved') resists++;
-        });
-        
-        var total = uses + resists;
-        
-        // Only show if there's data
-        if (total === 0) {
-            $stat.addClass('d-none');
-            return false;
+        // Add on-track / off-track class for styling
+        $stat.removeClass('milestone-on-track milestone-off-track');
+        if (statConfig.onTrack === true) {
+            $stat.addClass('milestone-on-track');
+        } else if (statConfig.onTrack === false) {
+            $stat.addClass('milestone-off-track');
         }
         
-        // Calculate resist percentage (green portion)
-        var resistPercent = Math.round((resists / total) * 100);
-        
-        // Render pie chart - show resisted portion as "good" (green)
-        renderDidDidntPieChart('#brief-did-didnt-chart', resistPercent, uses, resists);
         $stat.removeClass('d-none');
         return true;
     }
     
     /**
-     * Render the did/didn't pie chart
-     * @param {string} selector - Element selector
-     * @param {number} resistPercent - Percentage resisted (green)
-     * @param {number} uses - Number of uses
-     * @param {number} resists - Number of resists
+     * Format a stat value based on its type
+     * @param {number} value - The value to format
+     * @param {string} format - 'number', 'time', 'money', or 'timeMinutes'
+     * @returns {string} - Formatted string
      */
-    function renderDidDidntPieChart(selector, resistPercent, uses, resists) {
-        var $el = $(selector);
-        var greenColor = '#1e9039';
-        var redColor = '#911521';
-        var bgColor = 'rgba(255, 255, 255, 0.1)';
-        
-        // Use conic gradient - green for resists, red for uses
-        var gradient = 'conic-gradient(' + 
-            greenColor + ' 0% ' + resistPercent + '%, ' + 
-            redColor + ' ' + resistPercent + '% 100%)';
-        
-        $el.css({
-            'background': gradient,
-            'border-radius': '50%'
-        });
-        
-        // Show ratio in center
-        $el.html('<span class="pie-ratio">' + resists + '/' + (uses + resists) + '</span>');
-    }
-    
-    /**
-     * Get start of day timestamp
-     * @param {number} timestamp - Current timestamp
-     * @returns {number} - Start of day timestamp
-     */
-    function getStartOfDay(timestamp) {
-        var date = new Date(timestamp * 1000);
-        date.setHours(0, 0, 0, 0);
-        return Math.round(date.getTime() / 1000);
-    }
-    
-    /**
-     * Get goal time for today based on weekly goal
-     * @param {Object} jsonObject - Storage object
-     * @param {Object} baseline - Baseline settings
-     * @returns {number} - Goal time in seconds
-     */
-    function getGoalTimeForToday(jsonObject, baseline) {
-        // If no explicit goal, use the max daily time from history
-        var maxDailyTime = getMaxDailyTime(jsonObject);
-        
-        // Default to 1 hour if no data
-        if (maxDailyTime === 0) {
-            maxDailyTime = 3600;
-        }
-        
-        return maxDailyTime;
-    }
-    
-    /**
-     * Get the maximum time spent in any single day
-     * @param {Object} jsonObject - Storage object
-     * @returns {number} - Max time in seconds
-     */
-    function getMaxDailyTime(jsonObject) {
-        var dailyTotals = {};
-        
-        (jsonObject.action || []).forEach(function(action) {
-            if (!action) return;
-            
-            var dayKey = new Date(parseInt(action.timestamp) * 1000).toDateString();
-            
-            if (action.clickType === 'timed' && action.duration) {
-                dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + (parseInt(action.duration) || 0);
+    function formatStatValue(value, format) {
+        if (format === 'time') {
+            return StatsCalculationsModule.formatDurationBrief(value);
+        } else if (format === 'timeMinutes') {
+            // Format minutes as hours:minutes
+            var hours = Math.floor(value / 60);
+            var mins = value % 60;
+            if (hours > 0) {
+                return hours + 'h ' + mins + 'm';
             }
-            
-            if ((action.clickType === 'wait' || action.clickType === 'goal') && action.status >= 2) {
-                var start = parseInt(action.clickStamp || action.timestamp);
-                var end = parseInt(action.waitStopped || action.goalStopped || action.timestamp);
-                dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + Math.max(0, end - start);
-            }
-        });
-        
-        var max = 0;
-        for (var day in dailyTotals) {
-            if (dailyTotals[day] > max) {
-                max = dailyTotals[day];
-            }
+            return mins + 'm';
+        } else if (format === 'money') {
+            return '$' + value;
         }
-        
-        return max;
-    }
-    
-    /**
-     * Render a mini pie chart using CSS
-     * @param {string} selector - Element selector
-     * @param {number} percentage - Fill percentage
-     * @param {boolean} isDecreaseHabit - Habit direction
-     */
-    function renderMiniPieChart(selector, percentage, isDecreaseHabit) {
-        var $el = $(selector);
-        var color = isDecreaseHabit ? '#1e9039' : '#6b96c1';
-        var bgColor = 'rgba(255, 255, 255, 0.1)';
-        
-        // Use conic gradient for pie chart
-        var gradient = 'conic-gradient(' + 
-            color + ' 0% ' + percentage + '%, ' + 
-            bgColor + ' ' + percentage + '% 100%)';
-        
-        $el.css({
-            'background': gradient,
-            'border-radius': '50%'
-        });
-        
-        // Add percentage text in center
-        $el.html('<span class="pie-percentage">' + Math.round(percentage) + '%</span>');
-    }
-    
-    /**
-     * Update the resist streak stat
-     * @param {Object} jsonObject - Storage object
-     * @returns {boolean} - Whether stat has displayable value
-     */
-    function updateResistStreakStat(jsonObject) {
-        var $stat = $('.stat-brief.stat-resist-streak');
-        var baseline = jsonObject.baseline || {};
-        
-        // Only for do-less habits with times-done tracking
-        if (!baseline.decreaseHabit || !baseline.valuesTimesDone) {
-            $stat.addClass('d-none');
-            return false;
-        }
-        
-        var streak = 0;
-        var actions = (jsonObject.action || []).filter(function(a) {
-            return a && (a.clickType === 'used' || a.clickType === 'craved');
-        });
-        
-        // Sort by timestamp descending
-        actions.sort(function(a, b) {
-            return parseInt(b.timestamp) - parseInt(a.timestamp);
-        });
-        
-        // Count consecutive resists from most recent
-        for (var i = 0; i < actions.length; i++) {
-            if (actions[i].clickType === 'craved') {
-                streak++;
-            } else {
-                break;
-            }
-        }
-        
-        // Only show if there's a streak
-        if (streak === 0) {
-            $stat.addClass('d-none');
-            return false;
-        }
-        
-        $('#brief-resist-streak').text(streak);
-        $stat.removeClass('d-none');
-        return true;
+        return String(value);
     }
     
     /**
@@ -625,11 +872,12 @@ var BriefStatsModule = (function () {
         hide: hide,
         refresh: refresh,
         updateAllStats: updateAllStats,
-        calculateNextMilestone: calculateNextMilestone
+        determineFocus: determineFocus,
+        determineComparisonStat: determineComparisonStat
     };
 })();
 
-// Make the module available globally (also keep old name for compatibility)
+// Make the module available globally
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = BriefStatsModule;
 } else {

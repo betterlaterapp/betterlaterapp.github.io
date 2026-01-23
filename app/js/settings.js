@@ -80,9 +80,10 @@ var SettingsModule = (function () {
 
             // Update baseline value in storage
             var jsonObject = StorageModule.retrieveStorageObject();
-            if (categoryName && jsonObject.baseline.hasOwnProperty(categoryName)) {
-                jsonObject.baseline[categoryName] = isChecked;
-                json.baseline[categoryName] = isChecked;
+            var baseline = jsonObject.option.baseline;
+            if (categoryName && baseline.hasOwnProperty(categoryName)) {
+                baseline[categoryName] = isChecked;
+                json.option.baseline[categoryName] = isChecked;
                 StorageModule.setStorageObject(jsonObject);
                 
                 // Sync with baseline questionnaire checkbox
@@ -121,7 +122,7 @@ var SettingsModule = (function () {
         // Set initial category states based on baseline values
         if (StorageModule.hasStorageData()) {
             var jsonObject = StorageModule.retrieveStorageObject();
-            var baseline = jsonObject.baseline;
+            var baseline = jsonObject.option.baseline;
 
             // Categories should be OPEN iff their baseline values* is true.
             // (Buttons category is always open / always available.)
@@ -176,7 +177,7 @@ var SettingsModule = (function () {
         // Called when baseline values change - update visibility of conditional options
         if (StorageModule.hasStorageData()) {
             var jsonObject = StorageModule.retrieveStorageObject();
-            initializeConditionalOptions(jsonObject.baseline);
+            initializeConditionalOptions(jsonObject.option.baseline);
             updatePrerequisiteToggles(jsonObject);
         }
     }
@@ -186,7 +187,7 @@ var SettingsModule = (function () {
      * @param {Object} jsonObject - The storage object
      */
     function updatePrerequisiteToggles(jsonObject) {
-        var baseline = jsonObject.baseline;
+        var baseline = jsonObject.option.baseline;
         var stats = json ? json.statistics : null;
 
         if (!stats) return;
@@ -209,20 +210,24 @@ var SettingsModule = (function () {
         }
 
         // 1. Weekly report: usage change vs. baseline
-        var hasUsageBaseline = baseline.amountDonePerWeek > 0;
+        var hasUsageBaseline = baseline.timesDone > 0;
         toggleOption('useChangeVsBaselineDisplayed', !hasUsageBaseline, "Requires baseline usage amount");
 
-        // 2. Weekly report: usage this week vs. goal
-        var hasUsageGoal = baseline.goalDonePerWeek > 0;
-        toggleOption('useGoalVsThisWeekDisplayed', !hasUsageGoal, "Requires usage goal amount");
+        // 2. Weekly report: usage this week vs. goal (check behavioralGoals for active goal)
+        var hasUsageGoal = jsonObject.behavioralGoals && jsonObject.behavioralGoals.some(function(g) {
+            return g && g.unit === 'times' && !g.completed;
+        });
+        toggleOption('useGoalVsThisWeekDisplayed', !hasUsageGoal, "Requires active usage goal");
 
         // 3. Weekly report: cost change vs. baseline
-        var hasCostBaseline = baseline.amountSpentPerWeek > 0;
+        var hasCostBaseline = baseline.moneySpent > 0;
         toggleOption('costChangeVsBaselineDisplayed', !hasCostBaseline, "Requires baseline spending amount");
 
-        // 4. Weekly report: usage this week vs. goal
-        var hasCostGoal = baseline.goalSpentPerWeek > 0;
-        toggleOption('costGoalVsThisWeekDisplayed', !hasCostGoal, "Requires spending goal amount");
+        // 4. Weekly report: spending this week vs. goal (check behavioralGoals for active goal)
+        var hasCostGoal = jsonObject.behavioralGoals && jsonObject.behavioralGoals.some(function(g) {
+            return g && g.unit === 'dollars' && !g.completed;
+        });
+        toggleOption('costGoalVsThisWeekDisplayed', !hasCostGoal, "Requires active spending goal");
 
         // 5. Longest Wait completed
         var hasCompletedWaits = stats.wait.completedWaits > 0;
@@ -255,7 +260,6 @@ var SettingsModule = (function () {
         var jsonObject = StorageModule.retrieveStorageObject();
 
         // Keep in-memory json in sync
-        json.baseline = jsonObject.baseline;
         json.option = jsonObject.option;
 
         // Sync displayed option checkboxes (live stats + journal records + weekly reports)
@@ -302,7 +306,7 @@ var SettingsModule = (function () {
      * Sync baseline values UI with stored values
      */
     function syncBaselineValuesUI(jsonObject) {
-        var baseline = jsonObject.baseline || {};
+        var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
         
         // Track if any category is enabled
         var anyEnabled = false;
@@ -311,7 +315,7 @@ var SettingsModule = (function () {
         if (baseline.valuesTimesDone) {
             anyEnabled = true;
             $('[data-baseline-category="valuesTimesDone"]').show();
-            $('.settings-amountDonePerWeek').val(baseline.amountDonePerWeek || '');
+            $('.settings-amountDonePerWeek').val(baseline.timesDone || '');
             $('.settings-usage-timeline-select').val(baseline.usageTimeline || 'week');
         } else {
             $('[data-baseline-category="valuesTimesDone"]').hide();
@@ -321,8 +325,8 @@ var SettingsModule = (function () {
         if (baseline.valuesTime) {
             anyEnabled = true;
             $('[data-baseline-category="valuesTime"]').show();
-            $('.settings-currentTimeHours').val(baseline.currentTimeHours || '');
-            $('.settings-currentTimeMinutes').val(baseline.currentTimeMinutes || '');
+            $('.settings-currentTimeHours').val(baseline.timeSpentHours || '');
+            $('.settings-currentTimeMinutes').val(baseline.timeSpentMinutes || '');
             $('.settings-time-timeline-select').val(baseline.timeTimeline || 'week');
         } else {
             $('[data-baseline-category="valuesTime"]').hide();
@@ -332,7 +336,7 @@ var SettingsModule = (function () {
         if (baseline.valuesMoney) {
             anyEnabled = true;
             $('[data-baseline-category="valuesMoney"]').show();
-            $('.settings-amountSpentPerWeek').val(baseline.amountSpentPerWeek || '');
+            $('.settings-amountSpentPerWeek').val(baseline.moneySpent || '');
             $('.settings-spending-timeline-select').val(baseline.spendingTimeline || 'week');
         } else {
             $('[data-baseline-category="valuesMoney"]').hide();
@@ -353,40 +357,42 @@ var SettingsModule = (function () {
         var jsonObject = StorageModule.retrieveStorageObject();
         if (!jsonObject) return;
         
+        var baseline = jsonObject.option.baseline;
+        
         // Times Done
-        if (jsonObject.baseline.valuesTimesDone) {
+        if (baseline.valuesTimesDone) {
             var amountDone = parseInt($('.settings-amountDonePerWeek').val()) || 0;
             var usageTimeline = $('.settings-usage-timeline-select').val();
-            jsonObject.baseline.amountDonePerWeek = amountDone;
-            jsonObject.baseline.usageTimeline = usageTimeline;
+            baseline.timesDone = amountDone;
+            baseline.usageTimeline = usageTimeline;
         }
         
         // Time Spent
-        if (jsonObject.baseline.valuesTime) {
+        if (baseline.valuesTime) {
             var timeHours = parseInt($('.settings-currentTimeHours').val()) || 0;
             var timeMinutes = parseInt($('.settings-currentTimeMinutes').val()) || 0;
             var timeTimeline = $('.settings-time-timeline-select').val();
-            jsonObject.baseline.currentTimeHours = timeHours;
-            jsonObject.baseline.currentTimeMinutes = timeMinutes;
-            jsonObject.baseline.timeTimeline = timeTimeline;
+            baseline.timeSpentHours = timeHours;
+            baseline.timeSpentMinutes = timeMinutes;
+            baseline.timeTimeline = timeTimeline;
         }
         
         // Money Spent
-        if (jsonObject.baseline.valuesMoney) {
+        if (baseline.valuesMoney) {
             var amountSpent = parseInt($('.settings-amountSpentPerWeek').val()) || 0;
             var spendingTimeline = $('.settings-spending-timeline-select').val();
-            jsonObject.baseline.amountSpentPerWeek = amountSpent;
-            jsonObject.baseline.spendingTimeline = spendingTimeline;
+            baseline.moneySpent = amountSpent;
+            baseline.spendingTimeline = spendingTimeline;
         }
         
         // Save to storage
         StorageModule.setStorageObject(jsonObject);
         
         // Keep in-memory json in sync
-        json.baseline = jsonObject.baseline;
+        json.option = jsonObject.option;
         
         // Also sync the baseline questionnaire inputs
-        syncBaselineQuestionnaireFromSettings(jsonObject.baseline);
+        syncBaselineQuestionnaireFromSettings(baseline);
     }
     
     /**
@@ -394,27 +400,27 @@ var SettingsModule = (function () {
      */
     function syncBaselineQuestionnaireFromSettings(baseline) {
         // Times Done
-        if (baseline.amountDonePerWeek !== undefined) {
-            $('.baseline-amountDonePerWeek').val(baseline.amountDonePerWeek);
+        if (baseline.timesDone !== undefined) {
+            $('.baseline-amountDonePerWeek').val(baseline.timesDone);
         }
         if (baseline.usageTimeline) {
             $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
         }
         
         // Time Spent
-        if (baseline.currentTimeHours !== undefined) {
-            $('.baseline-currentTimeHours').val(baseline.currentTimeHours);
+        if (baseline.timeSpentHours !== undefined) {
+            $('.baseline-currentTimeHours').val(baseline.timeSpentHours);
         }
-        if (baseline.currentTimeMinutes !== undefined) {
-            $('.baseline-currentTimeMinutes').val(baseline.currentTimeMinutes);
+        if (baseline.timeSpentMinutes !== undefined) {
+            $('.baseline-currentTimeMinutes').val(baseline.timeSpentMinutes);
         }
         if (baseline.timeTimeline) {
             $('.baseline-time-timeline-select').val(baseline.timeTimeline);
         }
         
         // Money Spent
-        if (baseline.amountSpentPerWeek !== undefined) {
-            $('.baseline-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+        if (baseline.moneySpent !== undefined) {
+            $('.baseline-amountSpentPerWeek').val(baseline.moneySpent);
         }
         if (baseline.spendingTimeline) {
             $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);

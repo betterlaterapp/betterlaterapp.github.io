@@ -165,7 +165,7 @@ var WaitTimerModule = (function () {
      */
     function createWaitTimerPanel(waitEndTimestamp, waitType) {
         var jsonObject = StorageModule.retrieveStorageObject();
-        var isDecreaseHabit = jsonObject.baseline.decreaseHabit;
+        var isDecreaseHabit = jsonObject.option.baseline.decreaseHabit;
         var timerId = 'wait_' + Math.round(new Date() / 1000);
         
         var now = Math.round(new Date() / 1000);
@@ -384,7 +384,7 @@ var WaitTimerModule = (function () {
         }
         
         // Determine habit direction for messaging
-        var isDecreaseHabit = jsonObject.baseline && jsonObject.baseline.decreaseHabit;
+        var isDecreaseHabit = jsonObject.option && jsonObject.option.baseline && jsonObject.option.baseline.decreaseHabit;
         
         // Show completion notification with extend option
         showWaitCompletionNotification(timerId, waitType, isDecreaseHabit);

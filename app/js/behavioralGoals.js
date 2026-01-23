@@ -757,7 +757,7 @@ var BehavioralGoalsModule = (function () {
      */
     function populateGoalTypeDropdown() {
         var jsonObject = StorageModule.retrieveStorageObject();
-        var baseline = jsonObject.baseline;
+        var baseline = jsonObject.option.baseline;
         var dropdown = $('#create-goal-type-select');
         var firstOptionValue = null;
         

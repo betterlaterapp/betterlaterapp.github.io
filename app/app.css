@@ -242,16 +242,16 @@ input[type="number"] {
 
 .app-background {
 	background: url('../assets/images/lake-reflect-background.jpg');
-    background-position: 0px -147px;
-    animation: animatedBackground 18s ease-in-out infinite alternate;
+    background-position: 0px -137px;
+    animation: animatedBackground 24s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
     from {
-        background-position: 0px -147px;
+        background-position: 0px -137px;
     }
     to {
-        background-position: 300px -114px;
+        background-position: 300px -137px;
     }
   }
 
@@ -548,6 +548,7 @@ input[type="number"] {
 
 .tab-pane#statistics-content {
     background: none;
+    padding: 0px;
 }
 
 .tab-pane .btn {
@@ -560,6 +561,7 @@ input[type="number"] {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 6;
 }
 /* app main tab menu - Cost, Use, Goals */
 .button-bar {
@@ -1375,10 +1377,9 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 .brief-stats-container-wrapper {
     position: relative;
     left: -10px;
-    top: -15px;
     padding-top: 82px;
     width: calc(100% + 20px);
-    background: radial-gradient(circle, rgba(107, 107, 107, 0.1) 0%, rgba(111, 111, 111, 0.2) 30%, rgba(20, 20, 20, .5) 100%);
+    background: radial-gradient(circle, rgba(107, 107, 107, 0.1) 0%, rgba(111, 111, 111, 0.5) 30%, rgba(20, 20, 20, .5) 100%);
     border-bottom-left-radius: 16px;
     border-bottom-right-radius: 16px;
     border: 2px solid;
@@ -1492,6 +1493,244 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 /* Resist streak styling */
 .stat-brief.stat-resist-streak .stat-brief-value {
     color: #1e9039; /* Updated green */
+}
+
+/* Comparison stat styling (stat vs best/avg) */
+.stat-brief.stat-comparison {
+    flex: 0 0 35%;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-comparison-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-comparison-values {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+.stat-comparison-values .stat-current {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #6b96c1;
+}
+
+/* ============================================
+   COMPARISON STAT - Resist Streak Style
+   ============================================ */
+.stat-brief.stat-comparison {
+    flex: 0 0 45%;
+}
+
+.stat-comparison-content {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.stat-comparison-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-width: 50px;
+}
+
+.stat-comparison-box.stat-current-box {
+    background: linear-gradient(135deg, #2a3a4a 0%, #1e2a38 100%);
+    border: 1px solid #3a4a5a;
+}
+
+.stat-comparison-box.stat-vs-box {
+    background: rgba(40, 50, 60, 0.6);
+    border: 1px solid #2a3a4a;
+}
+
+.stat-current-label,
+.stat-vs-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.stat-comparison-box .stat-current {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.stat-comparison-box .stat-vs {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #8fa5bb;
+    line-height: 1;
+}
+
+.stat-comparison-divider {
+    font-size: 0.8rem;
+    color: #5a6a7a;
+    font-weight: 500;
+    text-transform: lowercase;
+}
+
+/* Animation when current exceeds best/avg */
+.stat-brief.stat-comparison.stat-exceeds .stat-current-box {
+    background: linear-gradient(135deg, #2a4a3a 0%, #1e382a 100%);
+    border-color: #6a3a3a;
+    animation: pulse-glow 1.5s ease-in-out;
+}
+
+.stat-brief.stat-comparison.stat-exceeds .stat-current {
+    color: #ffa4a4;
+    font-size: 2.2rem;
+    animation: celebrate 0.6s ease-out;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124, 224, 124, 0); }
+    50% { box-shadow: 0 0 15px 5px rgba(124, 224, 124, 0.3); }
+}
+
+@keyframes celebrate {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(0.95); }
+    75% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* 2 stats visible - comparison sizing */
+.brief-stats-container.stats-count-2 .stat-comparison-box .stat-current {
+    font-size: 2.2rem;
+}
+.brief-stats-container.stats-count-2 .stat-comparison-box .stat-vs {
+    font-size: 1.6rem;
+}
+.brief-stats-container.stats-count-2 .stat-comparison-box {
+    padding: 10px 16px;
+}
+
+/* 1 stat visible - comparison sizing */
+.brief-stats-container.stats-count-1 .stat-comparison-box .stat-current {
+    font-size: 2.8rem;
+}
+.brief-stats-container.stats-count-1 .stat-comparison-box .stat-vs {
+    font-size: 2.0rem;
+}
+.brief-stats-container.stats-count-1 .stat-comparison-box {
+    padding: 12px 20px;
+}
+
+/* ============================================
+   MILESTONE STAT - Alarm Clock Style
+   ============================================ */
+.stat-brief.stat-milestone {
+    flex: 0 0 35%;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-milestone-datetime {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-milestone-countdown {
+    font-size: 0.85rem;
+    color: #e0e8f0;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-milestone-clock {
+    background: #0a0a0a;
+    border-radius: 8px;
+    padding: 8px 16px;
+    border: 2px solid #1a1a1a;
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.stat-milestone-time {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ff3333;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(255, 50, 50, 0.5);
+    letter-spacing: 2px;
+}
+
+.stat-milestone-comparison {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Milestone subtype colors - override for alarm clock */
+.stat-brief.stat-milestone.stat-wait-until .stat-milestone-time {
+    color: #ff5533; /* Orange-red for "wait" */
+    text-shadow: 0 0 10px rgba(255, 85, 50, 0.5);
+}
+
+.stat-brief.stat-milestone.stat-do-it-by .stat-milestone-time {
+    color: #33ff55; /* Green for "do it" */
+    text-shadow: 0 0 10px rgba(50, 255, 85, 0.5);
+}
+
+.stat-brief.stat-milestone.stat-do-it-by .stat-milestone-clock {
+    border-color: #1a2a1a;
+}
+
+/* 2 stats visible - milestone sizing */
+.brief-stats-container.stats-count-2 .stat-milestone-time {
+    font-size: 2.2rem;
+}
+.brief-stats-container.stats-count-2 .stat-milestone-countdown {
+    font-size: 1rem;
+}
+.brief-stats-container.stats-count-2 .stat-milestone-clock {
+    padding: 10px 20px;
+}
+
+/* 1 stat visible - milestone sizing */
+.brief-stats-container.stats-count-1 .stat-milestone-time {
+    font-size: 2.8rem;
+}
+.brief-stats-container.stats-count-1 .stat-milestone-countdown {
+    font-size: 1.2rem;
+}
+.brief-stats-container.stats-count-1 .stat-milestone-clock {
+    padding: 12px 24px;
+}
+
+/* Milestone on-track / off-track styling */
+.stat-brief.stat-milestone.milestone-on-track .stat-milestone-countdown {
+    color: #ffffff;
+}
+.stat-brief.stat-milestone.milestone-off-track .stat-milestone-time {
+    color: #ff3333;
+    animation: blink-alarm 1s infinite;
+}
+
+@keyframes blink-alarm {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* ============================================

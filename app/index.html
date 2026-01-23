@@ -780,7 +780,7 @@
                     <h2 class="d-none">Live Statistics</h2>
 
                     <!-- Brief Stats Bar -->
-                    <div class="brief-stats-container-wrapper">
+                    <div class="brief-stats-container-wrapper d-none">
                         <div id="brief-stats" class="brief-stats d-none">
                             <div class="brief-stats-container">
                                 <!-- Last Done Timer (shows if times-done OR time-spent selected) -->
@@ -841,43 +841,47 @@
                                     <div class="stat-brief-label">Last spent</div>
                                 </div>
                                 
-                                <!-- Do it by / Wait until (milestone-based) -->
-                                <div class="stat-brief stat-next-milestone do-more-only d-none">
-                                    <div class="stat-brief-value" id="brief-do-it-by">--</div>
-                                    <div class="stat-brief-label">Do it by</div>
-                                </div>
-                                <div class="stat-brief stat-next-milestone do-less-only d-none">
-                                    <div class="stat-brief-value" id="brief-wait-until">--</div>
-                                    <div class="stat-brief-label">Wait until</div>
-                                </div>
-                                
-                                <!-- Time today / Wait today (pie chart) -->
-                                <div class="stat-brief stat-time-today do-more-only d-none">
-                                    <div class="stat-brief-chart" id="brief-time-chart"></div>
-                                    <div class="stat-brief-label">Time today</div>
-                                </div>
-                                <div class="stat-brief stat-time-today do-less-only d-none">
-                                    <div class="stat-brief-chart" id="brief-wait-chart"></div>
-                                    <div class="stat-brief-label">Wait today</div>
+                                <!-- Comparison Stat (stat vs best/avg) - Resist Streak style -->
+                                <div class="stat-brief stat-comparison d-none">
+                                    <div class="stat-comparison-content">
+                                        <div class="stat-comparison-box stat-current-box">
+                                            <span class="stat-current-label">Current</span>
+                                            <span class="stat-current">0</span>
+                                        </div>
+                                        <div class="stat-comparison-divider">vs</div>
+                                        <div class="stat-comparison-box stat-vs-box">
+                                            <span class="stat-vs-label">Best</span>
+                                            <span class="stat-vs">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-brief-label stat-label">Resist streak</div>
                                 </div>
                                 
-                                <!-- Did / Didn't pie chart (do-less only) -->
-                                <div class="stat-brief stat-did-didnt do-less-only d-none">
-                                    <div class="stat-brief-chart" id="brief-did-didnt-chart"></div>
-                                    <div class="stat-brief-label">Did / Didn't</div>
-                                </div>
-                                
-                                <!-- Resist streak (do-less only) -->
-                                <div class="stat-brief stat-resist-streak do-less-only d-none">
-                                    <div class="stat-brief-value" id="brief-resist-streak">0</div>
-                                    <div class="stat-brief-label">Streak</div>
+                                <!-- Milestone Stat (Wait until / Do it by / Allotment) - Alarm clock style -->
+                                <div class="stat-brief stat-milestone d-none">
+                                    <!-- Date/time display (for Wait until / Do it by) -->
+                                    <div class="stat-milestone-datetime">
+                                        <div class="stat-milestone-countdown">0h 0m</div>
+                                        <div class="stat-milestone-clock">
+                                            <div class="stat-milestone-time">--:--</div>
+                                        </div>
+                                    </div>
+                                    <!-- Comparison display (for time/money allotment) -->
+                                    <div class="stat-milestone-comparison d-none">
+                                        <div class="stat-comparison-values">
+                                            <span class="stat-current">0</span>
+                                            <span class="stat-separator">/</span>
+                                            <span class="stat-vs">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-brief-label stat-label">Wait until</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
 
-                    <div class="bg-white">
+                    <div class="bg-white p-2">
                         <div class="initial-instructions">
                             <p>
                                 This area will become populated with statistics as you interact more with the app's action
@@ -1743,6 +1747,14 @@
                                     <i class="fas fa-question"></i>
                                     &nbsp;About Better Later
                                 </a>
+                            </div>
+                            <div class="baseline-intro">
+                                <h2 class="text-left d-none">Better Later</h2>
+                                <h3 class="mt-0">The easy-going Habit Tracking app</h3>
+                                <h4 class="mt-0">Accomplish your goals incrementally, non-judgementally, and  discreetly.</h4>
+                                
+                            </div>
+                            <div class="baseline-info-buttons">
 
                                 <a href="https://github.com/betterlaterapp/betterlaterapp.github.io/blob/main/README.md"
                                     target="_blank" class="btn btn-outline-success">
@@ -1750,17 +1762,11 @@
                                     &nbsp;Data Privacy
                                 </a>
                             </div>
-                            <div class="baseline-intro">
-                                <h2 class="text-left">Better Later</h2>
-                                <h3 class="mt-0">The easy-going Habit Tracking app</h3>
-                                <h4 class="mt-0">Accomplish your goals incrementally, non-judgementally, and  discreetly.</h4>
-                                
-                            </div>
 
 
                             <div class="baseline-questionnaire show">
                                 <div class="baseline-intro baseline-heading mb-0">
-                                    <h2 class="text-muted mb-0" style="font-size: .8rem;">
+                                    <h2 class="text-muted mb-0" style="font-size: 1rem;">
                                         Baseline Questionnaire
                                     </h2>
                                 </div>

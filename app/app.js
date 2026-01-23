@@ -126,16 +126,12 @@ $(document).ready(function () {
                 "increaseHabit": false,
                 "decreaseHabit": false,
                 "neutralHabit": true,
-                "amountDonePerWeek": 0,
-                "goalDonePerWeek": 0,
+                "timesDone": 0,
                 "usageTimeline": "week",
-                "amountSpentPerWeek": 0,
-                "goalSpentPerWeek": 0,
+                "moneySpent": 0,
                 "spendingTimeline": "week",
-                "currentTimeHours": 0,
-                "currentTimeMinutes": 0,
-                "goalTimeHours": 0,
-                "goalTimeMinutes": 0,
+                "timeSpentHours": 0,
+                "timeSpentMinutes": 0,
                 "timeTimeline": "week",
                 "valuesTimesDone": false,
                 "valuesTime": false,
@@ -146,6 +142,7 @@ $(document).ready(function () {
                 "activeTab": "statistics-content",
                 "liveStatsToDisplay": {
                     "goalButton": true,
+                    "waitButton": true,
                     "undoButton": true,
                     "untilGoalEnd": true,
                     "longestGoal": true,
@@ -216,13 +213,18 @@ $(document).ready(function () {
         //get configuration from storage
         function setOptionsFromStorage() {
             var jsonObject = StorageModule.retrieveStorageObject();
+            if (!jsonObject || !jsonObject.option) {
+                console.warn("Storage missing option object, skipping option load");
+                return;
+            }
+
             json.option.activeTab = jsonObject.option.activeTab;
 
             //set remembered variables for settings page 
             //display logic
-            json.option.liveStatsToDisplay = jsonObject.option.liveStatsToDisplay;
-            json.option.logItemsToDisplay = jsonObject.option.logItemsToDisplay;
-            json.option.reportItemsToDisplay = jsonObject.option.reportItemsToDisplay;
+            json.option.liveStatsToDisplay = jsonObject.option.liveStatsToDisplay || json.option.liveStatsToDisplay;
+            json.option.logItemsToDisplay = jsonObject.option.logItemsToDisplay || json.option.logItemsToDisplay;
+            json.option.reportItemsToDisplay = jsonObject.option.reportItemsToDisplay || json.option.reportItemsToDisplay;
 
             //SETTINGS PAGE INITIAL DISPLAY
             //LIVE STATS
@@ -237,14 +239,17 @@ $(document).ready(function () {
             for (var key in json.option.reportItemsToDisplay) {
                 $("#" + key + "Displayed").prop('checked', json.option.reportItemsToDisplay[key]);
             }
-            //baseline questionnaire
-            json.baseline = jsonObject.baseline;
+            //baseline questionnaire (stored under option.baseline, mapped to in-memory json.baseline)
+            if (jsonObject.option.baseline) {
+                json.baseline = jsonObject.option.baseline;
+            }
+            json.option = jsonObject.option;
 
             // Load baseline values from storage using the module
             BaselineModule.loadBaselineValues();
 
             // Add serious-user class on startup only (hides intro content for returning users)
-            if (jsonObject.baseline.specificSubject) {
+            if (json.baseline && json.baseline.specificSubject) {
                 $('body').addClass("serious-user");
             }
         }
@@ -593,7 +598,7 @@ $(document).ready(function () {
 
             //NEEEWWWWW USERRR
             if ((useCount == 0 && craveCount == 0 && costCount == 0 && moodCount == 0 && goalCount == 0)
-                && json.baseline.specificSubject == false
+                && json.baseline && json.baseline.specificSubject == false
                 && json.option.activeTab == "settings-content") {
                 var introMessage = "<b>Welcome back!</b> Start tracking your habit now by clicking any of the buttons on the right.";
                 var responseTools = '<button class="btn btn-md btn-outline-info clear-notification" onClick="$(\'.statistics-tab-toggler\').click();">' +
@@ -684,10 +689,12 @@ $(document).ready(function () {
             //replace this with 
             //empty action table
             //basic stat display settings option table
-            var newJsonString = '{ "version": 3, "action": [], "behavioralGoals": [], "activeTimers": [], "customUnits": [], ' +
-                '  "baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "amountDonePerWeek": 0, "goalDonePerWeek": 0, "usageTimeline": "week", "amountSpentPerWeek": 0, "goalSpentPerWeek": 0, "spendingTimeline": "week", "currentTimeHours": 0, "currentTimeMinutes": 0, "goalTimeHours": 0, "goalTimeMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
+            // NOTE: v4 structure has baseline and customUnits under option
+            var newJsonString = '{ "version": 5, "action": [], "behavioralGoals": [], "activeTimers": [], ' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"liveStatsToDisplay": { "waitButton": true, "undoButton": true, "untilWaitEnd": true, "longestWait": true, "usedButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
+                '"baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "timesDone": 0, "usageTimeline": "week", "moneySpent": 0, "spendingTimeline": "week", "timeSpentHours": 0, "timeSpentMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
+                '"customUnits": [],' +
+                '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilWaitEnd": true, "longestWait": true, "usedButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
                 '"logItemsToDisplay" : {"wait": true, "used": true, "craved": true, "bought": true, "mood": true, "timed": true},' +
                 '"reportItemsToDisplay" : {	"useChangeVsBaseline": false, "useChangeVsLastWeek": true, "useVsResistsGraph": true, "costChangeVsBaseline": false, "costChangeVsLastWeek": true, "useGoalVsThisWeek": false, "costGoalVsThisWeek": false}' +
                 '} }';

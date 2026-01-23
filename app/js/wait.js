@@ -212,7 +212,7 @@ var WaitModule = (function () {
         var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
 
         // Notify user that wait ended
-        var isDecreaseHabit = json.baseline.decreaseHabit;
+        var isDecreaseHabit = json.option.baseline.decreaseHabit;
         var message = isDecreaseHabit 
             ? "Congrats! You made it through the wait! " + affirmation
             : "Time's up! Ready to take action? " + affirmation;
@@ -327,7 +327,7 @@ var WaitModule = (function () {
 
             if (hasActiveWait) {
                 // Ask if user wants to extend wait
-                var isDecreaseHabit = json.baseline.decreaseHabit;
+                var isDecreaseHabit = json.option.baseline.decreaseHabit;
                 var message = isDecreaseHabit
                     ? "You already have an active wait. Would you like to extend it?"
                     : "You already have a reminder set. Would you like to change it?";

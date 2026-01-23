@@ -375,7 +375,7 @@ var StatsDisplayModule = (function () {
         var period = reportValues.period;
         var reportStart = reportValues.reportStart;
         var reportEnd = reportValues.reportEnd;
-        var isDecreaseHabit = json.baseline && json.baseline.decreaseHabit;
+        var isDecreaseHabit = json.option && json.option.baseline && json.option.baseline.decreaseHabit;
 
         // Update legend labels based on metric and habit direction
         var legendLabels = getLegendLabels(metric, isDecreaseHabit);
@@ -681,7 +681,7 @@ var StatsDisplayModule = (function () {
 
         if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && metric === 'usage') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.baseline.amountDonePerWeek, 
+                json.option.baseline.timesDone, 
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
@@ -711,7 +711,7 @@ var StatsDisplayModule = (function () {
 
         if (json.option.reportItemsToDisplay.costChangeVsBaseline && metric === 'cost') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.baseline.amountSpentPerWeek, 
+                json.option.baseline.moneySpent, 
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
@@ -725,11 +725,20 @@ var StatsDisplayModule = (function () {
             $("#costChangeVsBaseline").parent().parent().hide();
         }
 
-        // Goal comparisons
-        if (json.option.reportItemsToDisplay.useGoalVsThisWeek && metric === 'usage') {
-            $("#goalDonePerWeek").html(json.baseline.goalDonePerWeek);
+        // Goal comparisons - get goal amounts from behavioralGoals
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var behavioralGoals = jsonObject && jsonObject.behavioralGoals ? jsonObject.behavioralGoals : [];
+        
+        // Find active usage goal
+        var usageGoal = behavioralGoals.find(function(g) {
+            return g && g.unit === 'times' && !g.completed;
+        });
+        var usageGoalAmount = usageGoal ? usageGoal.goalAmount : 0;
+        
+        if (json.option.reportItemsToDisplay.useGoalVsThisWeek && metric === 'usage' && usageGoalAmount > 0) {
+            $("#goalDonePerWeek").html(usageGoalAmount);
             $("#actualDoneThisWeek").html(totalThisPeriod);
-            if (totalThisPeriod < json.baseline.goalDonePerWeek) {
+            if (totalThisPeriod < usageGoalAmount) {
                 $("#actualDoneThisWeek").addClass("down").removeClass("up");
             } else {
                 $("#actualDoneThisWeek").addClass("up").removeClass("down");
@@ -739,10 +748,16 @@ var StatsDisplayModule = (function () {
             $("#goalDonePerWeek").parent().parent().hide();
         }
 
-        if (json.option.reportItemsToDisplay.costGoalVsThisWeek && metric === 'cost') {
-            $("#goalSpentPerWeek").html(json.baseline.goalSpentPerWeek + "$");
+        // Find active spending goal
+        var spendingGoal = behavioralGoals.find(function(g) {
+            return g && g.unit === 'dollars' && !g.completed;
+        });
+        var spendingGoalAmount = spendingGoal ? spendingGoal.goalAmount : 0;
+        
+        if (json.option.reportItemsToDisplay.costGoalVsThisWeek && metric === 'cost' && spendingGoalAmount > 0) {
+            $("#goalSpentPerWeek").html(spendingGoalAmount + "$");
             $("#actualSpentThisWeek").html(Math.round(totalThisPeriod) + "$");
-            if (totalThisPeriod <= json.baseline.goalSpentPerWeek) {
+            if (totalThisPeriod <= spendingGoalAmount) {
                 $("#actualSpentThisWeek").addClass("down").removeClass("up");
             } else {
                 $("#actualSpentThisWeek").addClass("up").removeClass("down");
@@ -767,7 +782,7 @@ var StatsDisplayModule = (function () {
      * @returns {boolean} - Whether the report was initiated
      */
     function initiateReport(json) {
-        if (!json.option.reportItemsToDisplay.useVsResistsGraph) {
+        if (!json || !json.option || !json.option.reportItemsToDisplay || !json.option.reportItemsToDisplay.useVsResistsGraph) {
             return false;
         }
 
@@ -775,6 +790,15 @@ var StatsDisplayModule = (function () {
         var timeNow = Math.round(new Date() / 1000);
         var period = json.option.reportItemsToDisplay.reportPeriod || 'week';
 
+        // Initialize report object if not present (e.g., when called with storage object)
+        if (!json.report) {
+            json.report = {
+                minEndStamp: 0,
+                activeEndStamp: 0,
+                maxEndStamp: 0,
+                maxHeight: 1
+            };
+        }
         json.report.maxHeight = StatsCalculationsModule.calculateMaxReportHeight(jsonObject);
 
         // Is there ANY data?
@@ -886,7 +910,7 @@ var StatsDisplayModule = (function () {
      * @param {Object} json - App state object
      */
     function setupReportFilters(json) {
-        var baseline = json.baseline || {};
+        var baseline = (json.option && json.option.baseline) || {};
         var reportOptions = json.option.reportItemsToDisplay || {};
         
         // Set initial values from stored options

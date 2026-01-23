@@ -356,7 +356,7 @@ var UIModule = (function() {
         
         // Get streak data from storage
         var jsonObject = StorageModule.retrieveStorageObject();
-        var isDecreaseHabit = jsonObject.baseline.decreaseHabit;
+        var isDecreaseHabit = jsonObject.option.baseline.decreaseHabit;
         
         // For 'do less' habits: consecutive resists matter
         // For 'do more' habits: consecutive did-its matter (we'll track this separately)

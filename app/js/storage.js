@@ -188,10 +188,85 @@ var StorageModule = (function () {
 
             jsonObject.version = 3;
         }
+        
+        // Migration to v4 - Restructure: baseline & customUnits → option.baseline & option.customUnits
+        if (version < 4) {
+            console.log("Migrating storage to v4 (restructure baseline & customUnits under option)...");
+            
+            // Ensure option object exists
+            if (!jsonObject.option) {
+                jsonObject.option = {};
+            }
+            
+            // Move baseline under option
+            if (jsonObject.baseline) {
+                jsonObject.option.baseline = jsonObject.baseline;
+                delete jsonObject.baseline;
+            } else if (!jsonObject.option.baseline) {
+                // Initialize baseline if it doesn't exist anywhere
+                jsonObject.option.baseline = {};
+            }
+            
+            // Move customUnits under option
+            if (jsonObject.customUnits) {
+                jsonObject.option.customUnits = jsonObject.customUnits;
+                delete jsonObject.customUnits;
+            } else if (!jsonObject.option.customUnits) {
+                // Initialize customUnits if it doesn't exist anywhere
+                jsonObject.option.customUnits = [];
+            }
+            
+            jsonObject.version = 4;
+        }
+        
+        // Migration to v5 - Rename baseline properties to match naming convention
+        // amountDonePerWeek → timesDone
+        // amountSpentPerWeek → moneySpent
+        // currentTimeHours → timeSpentHours
+        // currentTimeMinutes → timeSpentMinutes
+        // Also removes goal* properties (goals come from behavioralGoals now)
+        if (version < 5) {
+            console.log("Migrating storage to v5 (rename baseline properties)...");
+            
+            var baseline = jsonObject.option && jsonObject.option.baseline;
+            if (baseline) {
+                // Rename properties
+                if (baseline.amountDonePerWeek !== undefined) {
+                    baseline.timesDone = baseline.amountDonePerWeek;
+                    delete baseline.amountDonePerWeek;
+                }
+                if (baseline.amountSpentPerWeek !== undefined) {
+                    baseline.moneySpent = baseline.amountSpentPerWeek;
+                    delete baseline.amountSpentPerWeek;
+                }
+                if (baseline.currentTimeHours !== undefined) {
+                    baseline.timeSpentHours = baseline.currentTimeHours;
+                    delete baseline.currentTimeHours;
+                }
+                if (baseline.currentTimeMinutes !== undefined) {
+                    baseline.timeSpentMinutes = baseline.currentTimeMinutes;
+                    delete baseline.currentTimeMinutes;
+                }
+                
+                // Remove goal properties (these now come from behavioralGoals)
+                delete baseline.goalDonePerWeek;
+                delete baseline.goalSpentPerWeek;
+                delete baseline.goalTimeHours;
+                delete baseline.goalTimeMinutes;
+                
+                // Ensure new properties exist with defaults
+                if (baseline.timesDone === undefined) baseline.timesDone = 0;
+                if (baseline.moneySpent === undefined) baseline.moneySpent = 0;
+                if (baseline.timeSpentHours === undefined) baseline.timeSpentHours = 0;
+                if (baseline.timeSpentMinutes === undefined) baseline.timeSpentMinutes = 0;
+            }
+            
+            jsonObject.version = 5;
+        }
 
         setStorageObject(jsonObject);
-        if (version < 3) {
-            console.log("Storage migration to v3 complete.");
+        if (version < 5) {
+            console.log("Storage migration to v5 complete.");
         }
     }
 
@@ -203,8 +278,8 @@ var StorageModule = (function () {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            // Check if at latest version (v3)
-            return jsonObject && jsonObject.version >= 3;
+            // Check if at latest version (v5)
+            return jsonObject && jsonObject.version >= 5;
         } catch (e) {
             return false;
         }
@@ -617,14 +692,15 @@ var StorageModule = (function () {
     function addCustomUnit(unit) {
         var jsonObject = retrieveStorageObject();
         if (!jsonObject) return [];
-        if (!jsonObject.customUnits) jsonObject.customUnits = [];
+        if (!jsonObject.option) jsonObject.option = {};
+        if (!jsonObject.option.customUnits) jsonObject.option.customUnits = [];
 
         var normalizedUnit = unit.trim().toLowerCase();
-        if (normalizedUnit && !jsonObject.customUnits.includes(normalizedUnit)) {
-            jsonObject.customUnits.push(normalizedUnit);
+        if (normalizedUnit && !jsonObject.option.customUnits.includes(normalizedUnit)) {
+            jsonObject.option.customUnits.push(normalizedUnit);
             setStorageObject(jsonObject);
         }
-        return jsonObject.customUnits;
+        return jsonObject.option.customUnits;
     }
 
     /**
@@ -633,8 +709,8 @@ var StorageModule = (function () {
      */
     function getCustomUnits() {
         var jsonObject = retrieveStorageObject();
-        if (!jsonObject) return [];
-        return jsonObject.customUnits || [];
+        if (!jsonObject || !jsonObject.option) return [];
+        return jsonObject.option.customUnits || [];
     }
 
     // Public API

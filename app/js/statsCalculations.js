@@ -333,8 +333,684 @@ var StatsCalculationsModule = (function () {
         return largestDiff;
     }
 
+    // ============================================
+    // Brief Stats Calculation Functions
+    // ============================================
+
+    /**
+     * Get start of period timestamp
+     * @param {string} period - 'day', 'week', or 'month'
+     * @param {number} nowSec - Current timestamp in seconds (optional, defaults to now)
+     * @returns {number} - Start of period timestamp in seconds
+     */
+    function getStartOfPeriod(period, nowSec) {
+        var now = nowSec ? new Date(nowSec * 1000) : new Date();
+        var startDate = new Date(now);
+        
+        if (period === 'day') {
+            startDate.setHours(0, 0, 0, 0);
+        } else if (period === 'week') {
+            var dayOfWeek = startDate.getDay();
+            startDate.setDate(startDate.getDate() - dayOfWeek);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (period === 'month') {
+            startDate.setDate(1);
+            startDate.setHours(0, 0, 0, 0);
+        }
+        
+        return Math.floor(startDate.getTime() / 1000);
+    }
+
+    /**
+     * Get current resist streak (consecutive 'craved' from most recent action)
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Current resist streak count
+     */
+    function getCurrentResistStreak(actions) {
+        var relevantActions = actions.filter(function(a) {
+            return a && (a.clickType === 'used' || a.clickType === 'craved');
+        });
+        
+        if (relevantActions.length === 0) return 0;
+        
+        // Sort by timestamp descending (most recent first)
+        relevantActions.sort(function(a, b) {
+            return parseInt(b.timestamp) - parseInt(a.timestamp);
+        });
+        
+        var streak = 0;
+        for (var i = 0; i < relevantActions.length; i++) {
+            if (relevantActions[i].clickType === 'craved') {
+                streak++;
+            } else {
+                break;
+            }
+        }
+        
+        return streak;
+    }
+
+    /**
+     * Get count of 'used' or 'timed' actions for a specific period
+     * @param {Array} actions - Array of all actions
+     * @param {string} period - 'day', 'week', or 'month'
+     * @returns {number} - Count of actions in the period
+     */
+    function getCountForPeriod(actions, period) {
+        var periodStart = getStartOfPeriod(period);
+        
+        return actions.filter(function(a) {
+            return a && (a.clickType === 'used' || a.clickType === 'timed') &&
+                   parseInt(a.timestamp) >= periodStart;
+        }).length;
+    }
+
+    /**
+     * Get total amount spent for a specific period
+     * @param {Array} actions - Array of all actions
+     * @param {string} period - 'day', 'week', or 'month'
+     * @returns {number} - Total amount spent in the period
+     */
+    function getAmountSpentForPeriod(actions, period) {
+        var periodStart = getStartOfPeriod(period);
+        var total = 0;
+        
+        actions.forEach(function(a) {
+            if (a && a.clickType === 'bought' && parseInt(a.timestamp) >= periodStart) {
+                total += parseFloat(a.spent) || 0;
+            }
+        });
+        
+        return total;
+    }
+
+    /**
+     * Get total time spent for a specific period (from 'timed' actions)
+     * @param {Array} actions - Array of all actions
+     * @param {string} period - 'day', 'week', or 'month'
+     * @returns {number} - Total time in seconds
+     */
+    function getTimeSpentForPeriod(actions, period) {
+        var periodStart = getStartOfPeriod(period);
+        var total = 0;
+        
+        actions.forEach(function(a) {
+            if (a && a.clickType === 'timed' && parseInt(a.timestamp) >= periodStart) {
+                total += parseInt(a.duration) || 0;
+            }
+        });
+        
+        return total;
+    }
+
+    /**
+     * Group actions by day and return daily totals
+     * @param {Array} actions - Array of actions to group
+     * @param {string} clickType - Type of action to filter ('used', 'timed', 'bought')
+     * @param {string} valueField - Field to sum (null for count, 'spent' for money, 'duration' for time)
+     * @returns {Object} - Object with date strings as keys and totals as values
+     */
+    function groupByDay(actions, clickType, valueField) {
+        var dailyTotals = {};
+        
+        actions.forEach(function(a) {
+            if (!a) return;
+            
+            var matchesType = Array.isArray(clickType) 
+                ? clickType.indexOf(a.clickType) !== -1 
+                : a.clickType === clickType;
+            
+            if (!matchesType) return;
+            
+            var dayKey = new Date(parseInt(a.timestamp) * 1000).toDateString();
+            
+            if (valueField) {
+                dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + (parseFloat(a[valueField]) || 0);
+            } else {
+                dailyTotals[dayKey] = (dailyTotals[dayKey] || 0) + 1;
+            }
+        });
+        
+        return dailyTotals;
+    }
+
+    /**
+     * Get best (max) count per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Best count per day
+     */
+    function getBestCountPerDay(actions) {
+        var dailyTotals = groupByDay(actions, ['used', 'timed'], null);
+        var max = 0;
+        
+        for (var day in dailyTotals) {
+            if (dailyTotals[day] > max) {
+                max = dailyTotals[day];
+            }
+        }
+        
+        return max;
+    }
+
+    /**
+     * Get best (max) amount spent per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Best amount per day
+     */
+    function getBestAmountPerDay(actions) {
+        var dailyTotals = groupByDay(actions, 'bought', 'spent');
+        var max = 0;
+        
+        for (var day in dailyTotals) {
+            if (dailyTotals[day] > max) {
+                max = dailyTotals[day];
+            }
+        }
+        
+        return max;
+    }
+
+    /**
+     * Get best (max) time spent per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Best time in seconds per day
+     */
+    function getBestTimePerDay(actions) {
+        var dailyTotals = groupByDay(actions, 'timed', 'duration');
+        var max = 0;
+        
+        for (var day in dailyTotals) {
+            if (dailyTotals[day] > max) {
+                max = dailyTotals[day];
+            }
+        }
+        
+        return max;
+    }
+
+    /**
+     * Get average count per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Average count per day (rounded)
+     */
+    function getAverageCountPerDay(actions) {
+        var dailyTotals = groupByDay(actions, ['used', 'timed'], null);
+        var days = Object.keys(dailyTotals);
+        
+        if (days.length === 0) return 0;
+        
+        var total = 0;
+        days.forEach(function(day) {
+            total += dailyTotals[day];
+        });
+        
+        return Math.round(total / days.length);
+    }
+
+    /**
+     * Get average amount spent per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Average amount per day (rounded to 2 decimals)
+     */
+    function getAverageAmountPerDay(actions) {
+        var dailyTotals = groupByDay(actions, 'bought', 'spent');
+        var days = Object.keys(dailyTotals);
+        
+        if (days.length === 0) return 0;
+        
+        var total = 0;
+        days.forEach(function(day) {
+            total += dailyTotals[day];
+        });
+        
+        return Math.round((total / days.length) * 100) / 100;
+    }
+
+    /**
+     * Get average time spent per day from history
+     * @param {Array} actions - Array of all actions
+     * @returns {number} - Average time in seconds per day
+     */
+    function getAverageTimePerDay(actions) {
+        var dailyTotals = groupByDay(actions, 'timed', 'duration');
+        var days = Object.keys(dailyTotals);
+        
+        if (days.length === 0) return 0;
+        
+        var total = 0;
+        days.forEach(function(day) {
+            total += dailyTotals[day];
+        });
+        
+        return Math.round(total / days.length);
+    }
+
+    /**
+     * Convert baseline amount per timeline to amount per day
+     * @param {number} amount - The baseline amount
+     * @param {string} timeline - 'day', 'week', or 'month'
+     * @returns {number} - Amount per day
+     */
+    function baselineToPerDay(amount, timeline) {
+        amount = parseFloat(amount) || 0;
+        
+        if (timeline === 'day') {
+            return amount;
+        } else if (timeline === 'week') {
+            return amount / 7;
+        } else if (timeline === 'month') {
+            return amount / 30;
+        }
+        
+        return amount;
+    }
+
+    /**
+     * Format time duration for brief display (compact)
+     * @param {number} seconds - Duration in seconds
+     * @returns {string} - Formatted string like "2h 30m" or "45m"
+     */
+    function formatDurationBrief(seconds) {
+        if (seconds < 60) {
+            return seconds + 's';
+        }
+        
+        var hours = Math.floor(seconds / 3600);
+        var minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (hours > 0) {
+            return hours + 'h ' + minutes + 'm';
+        }
+        
+        return minutes + 'm';
+    }
+
+    // ============================================
+    // Milestone Calculation Functions
+    // ============================================
+
+    /**
+     * Get active behavioral goal for a specific unit type
+     * @param {Array} behavioralGoals - Array of behavioral goals
+     * @param {string} unit - 'times', 'minutes', or 'dollars'
+     * @returns {Object|null} - Active goal or null
+     */
+    function getActiveGoalForUnit(behavioralGoals, unit) {
+        if (!behavioralGoals || !Array.isArray(behavioralGoals)) return null;
+        
+        return behavioralGoals.find(function(g) {
+            return g.status === 'active' && g.type === 'quantitative' && g.unit === unit;
+        }) || null;
+    }
+
+    /**
+     * Calculate milestone schedule for a goal
+     * Milestones are evenly distributed between goal start and end
+     * @param {Object} goal - Behavioral goal object
+     * @returns {Array} - Array of milestone objects with {timestamp, targetAmount, index}
+     */
+    function calculateMilestoneSchedule(goal) {
+        if (!goal || !goal.createdAt || !goal.completionTimeline) return [];
+        
+        var goalStartMs = goal.createdAt;
+        var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
+        var totalDurationMs = goalEndMs - goalStartMs;
+        
+        var currentAmount = goal.currentAmount || 0;
+        var goalAmount = goal.goalAmount || 0;
+        var measurementDays = goal.measurementTimeline || 7;
+        
+        // Calculate total actions over the goal period
+        var periodsInGoal = goal.completionTimeline / measurementDays;
+        var startingTotal = currentAmount * periodsInGoal;
+        var goalTotal = goalAmount * periodsInGoal;
+        
+        // Number of milestones = number of measurement periods
+        var numMilestones = Math.max(1, Math.ceil(periodsInGoal));
+        var milestones = [];
+        
+        for (var i = 1; i <= numMilestones; i++) {
+            var progress = i / numMilestones;
+            var milestoneTimestamp = goalStartMs + (totalDurationMs * progress);
+            
+            // Linear interpolation from startingTotal to goalTotal
+            var targetAmount = Math.round(startingTotal + (goalTotal - startingTotal) * progress);
+            
+            milestones.push({
+                timestamp: milestoneTimestamp,
+                targetAmount: targetAmount,
+                index: i,
+                totalMilestones: numMilestones,
+                progress: progress
+            });
+        }
+        
+        return milestones;
+    }
+
+    /**
+     * Calculate next milestone for a goal using FIXED milestone schedule
+     * 
+     * Milestones are permanent targets calculated from goal start → goal end.
+     * They do NOT shift based on current time.
+     * 
+     * If user violates a milestone (do-more: misses deadline, do-less: acts too early),
+     * we recalculate ONLY from the violated milestone timestamp to goal end.
+     * 
+     * @param {Object} goal - Behavioral goal object
+     * @param {Array} actions - Array of actions
+     * @param {boolean} isDoLess - Whether this is a "do less" habit
+     * @returns {Object|null} - Next milestone info or null if complete
+     */
+    function calculateNextMilestone(goal, actions, isDoLess) {
+        if (!goal) return null;
+        
+        var now = Date.now();
+        var goalStartMs = goal.createdAt;
+        var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
+        
+        // If goal is complete (past end date)
+        if (now >= goalEndMs) {
+            return { complete: true, message: 'Goal complete!' };
+        }
+        
+        // Get the FIXED milestone schedule (never changes based on progress)
+        var schedule = calculateMilestoneSchedule(goal);
+        if (!schedule || schedule.length === 0) return null;
+        
+        // Get actual count since goal started
+        var goalStartSec = Math.floor(goalStartMs / 1000);
+        var actualCount = getActualCountSinceGoalStart(goal, actions, goalStartSec);
+        
+        console.log('[Milestone] Schedule:', schedule);
+        console.log('[Milestone] Actual count:', actualCount, 'isDoLess:', isDoLess);
+        
+        // Find the next milestone in time (we haven't passed it yet)
+        var nextMilestoneIndex = -1;
+        for (var i = 0; i < schedule.length; i++) {
+            if (now < schedule[i].timestamp) {
+                nextMilestoneIndex = i;
+                break;
+            }
+        }
+        
+        // If all milestones are in the past, goal period is complete
+        if (nextMilestoneIndex === -1) {
+            return { complete: true, message: 'All milestones passed' };
+        }
+        
+        var nextMilestone = schedule[nextMilestoneIndex];
+        
+        // Check previous milestone to see if user is on track
+        // For milestone 0, compare against starting point (0 actions expected at goal start)
+        var previousExpected = nextMilestoneIndex > 0 
+            ? schedule[nextMilestoneIndex - 1].targetAmount 
+            : 0;
+        
+        // Determine if user is on track
+        var isOnTrack;
+        if (isDoLess) {
+            // Do-less: user should have done <= expected by now
+            isOnTrack = actualCount <= previousExpected || 
+                       (nextMilestoneIndex === 0 && actualCount === 0);
+        } else {
+            // Do-more: user should have done >= expected by now
+            isOnTrack = actualCount >= previousExpected;
+        }
+        
+        console.log('[Milestone] Next milestone index:', nextMilestoneIndex);
+        console.log('[Milestone] Previous expected:', previousExpected, 'On track:', isOnTrack);
+        
+        if (isOnTrack) {
+            // ON TRACK: Return the fixed milestone from the original schedule
+            return {
+                type: isDoLess ? 'waitUntil' : 'doItBy',
+                timestamp: nextMilestone.timestamp,
+                targetAmount: nextMilestone.targetAmount,
+                actualCount: actualCount,
+                milestoneIndex: nextMilestoneIndex + 1,
+                totalMilestones: schedule.length,
+                onTrack: true
+            };
+        } else {
+            // OFF TRACK: Recalculate from the violated milestone point to goal end
+            // Use the PREVIOUS milestone timestamp as the recalculation start point
+            var recalcStartMs = nextMilestoneIndex > 0 
+                ? schedule[nextMilestoneIndex - 1].timestamp 
+                : goalStartMs;
+            
+            return calculateCatchUpMilestone(
+                goal, 
+                actualCount, 
+                recalcStartMs, 
+                goalEndMs, 
+                schedule.length - nextMilestoneIndex, // remaining milestones
+                isDoLess
+            );
+        }
+    }
+    
+    /**
+     * Calculate catch-up milestone when user is off track
+     * Redistributes remaining work from violation point to goal end
+     * 
+     * @param {Object} goal - Behavioral goal
+     * @param {number} actualCount - Current actual count
+     * @param {number} violationStartMs - Timestamp when violation occurred
+     * @param {number} goalEndMs - Goal end timestamp
+     * @param {number} remainingMilestones - Number of milestones left
+     * @param {boolean} isDoLess - Whether this is a "do less" habit
+     * @returns {Object} - Catch-up milestone info
+     */
+    function calculateCatchUpMilestone(goal, actualCount, violationStartMs, goalEndMs, remainingMilestones, isDoLess) {
+        var now = Date.now();
+        var periodsInGoal = goal.completionTimeline / (goal.measurementTimeline || 7);
+        var goalTotal = (goal.goalAmount || 0) * periodsInGoal;
+        
+        // Remaining work to reach goal
+        var remainingActions = goalTotal - actualCount;
+        var remainingMs = goalEndMs - violationStartMs;
+        
+        console.log('[Milestone] CATCH-UP: Remaining actions:', remainingActions, 'from', new Date(violationStartMs));
+        
+        if (isDoLess) {
+            // Do-less catch-up: User did too many actions
+            // Calculate when they can next act based on remaining time/actions
+            if (remainingActions <= 0) {
+                // Exceeded limit - must wait until goal ends
+                return {
+                    type: 'waitUntil',
+                    timestamp: goalEndMs,
+                    actualCount: actualCount,
+                    onTrack: false,
+                    exceeded: true,
+                    message: 'Limit exceeded - wait until goal ends'
+                };
+            }
+            
+            // Recalculate interval: spread remaining actions over remaining time
+            var msPerAction = remainingMs / remainingActions;
+            // Next allowed action is from violation point + one interval
+            var nextAllowedMs = violationStartMs + msPerAction;
+            
+            // If next allowed is in the past, calculate from now
+            if (nextAllowedMs < now) {
+                var actionsUsedSinceViolation = Math.floor((now - violationStartMs) / msPerAction);
+                nextAllowedMs = violationStartMs + ((actionsUsedSinceViolation + 1) * msPerAction);
+            }
+            
+            if (nextAllowedMs > goalEndMs) {
+                nextAllowedMs = goalEndMs;
+            }
+            
+            return {
+                type: 'waitUntil',
+                timestamp: nextAllowedMs,
+                actualCount: actualCount,
+                targetAmount: goalTotal,
+                onTrack: false,
+                catchUp: true
+            };
+        } else {
+            // Do-more catch-up: User hasn't done enough actions
+            // Calculate new deadline to get back on track
+            if (remainingActions <= 0) {
+                // Already hit goal
+                return {
+                    complete: true,
+                    message: 'Goal achieved!'
+                };
+            }
+            
+            // Recalculate interval: spread remaining actions over remaining time
+            var msPerAction = remainingMs / remainingActions;
+            // Next required action is from now (urgency!)
+            var nextRequiredMs = now + msPerAction;
+            
+            if (nextRequiredMs > goalEndMs) {
+                nextRequiredMs = goalEndMs;
+            }
+            
+            return {
+                type: 'doItBy',
+                timestamp: nextRequiredMs,
+                actualCount: actualCount,
+                targetAmount: goalTotal,
+                onTrack: false,
+                catchUp: true
+            };
+        }
+    }
+
+    /**
+     * Get actual count of actions since goal started
+     * @param {Object} goal - Behavioral goal
+     * @param {Array} actions - Array of actions
+     * @param {number} goalStartSec - Goal start timestamp in seconds
+     * @returns {number} - Count of relevant actions
+     */
+    function getActualCountSinceGoalStart(goal, actions, goalStartSec) {
+        if (!actions || !Array.isArray(actions)) return 0;
+        
+        var count = 0;
+        var unit = goal.unit;
+        
+        actions.forEach(function(a) {
+            if (!a || parseInt(a.timestamp) < goalStartSec) return;
+            
+            if (unit === 'times') {
+                if (a.clickType === 'used' || a.clickType === 'timed') {
+                    count++;
+                }
+            } else if (unit === 'minutes') {
+                if (a.clickType === 'timed' && a.duration) {
+                    count += Math.round(parseInt(a.duration) / 60);
+                }
+            } else if (unit === 'dollars') {
+                if (a.clickType === 'bought' && a.spent) {
+                    count += parseFloat(a.spent) || 0;
+                }
+            }
+        });
+        
+        return count;
+    }
+
+    /**
+     * Format milestone timestamp for display
+     * @param {number} timestampMs - Timestamp in milliseconds
+     * @returns {string} - Formatted time string
+     */
+    function formatMilestoneTime(timestampMs) {
+        var now = Date.now();
+        var diffMs = timestampMs - now;
+        
+        if (diffMs <= 0) {
+            return 'Now';
+        }
+        
+        var diffSec = Math.floor(diffMs / 1000);
+        var diffMin = Math.floor(diffSec / 60);
+        var diffHour = Math.floor(diffMin / 60);
+        var diffDay = Math.floor(diffHour / 24);
+        
+        if (diffDay > 0) {
+            var remainingHours = diffHour % 24;
+            return diffDay + 'd ' + remainingHours + 'h';
+        } else if (diffHour > 0) {
+            var remainingMins = diffMin % 60;
+            return diffHour + 'h ' + remainingMins + 'm';
+        } else if (diffMin > 0) {
+            return diffMin + 'm';
+        } else {
+            return diffSec + 's';
+        }
+    }
+
+    /**
+     * Format milestone as clock time (e.g., "3:45 PM")
+     * @param {number} timestampMs - Timestamp in milliseconds
+     * @returns {string} - Formatted clock time
+     */
+    function formatMilestoneClockTime(timestampMs) {
+        var date = new Date(timestampMs);
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var ampm = hours >= 12 ? 'PM' : 'AM';
+        
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        
+        return hours + ':' + minutes + ampm;
+    }
+
+    /**
+     * Get allotted amount per period for a goal
+     * @param {Object} goal - Behavioral goal
+     * @returns {number} - Allotted amount per measurement period
+     */
+    function getAllottedPerPeriod(goal) {
+        return goal.goalAmount || 0;
+    }
+
+    /**
+     * Get current period's actual amount vs allotted for time-based milestone
+     * @param {Object} goal - Behavioral goal
+     * @param {Array} actions - Array of actions
+     * @returns {Object} - {current, allotted, unit}
+     */
+    function getTimeAllotmentStatus(goal, actions) {
+        if (!goal) return null;
+        
+        var periodStart = getStartOfPeriod(
+            goal.measurementTimeline === 1 ? 'day' : 
+            goal.measurementTimeline === 7 ? 'week' : 'month'
+        );
+        
+        var current = 0;
+        var unit = goal.unit;
+        
+        actions.forEach(function(a) {
+            if (!a || parseInt(a.timestamp) < periodStart) return;
+            
+            if (unit === 'minutes' && a.clickType === 'timed' && a.duration) {
+                current += Math.round(parseInt(a.duration) / 60);
+            } else if (unit === 'dollars' && a.clickType === 'bought' && a.spent) {
+                current += parseFloat(a.spent) || 0;
+            }
+        });
+        
+        return {
+            current: Math.round(current),
+            allotted: goal.goalAmount,
+            unit: unit
+        };
+    }
+
     // Public API
     return {
+        // Legacy stats functions
         segregatedTimeRange: segregatedTimeRange,
         midnightOfTimestamp: midnightOfTimestamp,
         calculateMaxReportHeight: calculateMaxReportHeight,
@@ -343,7 +1019,32 @@ var StatsCalculationsModule = (function () {
         convertSecondsToDateFormat: convertSecondsToDateFormat,
         calculateResistStreak: calculateResistStreak,
         calculateAverageTimeBetween: calculateAverageTimeBetween,
-        calculateLongestGoalFromSet: calculateLongestGoalFromSet
+        calculateLongestGoalFromSet: calculateLongestGoalFromSet,
+        
+        // Brief stats calculation functions
+        getStartOfPeriod: getStartOfPeriod,
+        getCurrentResistStreak: getCurrentResistStreak,
+        getCountForPeriod: getCountForPeriod,
+        getAmountSpentForPeriod: getAmountSpentForPeriod,
+        getTimeSpentForPeriod: getTimeSpentForPeriod,
+        groupByDay: groupByDay,
+        getBestCountPerDay: getBestCountPerDay,
+        getBestAmountPerDay: getBestAmountPerDay,
+        getBestTimePerDay: getBestTimePerDay,
+        getAverageCountPerDay: getAverageCountPerDay,
+        getAverageAmountPerDay: getAverageAmountPerDay,
+        getAverageTimePerDay: getAverageTimePerDay,
+        baselineToPerDay: baselineToPerDay,
+        formatDurationBrief: formatDurationBrief,
+        
+        // Milestone calculation functions
+        getActiveGoalForUnit: getActiveGoalForUnit,
+        calculateMilestoneSchedule: calculateMilestoneSchedule,
+        calculateNextMilestone: calculateNextMilestone,
+        formatMilestoneTime: formatMilestoneTime,
+        formatMilestoneClockTime: formatMilestoneClockTime,
+        getAllottedPerPeriod: getAllottedPerPeriod,
+        getTimeAllotmentStatus: getTimeAllotmentStatus
     };
 })();
 

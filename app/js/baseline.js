@@ -70,6 +70,37 @@ var BaselineModule = (function() {
 
     function saveBaselineValues() {
         var jsonObject = StorageModule.retrieveStorageObject();
+        
+        // Handle missing storage - shouldn't happen but be defensive
+        if (!jsonObject) {
+            console.warn("No storage object found in saveBaselineValues");
+            return;
+        }
+        
+        // Ensure option.baseline exists (v4 structure)
+        if (!jsonObject.option) {
+            jsonObject.option = {};
+        }
+        if (!jsonObject.option.baseline) {
+            jsonObject.option.baseline = {
+                userSubmitted: false,
+                specificSubject: false,
+                increaseHabit: false,
+                decreaseHabit: false,
+                neutralHabit: true,
+                timesDone: 0,
+                usageTimeline: 'week',
+                moneySpent: 0,
+                spendingTimeline: 'week',
+                timeSpentHours: 0,
+                timeSpentMinutes: 0,
+                timeTimeline: 'week',
+                valuesTimesDone: false,
+                valuesTime: false,
+                valuesMoney: false,
+                valuesHealth: false
+            };
+        }
 
         // --- Collect all form values ---
         var isDecrease = $(".decreaseHabit").is(":checked");
@@ -82,15 +113,16 @@ var BaselineModule = (function() {
         var isSerious = $(".serious-user").is(":checked");
 
         // --- Update baseline object ---
-        jsonObject.baseline.specificSubject = isSerious;
-        jsonObject.baseline.decreaseHabit = isDecrease;
-        jsonObject.baseline.increaseHabit = isIncrease;
-        jsonObject.baseline.neutralHabit = isNeutral;
-        jsonObject.baseline.valuesTimesDone = valuesTimesDone;
-        jsonObject.baseline.valuesTime = valuesTime;
-        jsonObject.baseline.valuesMoney = valuesMoney;
-        jsonObject.baseline.valuesHealth = valuesHealth;
-        jsonObject.baseline.userSubmitted = true;
+        var baseline = jsonObject.option.baseline;
+        baseline.specificSubject = isSerious;
+        baseline.decreaseHabit = isDecrease;
+        baseline.increaseHabit = isIncrease;
+        baseline.neutralHabit = isNeutral;
+        baseline.valuesTimesDone = valuesTimesDone;
+        baseline.valuesTime = valuesTime;
+        baseline.valuesMoney = valuesMoney;
+        baseline.valuesHealth = valuesHealth;
+        baseline.userSubmitted = true;
 
         // --- Update display options based on importance selections ---
         
@@ -146,7 +178,6 @@ var BaselineModule = (function() {
         jsonObject.option.logItemsToDisplay.mood = valuesHealth;
 
         // --- Save to storage ---
-        json.baseline = jsonObject.baseline;
         json.option = jsonObject.option;
         StorageModule.setStorageObject(jsonObject);
 
@@ -193,7 +224,7 @@ var BaselineModule = (function() {
 
     function loadBaselineValues() {
         var jsonObject = StorageModule.retrieveStorageObject();
-        var baseline = jsonObject.baseline;
+        var baseline = jsonObject.option.baseline;
 
         // --- Restore body classes ---
         updateBodyClasses(baseline.decreaseHabit, baseline.increaseHabit, baseline.neutralHabit);
@@ -232,26 +263,26 @@ var BaselineModule = (function() {
         
         // Restore saved baseline values for question 4
         var hasStatusValue = false;
-        if (baseline.amountDonePerWeek) {
-            $('.baseline-amountDonePerWeek').val(baseline.amountDonePerWeek);
+        if (baseline.timesDone) {
+            $('.baseline-amountDonePerWeek').val(baseline.timesDone);
             hasStatusValue = true;
         }
         if (baseline.usageTimeline) {
             $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
         }
-        if (baseline.currentTimeHours) {
-            $('.baseline-currentTimeHours').val(baseline.currentTimeHours);
+        if (baseline.timeSpentHours) {
+            $('.baseline-currentTimeHours').val(baseline.timeSpentHours);
             hasStatusValue = true;
         }
-        if (baseline.currentTimeMinutes) {
-            $('.baseline-currentTimeMinutes').val(baseline.currentTimeMinutes);
+        if (baseline.timeSpentMinutes) {
+            $('.baseline-currentTimeMinutes').val(baseline.timeSpentMinutes);
             hasStatusValue = true;
         }
         if (baseline.timeTimeline) {
             $('.baseline-time-timeline-select').val(baseline.timeTimeline);
         }
-        if (baseline.amountSpentPerWeek) {
-            $('.baseline-amountSpentPerWeek').val(baseline.amountSpentPerWeek);
+        if (baseline.moneySpent) {
+            $('.baseline-amountSpentPerWeek').val(baseline.moneySpent);
             hasStatusValue = true;
         }
         if (baseline.spendingTimeline) {
@@ -405,9 +436,9 @@ var BaselineModule = (function() {
         
         // Save to baseline as well
         var jsonObject = StorageModule.retrieveStorageObject();
-        jsonObject.baseline.wellnessText = comment;
-        jsonObject.baseline.wellnessMood = selectedMood;
-        jsonObject.baseline.statusType = 'wellness';
+        jsonObject.option.baseline.wellnessText = comment;
+        jsonObject.option.baseline.wellnessMood = selectedMood;
+        jsonObject.option.baseline.statusType = 'wellness';
         StorageModule.setStorageObject(jsonObject);
         
         // Create habit log entry using ActionLogModule and StorageModule
@@ -430,20 +461,21 @@ var BaselineModule = (function() {
     function saveCurrentStatus() {
         var jsonObject = StorageModule.retrieveStorageObject();
         var selectedType = $('#current-status-type-select').val();
+        var baseline = jsonObject.option.baseline;
         
         if (selectedType === 'usage') {
-            jsonObject.baseline.amountDonePerWeek = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
-            jsonObject.baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
+            baseline.timesDone = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
+            baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
         } else if (selectedType === 'time') {
-            jsonObject.baseline.currentTimeHours = parseInt($('.baseline-currentTimeHours').val()) || 0;
-            jsonObject.baseline.currentTimeMinutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
-            jsonObject.baseline.timeTimeline = $('.baseline-time-timeline-select').val();
+            baseline.timeSpentHours = parseInt($('.baseline-currentTimeHours').val()) || 0;
+            baseline.timeSpentMinutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
+            baseline.timeTimeline = $('.baseline-time-timeline-select').val();
         } else if (selectedType === 'spending') {
-            jsonObject.baseline.amountSpentPerWeek = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
-            jsonObject.baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
+            baseline.moneySpent = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
+            baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
         }
         
-        jsonObject.baseline.statusType = selectedType;
+        baseline.statusType = selectedType;
         StorageModule.setStorageObject(jsonObject);
         NotificationsModule.createNotification('Baseline status saved!', null, { type: 'baseline_saved' });
     }

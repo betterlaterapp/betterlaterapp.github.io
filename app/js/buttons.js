@@ -70,7 +70,7 @@ var ButtonsModule = (function() {
      */
     function updateDialogTabsVisibility() {
         var jsonObject = StorageModule.retrieveStorageObject();
-        var baseline = jsonObject.baseline;
+        var baseline = jsonObject.option.baseline;
 
         // "How much" tab - visible if valuesTimesDone is selected
         if (baseline.valuesTimesDone) {
@@ -212,7 +212,7 @@ var ButtonsModule = (function() {
             json.statistics.use.cravingsInARow++;
             $("#cravingsResistedInARow").html(json.statistics.use.cravingsInARow);
 
-            if (json.baseline.decreaseHabit == true) {
+            if (json.option.baseline.decreaseHabit == true) {
                 UIModule.shootConfetti();
             }
             
@@ -351,7 +351,7 @@ var ButtonsModule = (function() {
     }
 
     function handleUseButtonDialog() {
-        if (json.baseline.decreaseHabit === false) {
+        if (json.option.baseline.decreaseHabit === false) {
             UIModule.shootConfetti();
         }
 
@@ -364,7 +364,7 @@ var ButtonsModule = (function() {
         // Get optional "How long" data (only if valuesTime is set)
         var howLongData = null;
         var jsonObject = StorageModule.retrieveStorageObject();
-        if (jsonObject.baseline.valuesTime) {
+        if (jsonObject.option.baseline.valuesTime) {
             howLongData = getHowLongData();
         }
 
