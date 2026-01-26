@@ -214,7 +214,7 @@ var WaitTimerModule = (function () {
                         '<div class="boxes">' +
                             '<div>' +
                                 '<span class="timerSpan daysSinceLastClick">' + timeDisplay.days + '</span>' +
-                                '<span>Days</span>' +
+                                '<span>Day(s)</span>' +
                             '</div>' +
                             '<div>' +
                                 '<span class="timerSpan hoursSinceLastClick">' + timeDisplay.hours + '</span>' +

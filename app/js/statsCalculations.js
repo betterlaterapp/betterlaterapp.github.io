@@ -644,61 +644,296 @@ var StatsCalculationsModule = (function () {
     }
 
     /**
-     * Calculate milestone schedule for a goal
-     * Milestones are evenly distributed between goal start and end
+     * Calculate milestone schedule for a goal using gradually changing intervals.
+     * 
+     * The schedule creates milestones that transition from the user's current 
+     * frequency to their goal frequency over the completion timeline.
+     * 
+     * KEY INSIGHT: The number of milestones is DERIVED from:
+     * - Goal duration (completionTimeline)
+     * - First interval (measurementPeriod / currentAmount)
+     * - Last interval (measurementPeriod / goalAmount)
+     * - Curve type (affects weighted average of intervals)
+     * 
+     * Formula: totalMilestones = duration / weightedAverageInterval
+     * 
+     * This ensures intervals actually match the specified frequencies!
+     * 
      * @param {Object} goal - Behavioral goal object
-     * @returns {Array} - Array of milestone objects with {timestamp, targetAmount, index}
+     * @param {Object} options - Optional config {curveType, actionCount, recalculateFromNow}
+     * @returns {Array} - Array of milestone objects
      */
-    function calculateMilestoneSchedule(goal) {
+    function calculateMilestoneSchedule(goal, options) {
         if (!goal || !goal.createdAt || !goal.completionTimeline) return [];
+        
+        options = options || {};
+        var curveType = options.curveType || 'linear';
+        var actionCount = options.actionCount || 0;
+        var recalculateFromNow = options.recalculateFromNow || false;
         
         var goalStartMs = goal.createdAt;
         var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
-        var totalDurationMs = goalEndMs - goalStartMs;
+        var now = Date.now();
         
         var currentAmount = goal.currentAmount || 0;
         var goalAmount = goal.goalAmount || 0;
         var measurementDays = goal.measurementTimeline || 7;
         
-        // Calculate total actions over the goal period
-        var periodsInGoal = goal.completionTimeline / measurementDays;
-        var startingTotal = currentAmount * periodsInGoal;
-        var goalTotal = goalAmount * periodsInGoal;
+        // Treat 0 values as 1 for interval calculations (per spec)
+        var currentForCalc = Math.max(1, currentAmount);
+        var goalForCalc = Math.max(1, goalAmount);
         
-        // Number of milestones = number of measurement periods
-        var numMilestones = Math.max(1, Math.ceil(periodsInGoal));
-        var milestones = [];
+        // Calculate intervals in milliseconds
+        // First interval = how often at current rate (e.g., 24/day = 1 per hour)
+        // Last interval = how often at goal rate (e.g., 3/day = 1 per 8 hours)
+        var measurementPeriodMs = measurementDays * 24 * 60 * 60 * 1000;
+        var firstIntervalMs = measurementPeriodMs / currentForCalc;
+        var lastIntervalMs = measurementPeriodMs / goalForCalc;
         
-        for (var i = 1; i <= numMilestones; i++) {
-            var progress = i / numMilestones;
-            var milestoneTimestamp = goalStartMs + (totalDurationMs * progress);
+        // Calculate full duration for total milestone count
+        var fullDurationMs = goalEndMs - goalStartMs;
+        
+        // DERIVE total milestones from full duration and intervals
+        var weightedAvgInterval = calculateWeightedAverageInterval(
+            firstIntervalMs, 
+            lastIntervalMs, 
+            curveType
+        );
+        
+        var originalTotalMilestones = Math.round(fullDurationMs / weightedAvgInterval);
+        originalTotalMilestones = Math.max(1, originalTotalMilestones);
+        
+        // If recalculating based on actions taken
+        if (recalculateFromNow && now > goalStartMs && now < goalEndMs) {
+            // First, generate the original schedule to find milestone boundaries
+            var originalSchedule = generateMilestoneTimestamps(
+                goalStartMs,
+                goalEndMs,
+                originalTotalMilestones,
+                firstIntervalMs,
+                lastIntervalMs,
+                curveType
+            );
             
-            // Linear interpolation from startingTotal to goalTotal
-            var targetAmount = Math.round(startingTotal + (goalTotal - startingTotal) * progress);
+            // Find the last milestone that has passed
+            var lastPassedMilestone = null;
+            var passedCount = 0;
+            for (var i = 0; i < originalSchedule.length; i++) {
+                if (originalSchedule[i].timestamp <= now) {
+                    lastPassedMilestone = originalSchedule[i];
+                    passedCount = i + 1;
+                } else {
+                    break;
+                }
+            }
             
-            milestones.push({
-                timestamp: milestoneTimestamp,
-                targetAmount: targetAmount,
-                index: i,
-                totalMilestones: numMilestones,
-                progress: progress
-            });
+            // Calculate start point: use last passed milestone, or goalStart if none passed
+            var recalcStartMs = lastPassedMilestone ? lastPassedMilestone.timestamp : goalStartMs;
+            
+            // Each action consumes a milestone slot
+            // Remaining milestones = original total - actions taken
+            var remainingMilestones = Math.max(1, originalTotalMilestones - actionCount);
+            
+            // Calculate what progress we're at based on the milestone boundary
+            var timeProgress = (recalcStartMs - goalStartMs) / (goalEndMs - goalStartMs);
+            
+            // Current interval should be interpolated based on milestone position
+            var currentIntervalMs = firstIntervalMs + (lastIntervalMs - firstIntervalMs) * timeProgress;
+            
+            // Generate milestones from last milestone to goalEnd
+            var recalcMilestones = generateMilestoneTimestamps(
+                recalcStartMs,
+                goalEndMs,
+                remainingMilestones,
+                currentIntervalMs,
+                lastIntervalMs,
+                curveType
+            );
+            
+            // Debug: Log recalculated schedule
+            if (recalcMilestones.length > 0) {
+                console.log('[MilestoneSchedule RECALC] From milestone:', passedCount,
+                    '| Remaining:', remainingMilestones,
+                    '| Actions:', actionCount,
+                    '| Start:', new Date(recalcStartMs).toLocaleTimeString(),
+                    '| First interval:', Math.round(recalcMilestones[0].intervalMs / 60000) + 'min');
+            }
+            
+            return recalcMilestones;
+        }
+        
+        // Standard: generate from goalStart to goalEnd
+        var milestones = generateMilestoneTimestamps(
+            goalStartMs,
+            goalEndMs,
+            originalTotalMilestones,
+            firstIntervalMs,
+            lastIntervalMs,
+            curveType
+        );
+        
+        // Debug: Log interval breakdown
+        if (milestones.length > 0) {
+            console.log('[MilestoneSchedule] Curve:', curveType, 
+                '| Total:', originalTotalMilestones,
+                '| First interval:', Math.round(milestones[0].intervalMs / 60000) + 'min',
+                '| Last interval:', Math.round(milestones[milestones.length - 1].intervalMs / 60000) + 'min',
+                '| Expected first:', Math.round(firstIntervalMs / 60000) + 'min',
+                '| Expected last:', Math.round(lastIntervalMs / 60000) + 'min');
         }
         
         return milestones;
     }
+    
+    /**
+     * Calculate weighted average interval based on curve type.
+     * 
+     * For linear distribution: avg = (first + last) / 2
+     * For power curve (bunched at start): avg is weighted toward first
+     * For power-out (bunched at end): avg is weighted toward last
+     * 
+     * @param {number} firstInterval - First interval duration
+     * @param {number} lastInterval - Last interval duration
+     * @param {string} curveType - Type of distribution curve
+     * @returns {number} - Weighted average interval
+     */
+    function calculateWeightedAverageInterval(firstInterval, lastInterval, curveType) {
+        // For a transition from first to last interval using different curves,
+        // we need to calculate the expected average.
+        
+        // Sample the curve at many points to get accurate average
+        var samples = 100;
+        var sum = 0;
+        
+        for (var i = 0; i < samples; i++) {
+            var t = i / (samples - 1);
+            var curvedT = applyCurve(t, curveType);
+            var interval = firstInterval + (lastInterval - firstInterval) * curvedT;
+            sum += interval;
+        }
+        
+        return sum / samples;
+    }
+    
+    /**
+     * Generate milestone timestamps with gradually changing intervals.
+     * 
+     * IMPORTANT: Milestones are constrained to fit WITHIN the goal duration.
+     * The curve determines how milestones are distributed across the timeline:
+     * - Linear: evenly spaced
+     * - Power: bunched at start (shorter intervals early, longer late)
+     * - Power-out: bunched at end (longer intervals early, shorter late)
+     * 
+     * @param {number} startMs - Goal start timestamp
+     * @param {number} endMs - Goal end timestamp  
+     * @param {number} totalMilestones - Number of milestones to generate
+     * @param {number} firstIntervalMs - Desired time until first milestone (for weighting)
+     * @param {number} lastIntervalMs - Desired interval for final milestones (for weighting)
+     * @param {string} curveType - 'linear', 'power', 'power-out', or 'sigmoid'
+     * @returns {Array} - Array of milestone objects
+     */
+    function generateMilestoneTimestamps(startMs, endMs, totalMilestones, firstIntervalMs, lastIntervalMs, curveType) {
+        var milestones = [];
+        var totalDuration = endMs - startMs;
+        
+        if (totalMilestones <= 0) return milestones;
+        
+        // Calculate the weighting ratio from interval preferences
+        // If firstInterval is small and lastInterval is large, milestones cluster early
+        var intervalRatio = lastIntervalMs / firstIntervalMs;
+        
+        // Determine curve type based on interval ratio if not specified
+        // (intervalRatio > 1 means "do less" - start frequent, end sparse)
+        if (!curveType || curveType === 'linear') {
+            curveType = intervalRatio > 1 ? 'power' : 'power-out';
+        }
+        
+        // Generate milestone positions using normalized cumulative weights
+        // This ensures all milestones fit within the goal duration
+        var weights = [];
+        var totalWeight = 0;
+        
+        for (var i = 0; i < totalMilestones; i++) {
+            // Progress through milestones (0 to 1)
+            var t = i / Math.max(1, totalMilestones - 1);
+            
+            // Weight is the "interval size" at this point
+            // Linear interpolation between first and last interval
+            var weight = firstIntervalMs + (lastIntervalMs - firstIntervalMs) * applyCurve(t, curveType);
+            weights.push(weight);
+            totalWeight += weight;
+        }
+        
+        // Now place milestones proportionally within the duration
+        var cumulativeWeight = 0;
+        var prevTimestamp = startMs;
+        
+        for (var i = 0; i < totalMilestones; i++) {
+            cumulativeWeight += weights[i];
+            
+            // Position is proportional to cumulative weight
+            var position = cumulativeWeight / totalWeight;
+            var timestamp = startMs + (totalDuration * position);
+            
+            // Calculate actual interval from previous milestone
+            var intervalMs = timestamp - prevTimestamp;
+            
+            milestones.push({
+                timestamp: timestamp,
+                index: i + 1,
+                totalMilestones: totalMilestones,
+                intervalMs: intervalMs,
+                progress: (i + 1) / totalMilestones
+            });
+            
+            prevTimestamp = timestamp;
+        }
+        
+        return milestones;
+    }
+    
+    /**
+     * Apply curve transformation to progress value.
+     * 
+     * @param {number} t - Progress value from 0 to 1
+     * @param {string} curveType - Type of curve to apply
+     * @returns {number} - Transformed progress value
+     */
+    function applyCurve(t, curveType) {
+        switch (curveType) {
+            case 'power':
+                // Power curve (ease-in) - slow start, fast end
+                return Math.pow(t, 2);
+            case 'power-out':
+                // Inverted power curve (ease-out) - fast start, slow end
+                return 1 - Math.pow(1 - t, 2);
+            case 'sigmoid':
+                // Sigmoid curve - slow at both ends, fast in middle
+                return 1 / (1 + Math.exp(-10 * (t - 0.5)));
+            case 'linear':
+            default:
+                return t;
+        }
+    }
 
     /**
-     * Calculate next milestone for a goal using FIXED milestone schedule
+     * Calculate next milestone for a goal based on user actions.
      * 
-     * Milestones are permanent targets calculated from goal start → goal end.
-     * They do NOT shift based on current time.
+     * This is DYNAMIC: each action affects the milestone schedule.
      * 
-     * If user violates a milestone (do-more: misses deadline, do-less: acts too early),
-     * we recalculate ONLY from the violated milestone timestamp to goal end.
+     * DO LESS logic:
+     * - Total milestones = your "allowance" for the goal period
+     * - Each action "uses up" one milestone from your allowance
+     * - Remaining allowance is spread over remaining time using POWER curve
+     * - More actions = longer wait time (you've used up your allowance faster)
+     * 
+     * DO MORE logic:
+     * - Each action "earns" a milestone toward your goal
+     * - If ahead of schedule, next deadline extends (SIGMOID curve rewards progress)
+     * - Doing more than expected = breathing room
      * 
      * @param {Object} goal - Behavioral goal object
-     * @param {Array} actions - Array of actions
+     * @param {Array} actions - Array of user actions
      * @param {boolean} isDoLess - Whether this is a "do less" habit
      * @returns {Object|null} - Next milestone info or null if complete
      */
@@ -714,174 +949,299 @@ var StatsCalculationsModule = (function () {
             return { complete: true, message: 'Goal complete!' };
         }
         
-        // Get the FIXED milestone schedule (never changes based on progress)
-        var schedule = calculateMilestoneSchedule(goal);
-        if (!schedule || schedule.length === 0) return null;
+        // Get total milestones for this goal
+        var totalMilestones = calculateTotalMilestones(goal);
+        if (totalMilestones <= 0) return null;
         
-        // Get actual count since goal started
+        // Get actual action count since goal started
         var goalStartSec = Math.floor(goalStartMs / 1000);
-        var actualCount = getActualCountSinceGoalStart(goal, actions, goalStartSec);
+        var actionCount = getActualCountSinceGoalStart(goal, actions, goalStartSec);
         
-        console.log('[Milestone] Schedule:', schedule);
-        console.log('[Milestone] Actual count:', actualCount, 'isDoLess:', isDoLess);
+        // Calculate time progress (0 to 1)
+        var totalDurationMs = goalEndMs - goalStartMs;
+        var elapsedMs = now - goalStartMs;
+        var timeProgress = elapsedMs / totalDurationMs;
         
-        // Find the next milestone in time (we haven't passed it yet)
-        var nextMilestoneIndex = -1;
-        for (var i = 0; i < schedule.length; i++) {
-            if (now < schedule[i].timestamp) {
-                nextMilestoneIndex = i;
-                break;
-            }
-        }
+        // Calculate expected actions at this point (linear baseline)
+        var expectedActionsNow = Math.floor(totalMilestones * timeProgress);
         
-        // If all milestones are in the past, goal period is complete
-        if (nextMilestoneIndex === -1) {
-            return { complete: true, message: 'All milestones passed' };
-        }
-        
-        var nextMilestone = schedule[nextMilestoneIndex];
-        
-        // Check previous milestone to see if user is on track
-        // For milestone 0, compare against starting point (0 actions expected at goal start)
-        var previousExpected = nextMilestoneIndex > 0 
-            ? schedule[nextMilestoneIndex - 1].targetAmount 
-            : 0;
-        
-        // Determine if user is on track
-        var isOnTrack;
         if (isDoLess) {
-            // Do-less: user should have done <= expected by now
-            isOnTrack = actualCount <= previousExpected || 
-                       (nextMilestoneIndex === 0 && actualCount === 0);
+            return calculateDoLessMilestone(
+                goal, now, goalStartMs, goalEndMs, 
+                totalMilestones, actionCount, expectedActionsNow, timeProgress
+            );
         } else {
-            // Do-more: user should have done >= expected by now
-            isOnTrack = actualCount >= previousExpected;
-        }
-        
-        console.log('[Milestone] Next milestone index:', nextMilestoneIndex);
-        console.log('[Milestone] Previous expected:', previousExpected, 'On track:', isOnTrack);
-        
-        if (isOnTrack) {
-            // ON TRACK: Return the fixed milestone from the original schedule
-            return {
-                type: isDoLess ? 'waitUntil' : 'doItBy',
-                timestamp: nextMilestone.timestamp,
-                targetAmount: nextMilestone.targetAmount,
-                actualCount: actualCount,
-                milestoneIndex: nextMilestoneIndex + 1,
-                totalMilestones: schedule.length,
-                onTrack: true
-            };
-        } else {
-            // OFF TRACK: Recalculate from the violated milestone point to goal end
-            // Use the PREVIOUS milestone timestamp as the recalculation start point
-            var recalcStartMs = nextMilestoneIndex > 0 
-                ? schedule[nextMilestoneIndex - 1].timestamp 
-                : goalStartMs;
-            
-            return calculateCatchUpMilestone(
-                goal, 
-                actualCount, 
-                recalcStartMs, 
-                goalEndMs, 
-                schedule.length - nextMilestoneIndex, // remaining milestones
-                isDoLess
+            return calculateDoMoreMilestone(
+                goal, now, goalStartMs, goalEndMs,
+                totalMilestones, actionCount, expectedActionsNow, timeProgress
             );
         }
     }
     
     /**
-     * Calculate catch-up milestone when user is off track
-     * Redistributes remaining work from violation point to goal end
-     * 
-     * @param {Object} goal - Behavioral goal
-     * @param {number} actualCount - Current actual count
-     * @param {number} violationStartMs - Timestamp when violation occurred
-     * @param {number} goalEndMs - Goal end timestamp
-     * @param {number} remainingMilestones - Number of milestones left
-     * @param {boolean} isDoLess - Whether this is a "do less" habit
-     * @returns {Object} - Catch-up milestone info
+     * Calculate total number of milestones for a goal.
+     * Formula: completionPeriods × ((currentAmount + goalAmount) / 2)
      */
-    function calculateCatchUpMilestone(goal, actualCount, violationStartMs, goalEndMs, remainingMilestones, isDoLess) {
-        var now = Date.now();
-        var periodsInGoal = goal.completionTimeline / (goal.measurementTimeline || 7);
-        var goalTotal = (goal.goalAmount || 0) * periodsInGoal;
+    /**
+     * Calculate total number of milestones for a goal.
+     * 
+     * DERIVED from: duration / weightedAverageInterval
+     * This ensures the milestone count is consistent with actual interval constraints.
+     * 
+     * @param {Object} goal - Behavioral goal object
+     * @returns {number} - Total number of milestones
+     */
+    function calculateTotalMilestones(goal) {
+        var currentAmount = goal.currentAmount || 0;
+        var goalAmount = goal.goalAmount || 0;
+        var measurementDays = goal.measurementTimeline || 7;
+        var completionDays = goal.completionTimeline || 7;
         
-        // Remaining work to reach goal
-        var remainingActions = goalTotal - actualCount;
-        var remainingMs = goalEndMs - violationStartMs;
+        // Treat 0 values as 1 for interval calculations
+        var currentForCalc = Math.max(1, currentAmount);
+        var goalForCalc = Math.max(1, goalAmount);
         
-        console.log('[Milestone] CATCH-UP: Remaining actions:', remainingActions, 'from', new Date(violationStartMs));
+        // Calculate intervals
+        var measurementPeriodMs = measurementDays * 24 * 60 * 60 * 1000;
+        var durationMs = completionDays * 24 * 60 * 60 * 1000;
+        var firstIntervalMs = measurementPeriodMs / currentForCalc;
+        var lastIntervalMs = measurementPeriodMs / goalForCalc;
         
-        if (isDoLess) {
-            // Do-less catch-up: User did too many actions
-            // Calculate when they can next act based on remaining time/actions
-            if (remainingActions <= 0) {
-                // Exceeded limit - must wait until goal ends
-                return {
-                    type: 'waitUntil',
-                    timestamp: goalEndMs,
-                    actualCount: actualCount,
-                    onTrack: false,
-                    exceeded: true,
-                    message: 'Limit exceeded - wait until goal ends'
-                };
+        // Derive count from duration and weighted average interval
+        var curveType = lastIntervalMs > firstIntervalMs ? 'power' : 'power-out';
+        var weightedAvgInterval = calculateWeightedAverageInterval(
+            firstIntervalMs, 
+            lastIntervalMs, 
+            curveType
+        );
+        
+        var total = Math.round(durationMs / weightedAvgInterval);
+        return Math.max(1, total);
+    }
+    
+    /**
+     * Calculate next milestone for DO LESS goals.
+     * 
+     * Key insight: 
+     * - The original schedule defines milestone "slots" at specific times
+     * - Each action "uses up" one slot from the allowance
+     * - When a milestone time passes without action = slot completed (good!)
+     * - When action occurs before milestone = slot used (the action consumed it)
+     * 
+     * The calculation point shifts based on what happened:
+     * - If milestone passed without action: recalculate from that milestone's time
+     * - If extra actions occurred: spread remaining allowance over remaining time
+     * 
+     * Uses POWER curve (doing more early = progressively longer waits).
+     */
+    function calculateDoLessMilestone(goal, now, goalStartMs, goalEndMs, totalMilestones, actionCount, expectedActionsNow, timeProgress) {
+        // Get the original milestone schedule to find baseline timing
+        var originalSchedule = calculateMilestoneSchedule(goal);
+        
+        // Find the last milestone that has passed (by time)
+        var lastPassedMilestoneIndex = -1;
+        var lastPassedMilestoneTime = goalStartMs;
+        
+        for (var i = 0; i < originalSchedule.length; i++) {
+            if (originalSchedule[i].timestamp <= now) {
+                lastPassedMilestoneIndex = i;
+                lastPassedMilestoneTime = originalSchedule[i].timestamp;
+            } else {
+                break;
             }
-            
-            // Recalculate interval: spread remaining actions over remaining time
-            var msPerAction = remainingMs / remainingActions;
-            // Next allowed action is from violation point + one interval
-            var nextAllowedMs = violationStartMs + msPerAction;
-            
-            // If next allowed is in the past, calculate from now
-            if (nextAllowedMs < now) {
-                var actionsUsedSinceViolation = Math.floor((now - violationStartMs) / msPerAction);
-                nextAllowedMs = violationStartMs + ((actionsUsedSinceViolation + 1) * msPerAction);
-            }
-            
-            if (nextAllowedMs > goalEndMs) {
-                nextAllowedMs = goalEndMs;
-            }
-            
+        }
+        
+        // Count milestones that passed without action (these are COMPLETED for do-less)
+        var milestonesPassedByTime = lastPassedMilestoneIndex + 1;
+        
+        // User's actions "use up" slots. Completed slots = passed by time - used by actions
+        // But we need to think of it differently:
+        // - Total allowance = totalMilestones  
+        // - Used by actions = actionCount
+        // - Remaining allowance = totalMilestones - actionCount
+        
+        var remainingAllowance = totalMilestones - actionCount;
+        
+        // If user has exceeded their total allowance
+        if (remainingAllowance <= 0) {
             return {
                 type: 'waitUntil',
-                timestamp: nextAllowedMs,
-                actualCount: actualCount,
-                targetAmount: goalTotal,
+                timestamp: goalEndMs,
+                actualCount: actionCount,
+                totalMilestones: totalMilestones,
                 onTrack: false,
-                catchUp: true
-            };
-        } else {
-            // Do-more catch-up: User hasn't done enough actions
-            // Calculate new deadline to get back on track
-            if (remainingActions <= 0) {
-                // Already hit goal
-                return {
-                    complete: true,
-                    message: 'Goal achieved!'
-                };
-            }
-            
-            // Recalculate interval: spread remaining actions over remaining time
-            var msPerAction = remainingMs / remainingActions;
-            // Next required action is from now (urgency!)
-            var nextRequiredMs = now + msPerAction;
-            
-            if (nextRequiredMs > goalEndMs) {
-                nextRequiredMs = goalEndMs;
-            }
-            
-            return {
-                type: 'doItBy',
-                timestamp: nextRequiredMs,
-                actualCount: actualCount,
-                targetAmount: goalTotal,
-                onTrack: false,
-                catchUp: true
+                exceeded: true,
+                message: 'Allowance exceeded - wait until goal ends'
             };
         }
+        
+        // Determine if on track: have they done <= expected by now?
+        var isOnTrack = actionCount <= expectedActionsNow;
+        
+        // Calculate the reference point for next milestone:
+        // - If on track: use the last passed milestone time as reference
+        // - If off track (did more actions): recalculate from NOW
+        var referenceTime = isOnTrack ? Math.max(lastPassedMilestoneTime, now) : now;
+        var remainingTimeMs = goalEndMs - referenceTime;
+        
+        // Apply power curve: more actions = steeper curve = longer waits
+        // The curve exponent increases based on how far off track
+        var excessActions = Math.max(0, actionCount - expectedActionsNow);
+        var curveExponent = 1.0 + (excessActions * 0.3); // Gets steeper with more excess
+        curveExponent = Math.min(3.0, curveExponent); // Cap at 3.0
+        
+        // Calculate next interval using power curve
+        var nextIntervalMs = calculatePowerCurveInterval(
+            remainingTimeMs, 
+            remainingAllowance, 
+            curveExponent
+        );
+        
+        var nextTimestamp = referenceTime + nextIntervalMs;
+        
+        // Cap at goal end
+        if (nextTimestamp > goalEndMs) {
+            nextTimestamp = goalEndMs;
+        }
+        
+        return {
+            type: 'waitUntil',
+            timestamp: nextTimestamp,
+            actualCount: actionCount,
+            expectedNow: expectedActionsNow,
+            remainingAllowance: remainingAllowance,
+            totalMilestones: totalMilestones,
+            onTrack: isOnTrack,
+            milestoneIndex: actionCount + 1,
+            excessActions: excessActions
+        };
     }
-
+    
+    /**
+     * Calculate next milestone for DO MORE goals.
+     * 
+     * Key insight:
+     * - Each action "earns" progress toward your goal
+     * - If ahead of schedule, next deadline extends (reward!)
+     * - If behind, deadlines get closer (urgency!)
+     * 
+     * Uses SIGMOID curve (being ahead gives progressively more breathing room).
+     */
+    function calculateDoMoreMilestone(goal, now, goalStartMs, goalEndMs, totalMilestones, actionCount, expectedActionsNow, timeProgress) {
+        // Get original schedule for reference
+        var originalSchedule = calculateMilestoneSchedule(goal);
+        
+        var remainingTimeMs = goalEndMs - now;
+        
+        // How many more actions needed to complete goal?
+        var remainingNeeded = totalMilestones - actionCount;
+        
+        // If user has completed all required actions
+        if (remainingNeeded <= 0) {
+            return {
+                type: 'doItBy',
+                complete: true,
+                actualCount: actionCount,
+                totalMilestones: totalMilestones,
+                onTrack: true,
+                message: 'Goal achieved!'
+            };
+        }
+        
+        // Determine if on track: have they done >= expected by now?
+        var isOnTrack = actionCount >= expectedActionsNow;
+        var aheadBy = actionCount - expectedActionsNow;
+        
+        // Calculate next milestone time using SIGMOID curve
+        // Sigmoid: rewards being ahead with more breathing room
+        var nextIntervalMs;
+        
+        if (aheadBy > 0) {
+            // User is AHEAD - give them more breathing room
+            // Use sigmoid to gradually extend the deadline
+            var breathingFactor = 1 + applySigmoidBonus(aheadBy, remainingNeeded);
+            nextIntervalMs = (remainingTimeMs / remainingNeeded) * breathingFactor;
+        } else {
+            // User is BEHIND or on track - spread evenly (with slight urgency if behind)
+            var urgencyFactor = isOnTrack ? 1.0 : 0.9; // Slightly shorter intervals if behind
+            nextIntervalMs = (remainingTimeMs / remainingNeeded) * urgencyFactor;
+        }
+        
+        var nextTimestamp = now + nextIntervalMs;
+        
+        // Cap at goal end
+        if (nextTimestamp > goalEndMs) {
+            nextTimestamp = goalEndMs;
+        }
+        
+        return {
+            type: 'doItBy',
+            timestamp: nextTimestamp,
+            actualCount: actionCount,
+            expectedNow: expectedActionsNow,
+            remainingNeeded: remainingNeeded,
+            totalMilestones: totalMilestones,
+            onTrack: isOnTrack,
+            aheadBy: Math.max(0, aheadBy),
+            milestoneIndex: actionCount + 1
+        };
+    }
+    
+    /**
+     * Calculate interval using power curve.
+     * Higher exponent = steeper curve (longer waits when behind).
+     */
+    function calculatePowerCurveInterval(remainingTimeMs, remainingSlots, exponent) {
+        if (remainingSlots <= 0) return remainingTimeMs;
+        
+        // Base interval if evenly distributed
+        var baseInterval = remainingTimeMs / remainingSlots;
+        
+        // Apply power curve: first interval is larger
+        // This naturally makes the wait longer when you've used more allowance
+        var curveFactor = Math.pow(1 / remainingSlots, exponent - 1);
+        
+        return baseInterval * Math.max(1, curveFactor + 1);
+    }
+    
+    /**
+     * Calculate sigmoid bonus for being ahead of schedule.
+     * Returns a multiplier (0 to ~0.5) based on how far ahead.
+     */
+    function applySigmoidBonus(aheadBy, remainingNeeded) {
+        if (aheadBy <= 0 || remainingNeeded <= 0) return 0;
+        
+        // Normalize: how far ahead as proportion of remaining
+        var aheadRatio = Math.min(1, aheadBy / Math.max(1, remainingNeeded));
+        
+        // Sigmoid function centered at 0.3, scaled to max ~0.5 bonus
+        var x = (aheadRatio - 0.3) * 10;
+        var sigmoid = 1 / (1 + Math.exp(-x));
+        
+        return sigmoid * 0.5;
+    }
+    
+    /**
+     * Get actions since goal start for the relevant unit type.
+     */
+    function getActionsSinceGoalStart(goal, actions, goalStartSec) {
+        if (!actions || !Array.isArray(actions)) return [];
+        
+        var unit = goal.unit;
+        return actions.filter(function(a) {
+            if (!a || parseInt(a.timestamp) < goalStartSec) return false;
+            
+            if (unit === 'times') {
+                return a.clickType === 'used' || a.clickType === 'timed';
+            } else if (unit === 'minutes') {
+                return a.clickType === 'timed' && a.duration;
+            } else if (unit === 'dollars') {
+                return a.clickType === 'bought' && a.spent;
+            }
+            return false;
+        });
+    }
+    
     /**
      * Get actual count of actions since goal started
      * @param {Object} goal - Behavioral goal
@@ -895,12 +1255,24 @@ var StatsCalculationsModule = (function () {
         var count = 0;
         var unit = goal.unit;
         
+        // Debug: log what we're looking for
+        console.log('[ActionCount] Looking for actions since', goalStartSec, 'for unit:', unit);
+        console.log('[ActionCount] Total actions in storage:', actions.length);
+        
         actions.forEach(function(a) {
-            if (!a || parseInt(a.timestamp) < goalStartSec) return;
+            if (!a) return;
+            
+            var actionTs = parseInt(a.timestamp);
+            
+            // Skip actions before goal started
+            if (actionTs < goalStartSec) {
+                return;
+            }
             
             if (unit === 'times') {
                 if (a.clickType === 'used' || a.clickType === 'timed') {
                     count++;
+                    console.log('[ActionCount] Counted action:', a.clickType, 'at', actionTs);
                 }
             } else if (unit === 'minutes') {
                 if (a.clickType === 'timed' && a.duration) {
@@ -913,6 +1285,7 @@ var StatsCalculationsModule = (function () {
             }
         });
         
+        console.log('[ActionCount] Final count:', count);
         return count;
     }
 
@@ -1041,10 +1414,12 @@ var StatsCalculationsModule = (function () {
         getActiveGoalForUnit: getActiveGoalForUnit,
         calculateMilestoneSchedule: calculateMilestoneSchedule,
         calculateNextMilestone: calculateNextMilestone,
+        calculateTotalMilestones: calculateTotalMilestones,
         formatMilestoneTime: formatMilestoneTime,
         formatMilestoneClockTime: formatMilestoneClockTime,
         getAllottedPerPeriod: getAllottedPerPeriod,
-        getTimeAllotmentStatus: getTimeAllotmentStatus
+        getTimeAllotmentStatus: getTimeAllotmentStatus,
+        getActualCountSinceGoalStart: getActualCountSinceGoalStart
     };
 })();
 

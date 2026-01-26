@@ -333,7 +333,7 @@ var BriefStatsModule = (function () {
         // Per brief-stats-logic.txt: milestones require BOTH hasBaseline AND hasGoal
         if (focus === 'timesDone' && hasBaselineTimesDone(baseline) && hasGoalTimesDone(jsonObject)) {
             var goal = Calc.getActiveGoalForUnit(behavioralGoals, 'times');
-            var milestone = Calc.calculateNextMilestone(goal, actions, doLess);
+            var milestone = getNextScheduledMilestone(goal, actions, doLess);
             if (milestone && !milestone.complete) {
                 return getMilestoneStatConfig(milestone, doLess);
             }
@@ -375,6 +375,101 @@ var BriefStatsModule = (function () {
     }
     
     /**
+     * Get next scheduled milestone from the goal's milestone schedule.
+     * This uses the same schedule that's displayed in the goals panel,
+     * ensuring consistency between the brief stat and the milestones list.
+     * 
+     * @param {Object} goal - Behavioral goal object
+     * @param {Array} actions - Array of user actions
+     * @param {boolean} doLess - Whether this is a "do less" habit
+     * @returns {Object|null} - Milestone config or null if complete
+     */
+    function getNextScheduledMilestone(goal, actions, doLess) {
+        if (!goal) return null;
+        
+        var Calc = StatsCalculationsModule;
+        // Use correct curve type: power for "do less", sigmoid for "do more"
+        var curveType = doLess ? 'power' : 'sigmoid';
+        var schedule = Calc.calculateMilestoneSchedule(goal, { curveType: curveType });
+        if (!schedule || schedule.length === 0) return null;
+        
+        var now = Date.now();
+        var goalStartMs = goal.createdAt;
+        var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
+        var goalStartSec = Math.floor(goalStartMs / 1000);
+        
+        // Get relevant actions
+        var relevantActions = actions.filter(function(a) {
+            if (!a || parseInt(a.timestamp) < goalStartSec) return false;
+            if (goal.unit === 'times') {
+                return a.clickType === 'used' || a.clickType === 'timed';
+            }
+            return false;
+        });
+        relevantActions.sort(function(a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        });
+        
+        // Process milestones with action awareness (same logic as behavioralGoals.js)
+        var totalMilestones = Calc.calculateTotalMilestones(goal);
+        var actionCount = Calc.getActualCountSinceGoalStart(goal, actions, goalStartSec);
+        
+        // Count milestones that have passed (timestamp < now)
+        var milestonesPassedCount = 0;
+        for (var i = 0; i < schedule.length; i++) {
+            if (schedule[i].timestamp <= now) {
+                milestonesPassedCount++;
+            }
+        }
+        
+        // Calculate track status based on condition
+        // DO LESS: behind = MORE actions than milestones passed
+        // DO MORE: behind = FEWER actions than milestones passed
+        var trackDiff;
+        var trackStatus;
+        if (doLess) {
+            trackDiff = actionCount - milestonesPassedCount;
+            if (trackDiff > 0) {
+                trackStatus = { status: 'behind', count: trackDiff };
+            } else if (trackDiff < 0) {
+                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
+            } else {
+                trackStatus = { status: 'on-track', count: 0 };
+            }
+        } else {
+            trackDiff = milestonesPassedCount - actionCount;
+            if (trackDiff > 0) {
+                trackStatus = { status: 'behind', count: trackDiff };
+            } else if (trackDiff < 0) {
+                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
+            } else {
+                trackStatus = { status: 'on-track', count: 0 };
+            }
+        }
+        
+        // Find first upcoming milestone
+        for (var i = 0; i < schedule.length; i++) {
+            var m = schedule[i];
+            if (m.timestamp > now) {
+                return {
+                    type: doLess ? 'waitUntil' : 'doItBy',
+                    timestamp: m.timestamp,
+                    actualCount: actionCount,
+                    milestonesPassedCount: milestonesPassedCount,
+                    totalMilestones: totalMilestones,
+                    trackStatus: trackStatus.status,
+                    onTrack: trackStatus.status === 'on-track' || trackStatus.status === 'ahead',
+                    isAhead: trackStatus.status === 'ahead',
+                    milestoneIndex: m.index
+                };
+            }
+        }
+        
+        // All milestones passed
+        return { complete: true, totalMilestones: totalMilestones, actualCount: actionCount };
+    }
+    
+    /**
      * Get stat config for milestone (Wait until / Do it by)
      * @param {Object} milestone - Milestone data from calculateNextMilestone
      * @param {boolean} doLess - Whether this is a "do less" habit
@@ -407,6 +502,8 @@ var BriefStatsModule = (function () {
                 countdown: Calc.formatMilestoneTime(milestone.timestamp),
                 format: 'datetime',
                 onTrack: milestone.onTrack,
+                isAhead: milestone.isAhead,
+                trackStatus: milestone.trackStatus,
                 milestoneInfo: milestoneInfo
             };
         } else if (milestone.type === 'doItBy') {
@@ -418,6 +515,8 @@ var BriefStatsModule = (function () {
                 countdown: Calc.formatMilestoneTime(milestone.timestamp),
                 format: 'datetime',
                 onTrack: milestone.onTrack,
+                isAhead: milestone.isAhead,
+                trackStatus: milestone.trackStatus,
                 milestoneInfo: milestoneInfo
             };
         }
@@ -823,9 +922,12 @@ var BriefStatsModule = (function () {
         $stat.removeClass('stat-wait-until stat-do-it-by stat-time-allotment stat-money-allotment');
         $stat.addClass('stat-' + statConfig.subtype.replace(/([A-Z])/g, '-$1').toLowerCase());
         
-        // Add on-track / off-track class for styling
-        $stat.removeClass('milestone-on-track milestone-off-track');
-        if (statConfig.onTrack === true) {
+        // Add track status classes for styling
+        // ahead = green, on-track = neutral, behind = red
+        $stat.removeClass('milestone-on-track milestone-off-track milestone-ahead');
+        if (statConfig.isAhead === true) {
+            $stat.addClass('milestone-ahead');
+        } else if (statConfig.onTrack === true) {
             $stat.addClass('milestone-on-track');
         } else if (statConfig.onTrack === false) {
             $stat.addClass('milestone-off-track');
