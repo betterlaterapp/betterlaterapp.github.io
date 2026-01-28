@@ -242,16 +242,16 @@ input[type="number"] {
 
 .app-background {
 	background: url('../assets/images/lake-reflect-background.jpg');
-    background-position: 0px -140px;
+    background-position: 0px -147px;
     animation: animatedBackground 26s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
     from {
-        background-position: 0px -140px;
+        background-position: 0px -147px;
     }
     to {
-        background-position: 300px -137px;
+        background-position: 300px -147px;
     }
   }
 
@@ -1376,14 +1376,12 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 /* Full-width wrapper - breaks out of parent padding */
 .brief-stats-container-wrapper {
     position: relative;
-    left: -10px;
+    left: -5px;
     padding-top: 82px;
-    width: calc(100% + 20px);
+    width: calc(100% + 10px);
     background: rgba(0,0,0,0.2);
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
-    border: 2px solid;
-    border-top: none;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
 }
 
 .brief-stats {
@@ -1392,7 +1390,7 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     background: #171717;
     background: radial-gradient(circle,rgba(23, 23, 23, .8) 23%, rgba(59, 58, 58, .7) 86%, rgba(193, 193, 193, .6) 100%);
     backdrop-filter: blur(8px);
-    border-radius: 0 0 16px 16px;
+    border-radius: 0 0 10px 10px;
     padding: 0px 20px 8px 20px;
     margin: 0;
     max-height: 55px;
@@ -1700,13 +1698,14 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 
 /* 2 stats visible - milestone sizing */
 .brief-stats-container.stats-count-2 .stat-milestone-time {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
 }
 .brief-stats-container.stats-count-2 .stat-milestone-countdown {
     font-size: 1rem;
 }
 .brief-stats-container.stats-count-2 .stat-milestone-clock {
-    padding: 10px 20px;
+    padding: 7px 14px;
+    border: 1px solid #1a1a1a;
 }
 
 /* 1 stat visible - milestone sizing */
@@ -1725,15 +1724,17 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     color: #ffffff;
     font-size: .6rem;
 }
-.stat-brief.stat-milestone.milestone-off-track .stat-milestone-time {
+
+.stat-brief.stat-milestone.milestone-off-track .stat-milestone-time,
+.stat-brief.stat-milestone.milestone-off-track .stat-milestone-countdown {
     color: #ff3333;
-    animation: blink-alarm 1s infinite;
 }
 
-@keyframes blink-alarm {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+.stat-brief.stat-milestone.milestone-ahead .stat-milestone-time,
+.stat-brief.stat-milestone.milestone-ahead .stat-milestone-countdown {
+    color: #20c997;
 }
+
 
 /* ============================================
    BRIEF STATS - DYNAMIC SIZING BY COUNT (max 3)
@@ -3404,6 +3405,8 @@ input[type="number"] {
     min-height: 175px;
     cursor: pointer;
     position: relative;
+
+    border-bottom: 8px solid rgba(0, 0, 0, 0.6);
 }
 
 .goal-summary-header {
@@ -3446,11 +3449,13 @@ input[type="number"] {
     font-size: 0.85rem;
     color: #6c757d;
     font-weight: 500;
+    margin-right: 25px;
 }
 
 .goal-summary-title {
-    font-size: 1rem;
-    font-weight: 600;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 1.6rem;
+    font-weight: 400;
     color: #343a40;
     margin-bottom: 12px;
     line-height: 1.4;
@@ -3460,27 +3465,94 @@ input[type="number"] {
 /* Goal Stats Row (closed state) */
 .goal-summary-stats {
     display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
     gap: 16px;
     flex-wrap: wrap;
+    padding-bottom: 12px;
     margin-bottom: 12px;
+
+    padding-top: 12px;
 }
 
 .goal-stat-item {
     display: flex;
     flex-direction: column;
-    align-items: center;
     min-width: 60px;
+}
+
+.goal-stat-item.goal-stat-left {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.goal-stat-item.goal-stat-left .goal-type-badge {
+    padding: 2px 5px;
+}
+
+.goal-stat-item.goal-stat-right {
+    align-items: center;
 }
 
 .goal-stat-value {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #343a40;
+    color: #758390;
+}
+
+/* Milestone clock inside goal stats (uses brief-stats structure) */
+.goal-stat-item .stat-milestone-datetime {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.goal-stat-item .stat-milestone-countdown {
+    display: none;
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.goal-stat-item .stat-milestone-clock {
+    padding: 6px 12px;
+    background: rgba(30, 30, 30, 0.9);
+    border-radius: 6px;
+    border: 1px solid #333;
+}
+
+.goal-stat-item .stat-milestone-time {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ff5533;
+    font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+    text-shadow: 0 0 8px rgba(255, 85, 50, 0.5);
+    letter-spacing: 1px;
+}
+
+.goal-stat-item .stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* "Do more" / on-track goals use green timer */
+.goal-on-track .goal-stat-item .stat-milestone-time {
+    color: #33ff55;
+    text-shadow: 0 0 8px rgba(50, 255, 85, 0.5);
+}
+
+.goal-on-track .goal-stat-item .stat-milestone-clock {
+    border-color: #1a3a1a;
 }
 
 .goal-stat-label {
-    font-size: 0.7rem;
-    color: #6c757d;
+    font-size: .9rem;
+    color: #a9b5bf;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
@@ -3547,11 +3619,12 @@ input[type="number"] {
 
 /* Expand/Collapse Icon */
 .goal-expand-icon {
-    position: absolute;
-    right: 16px;
-    bottom: 16px;
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 1rem;
     color: #adb5bd;
     transition: transform 0.2s ease;
+    vertical-align: middle;
 }
 
 .goal-accordion-item.expanded .goal-expand-icon {
@@ -3566,7 +3639,9 @@ input[type="number"] {
 }
 
 .goal-accordion-item.expanded .goal-details {
-    max-height: 600px;
+    background: rgba(0, 0, 0, 0.06);
+    max-height: 2400px;
+    padding-top: 25px;
     transition: max-height 0.3s ease-in;
 }
 
@@ -3630,6 +3705,600 @@ input[type="number"] {
     color: #6c757d;
 }
 
+.milestone-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #343a40;
+}
+
+/* Milestone Status Styles */
+.milestone-item.milestone-completed .milestone-check {
+    color: #1e9039;
+}
+
+.milestone-item.milestone-missed .milestone-check {
+    color: #dc3545;
+}
+
+.milestone-item.milestone-upcoming .milestone-check {
+    color: #adb5bd;
+}
+
+.milestone-item.milestone-missed {
+    background: rgba(220, 53, 69, 0.05);
+    border-radius: 4px;
+    margin: 2px 0;
+    padding: 8px 4px;
+}
+
+.milestone-item.milestone-completed {
+    opacity: 0.8;
+}
+
+.milestone-status-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+
+.milestone-status-badge.completed {
+    background: rgba(30, 144, 57, 0.1);
+    color: #1e9039;
+}
+
+.milestone-status-badge.missed {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.milestone-status-badge.upcoming {
+    background: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+/* Day Summary Cards (default view) */
+.milestone-day-summary {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-left: 4px solid #adb5bd;
+}
+
+.milestone-day-summary:hover {
+    background: #e9ecef;
+    transform: translateX(2px);
+}
+
+.milestone-day-summary.completed {
+    border-left-color: #1e9039;
+    background: rgba(30, 144, 57, 0.05);
+}
+
+.milestone-day-summary.missed {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.milestone-day-summary.mixed {
+    border-left-color: #fd7e14;
+    background: rgba(253, 126, 20, 0.05);
+}
+
+.milestone-day-summary.upcoming {
+    border-left-color: #6c757d;
+}
+
+.day-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.day-summary-date {
+    font-weight: 700;
+    font-size: 1.45rem;
+    color: #212529;
+    line-height: .9rem;
+}
+
+.day-summary-count {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.day-summary-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.day-summary-interval {
+    color: #495057;
+}
+
+.day-summary-stats .status-completed {
+    color: #1e9039;
+    font-weight: 600;
+}
+
+.day-summary-stats .status-missed {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.day-summary-stats .status-upcoming {
+    color: #6c757d;
+}
+
+/* Milestone Cards (filtered day view) */
+.milestone-card {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.15s ease;
+}
+
+.milestone-card:hover {
+    border-color: #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.milestone-num {
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #343a40;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-right: 14px;
+    letter-spacing: -0.5px;
+}
+
+.milestone-card.milestone-completed .milestone-num {
+    background: rgba(30, 144, 57, 0.1);
+    color: #1e9039;
+}
+
+.milestone-card.milestone-missed .milestone-num {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.milestone-card.milestone-upcoming .milestone-num {
+    background: #f1f3f5;
+    color: #868e96;
+}
+
+.milestone-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.milestone-datetime {
+    font-weight: 600;
+    font-size: 1.45rem;
+    color: #212529;
+    line-height: .9rem;
+}
+
+.milestone-progress {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.milestone-card.milestone-completed {
+    opacity: 0.85;
+    border-left: 3px solid #1e9039;
+}
+
+.milestone-card.milestone-missed {
+    border-left: 3px solid #dc3545;
+    background: rgba(220, 53, 69, 0.02);
+}
+
+.milestone-card.milestone-upcoming {
+    border-left: 3px solid #adb5bd;
+}
+
+/* Progress Bar with Milestone Markers */
+.goal-progress-with-markers {
+    position: relative;
+}
+
+.milestone-marker {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 12px; /* Half the bar height */
+    background: rgba(0, 0, 0, 1);
+    transform: translateX(-50%);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.milestone-marker.upcoming {
+    background: rgba(0, 0, 0, 1);
+}
+
+/* Day markers - taller markers at midnight */
+.day-marker {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 24px; /* 1.5x the regular 16px milestone marker height */
+    background: rgba(197, 197, 197, 1);
+    transform: translateX(-50%);
+    z-index: 5;
+}
+
+/* Day labels between midnight markers */
+.day-label {
+    position: absolute;
+    bottom: 16px;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(197, 197, 197, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 6;
+    pointer-events: none;
+    border-bottom: 1px solid rgba(197, 197, 197, 1);
+}
+
+/* Goal stat value with missed indicator */
+.goal-stat-value.has-missed {
+    color: #dc3545;
+}
+
+.goal-stat-value.has-missed small {
+    font-size: 0.7em;
+    opacity: 0.8;
+}
+
+/* Track status colors */
+.goal-stat-value.status-on-track {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.goal-stat-value.status-behind {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.goal-stat-value.status-ahead {
+    color: #20c997;
+    font-weight: 600;
+}
+
+/* Track status badges */
+.goal-type-badge.badge-on-track {
+    background: rgba(40, 167, 69, 0.8);
+    color: #fff;
+    border: 1px solid rgba(40, 167, 69, 0.9);
+}
+
+.goal-type-badge.badge-ahead {
+    background: rgba(5, 152, 69, 0.527);
+    color: #fff;
+    border: 1px solid rgba(32, 201, 151, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(32, 201, 151, 0.4);
+}
+
+.goal-type-badge.badge-behind {
+    background: rgba(220, 53, 69, 0.85);
+    color: #fff;
+    border: 1px solid rgba(220, 53, 69, 0.9);
+}
+
+/* Goal Delete Button */
+.goal-accordion-item {
+    position: relative;
+}
+
+.goal-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #adb5bd;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.goal-delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.goal-delete-btn i {
+    font-size: 12px;
+}
+
+/* Dual Progress Bar */
+.goal-dual-progress {
+    margin-top: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    margin-bottom: -16px;
+}
+
+.goal-dual-progress .goal-progress-legend {
+    padding: 0 16px;
+    margin-top: 4px;
+    display: flex;
+    justify-content: flex-end;
+
+}
+
+.goal-dual-progress .goal-progress-bar {
+    height: 32px;
+    position: relative;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    overflow: visible;
+}
+
+.goal-dual-progress .goal-progress-fill {
+    position: absolute;
+    left: 0;
+    transition: width 0.3s ease;
+}
+
+/* Time progress - top 50% of bar */
+.goal-dual-progress .goal-progress-fill.time-progress {
+    bottom: 0;
+    height: 50%;
+    background: rgba(108, 117, 125, 0.6);
+    z-index: 1;
+}
+
+/* Amount done progress - bottom 50% of bar */
+.goal-dual-progress .goal-progress-fill.goal-progress {
+    top: 50%;
+    height: 50%;
+    z-index: 2;
+}
+
+.goal-dual-progress .goal-progress-fill.goal-progress.on-track {
+    background: #1e9039;
+}
+
+.goal-dual-progress .goal-progress-fill.goal-progress.behind {
+    background: linear-gradient(90deg, #911521, #fd7e14);
+}
+
+.goal-time-marker {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 150%;
+    background: #343a40;
+    z-index: 7;
+    transform: translateX(-50%);
+    border-radius: 1px;
+}
+
+/* Legend removed - kept for potential future use */
+.goal-progress-legend {
+    display: none;
+    display: flex;
+    justify-content: flex-start;
+    gap: 16px;
+    margin-top: 0;
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.legend-dot.time {
+    background: rgba(108, 117, 125, 0.5);
+}
+
+.legend-dot.progress {
+    background: linear-gradient(90deg, #1e9039, #20c997);
+}
+
+/* Calendar Filter Info */
+.calendar-filter-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 12px;
+    font-size: 0.8rem;
+}
+
+.calendar-filter-info .filter-date {
+    color: #495057;
+}
+
+.calendar-filter-info .clear-filter-btn {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+}
+
+/* Milestone Density Levels (opacity variations) */
+.milestone-density-1 a { opacity: 0.5; }
+.milestone-density-2 a { opacity: 0.65; }
+.milestone-density-3 a { opacity: 0.8; }
+.milestone-density-4 a { opacity: 0.9; }
+.milestone-density-5 a { opacity: 1.0; }
+
+
+/* Goal Milestone Calendar */
+.goal-calendar-container {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.goal-calendar-container h5 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.goal-milestone-calendar {
+    display: flex;
+    justify-content: center;
+}
+
+.goal-milestone-calendar .ui-datepicker {
+    width: 100%;
+    max-width: 300px;
+    font-size: 0.85rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.goal-milestone-calendar .ui-datepicker-header {
+    background: #f8f9fa;
+    border: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.goal-milestone-calendar .ui-datepicker-title {
+    font-weight: 600;
+}
+
+/* Milestone day markers in calendar */
+.milestone-day {
+    position: relative;
+}
+
+.milestone-day.milestone-completed a {
+    background: #1e9039 !important;
+    color: white !important;
+    border-radius: 2px;
+}
+
+.milestone-day.milestone-missed a {
+    background: #dc3545 !important;
+    color: white !important;
+}
+
+.milestone-day.milestone-upcoming a {
+    background: #6c757d !important;
+    color: white !important;
+    border-radius: 2px;
+}
+
+.milestone-day.milestone-completed a::after,
+.milestone-day.milestone-missed a::after,
+.milestone-day.milestone-upcoming a::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: white;
+}
+
+/* Goal Value Highlighting in Summary Title */
+/* Goal values highlight group */
+.goal-values-highlight {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.goal-value-current {
+    font-weight: 700;
+    color: #c82333;
+    font-size: 1.6rem;
+}
+
+.goal-value-target {
+    font-weight: 700;
+    color: #157a2c;
+    font-size: 1.8rem;
+}
+
+.goal-curve-arrow {
+    font-size: .9em;
+    line-height: 1;
+    margin: 0px 12px;
+}
+
+.goal-curve-arrow.curve-power {
+    color: #6c757d;
+}
+
+.goal-curve-arrow.curve-sigmoid {
+    color: #157a2c;
+}
+
+.goal-on-track .goal-value-target {
+    color: #24b144;
+}
+
+.goal-behind .goal-value-target {
+    color: #c82333;
+}
+
+.goal-behind .goal-curve-arrow {
+    color: #c82333;
+}
+
+/* Summary progress bar (visible when collapsed) */
+.goal-summary-progress {
+    height: 4px;
+    margin-top: 12px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
 /* Mood Records Section (for qualitative) */
 .goal-mood-records {
     margin-top: 16px;
@@ -3680,7 +4349,7 @@ input[type="number"] {
 
 .goal-progress-bar {
     height: 8px;
-    background: #e9ecef;
+    background: #ffffff;
     border-radius: 4px;
     overflow: hidden;
 }

@@ -442,12 +442,19 @@ var UIModule = (function() {
      */
     function openClickDialog(clickDialogTarget) {
         var navBarHeight = 62;
+        var $targetDialog = $(clickDialogTarget + ".log-more-info");
 
-        $(clickDialogTarget + ".log-more-info").slideToggle("fast");
+        $targetDialog.slideToggle("fast");
 
+        // Scroll to the specific dialog being opened (not just any .log-more-info)
+        // Use a short delay to let slideToggle start showing the element
+        setTimeout(function() {
+            if ($targetDialog.length && $targetDialog.offset()) {
         $('html, body').animate({
-            scrollTop: $('.log-more-info').offset().top - navBarHeight
-        }, 1500);
+                    scrollTop: $targetDialog.offset().top - navBarHeight
+                }, 500);
+            }
+        }, 100);
         
         // Grey out background
         var bodyHeight = $(document).height();
