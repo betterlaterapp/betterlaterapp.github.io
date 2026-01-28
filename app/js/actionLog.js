@@ -170,9 +170,8 @@ var ActionLogModule = (function () {
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
 
                 } else if (currClickType == "wait") {
-                    // Use new property names, with fallback to legacy names
-                    currWaitEndStamp = allActions[i].waitStopped || allActions[i].goalStopped;
-                    currWaitType = allActions[i].waitType || allActions[i].goalType;
+                    currWaitEndStamp = allActions[i].waitStopped;
+                    currWaitType = allActions[i].waitType;
                     placeWaitIntoLog(currClickStamp, currWaitEndStamp, currWaitType, true, jsonObject);
                     
                 } else if (currClickType == "mood") {
@@ -228,9 +227,8 @@ var ActionLogModule = (function () {
                     placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
 
                 } else if (currClickType == "wait") {
-                    // Use new property names, with fallback to legacy names
-                    currWaitEndStamp = allActions[i].waitStopped || allActions[i].goalStopped;
-                    currWaitType = allActions[i].waitType || allActions[i].goalType;
+                    currWaitEndStamp = allActions[i].waitStopped;
+                    currWaitType = allActions[i].waitType;
                     placeWaitIntoLog(currClickStamp, currWaitEndStamp, currWaitType, true, jsonObject);
                     
                 } else if (currClickType == "mood") {

@@ -267,7 +267,7 @@ var StatsDisplayModule = (function () {
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
                 var waitedInInterval = jsonObject.action.filter(function(e) {
-                    return e && (e.clickType === 'wait' || e.clickType === 'goal') && 
+                    return e && e.clickType === 'wait' &&
                            e.status >= 2 && // completed waits
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
@@ -277,7 +277,7 @@ var StatsDisplayModule = (function () {
                 }, 0);
                 var waitedSeconds = waitedInInterval.reduce(function(sum, e) {
                     var start = e.clickStamp || e.timestamp;
-                    var end = e.waitStopped || e.goalStopped || e.timestamp;
+                    var end = e.waitStopped || e.timestamp;
                     return sum + Math.max(0, end - start);
                 }, 0);
                 

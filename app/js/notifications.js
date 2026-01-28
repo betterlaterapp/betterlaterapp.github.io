@@ -208,17 +208,19 @@ var NotificationsModule = (function () {
         return notificationId;
     }
 
-    function createGoalEndNotification(goalHandle) {
-        var goalType = goalHandle.goalType;
-        var goalTypeGerund = goalType === "use" ? "doing" : 
-                            goalType === "bought" ? "buying" : "buying and doing";
+    function createWaitEndNotification(waitHandle) {
+        var waitTypeGerund = waitHandle.waitType === "use" ? "doing" :
+                            waitHandle.waitType === "bought" ? "buying" : "buying and doing";
 
-        var message = 'Your most recent goal ended since your last visit. Did you make it without ' + goalTypeGerund + ' it?';
+        var message = 'Your most recent wait ended since your last visit. Did you make it without ' + waitTypeGerund + ' it?';
         var responseTools = '<button class="notification-response-tool goal-ended-on-time">Yes</button>' +
                            '<button class="notification-response-tool goal-ended-early">No</button>';
 
-        createNotification(message, responseTools, { type: 'goal_ended_away' });
+        createNotification(message, responseTools, { type: 'wait_ended_away' });
     }
+
+    // Backward compatibility alias for any code still using old name
+    var createGoalEndNotification = createWaitEndNotification;
 
     function renderNotificationsLog() {
         var notifications = getStoredNotifications();
@@ -323,36 +325,36 @@ var NotificationsModule = (function () {
         var id = $logItem.data('id');
         
         var jsonObject = StorageModule.retrieveStorageObject();
-        var activeGoals = jsonObject.action.filter(function (e) {
-            return e && e.clickType == "goal" && e.status == 1;
+        var activeWaits = jsonObject.action.filter(function (e) {
+            return e && e.clickType == "wait" && e.status == 1;
         });
-        var mostRecentGoal = activeGoals[activeGoals.length - 1];
+        var mostRecentWait = activeWaits[activeWaits.length - 1];
 
-        if (!mostRecentGoal) {
+        if (!mostRecentWait) {
             if (id) markAsRead(id);
             renderNotificationsLog();
             return;
         }
 
-        var startStamp = mostRecentGoal.timestamp;
-        var endStamp = mostRecentGoal.goalStamp;
-        var goalType = mostRecentGoal.goalType;
+        var startStamp = mostRecentWait.timestamp;
+        var endStamp = mostRecentWait.waitStamp;
+        var waitType = mostRecentWait.waitType;
 
         if ($this.hasClass("goal-ended-on-time")) {
-            if (id) storeUserResponse(id, 'goal-ended-on-time', { goalType: goalType });
+            if (id) storeUserResponse(id, 'goal-ended-on-time', { waitType: waitType });
             renderNotificationsLog();
-            
-            ActionLogModule.placeWaitIntoLog(startStamp, endStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
+
+            ActionLogModule.placeWaitIntoLog(startStamp, endStamp, waitType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
             var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
             createNotification("Congrats on completing your wait! " + affirmation, null, { type: 'wait_completed' });
-            StorageModule.changeWaitStatus(3, goalType);
+            StorageModule.changeWaitStatus(3, waitType);
 
             json.statistics.wait.activeWaitBoth = 0;
             json.statistics.wait.activeWaitUse = 0;
             json.statistics.wait.activeWaitBought = 0;
         }
         else if ($this.hasClass("goal-ended-early")) {
-            if (id) storeUserResponse(id, 'goal-ended-early', { goalType: goalType });
+            if (id) storeUserResponse(id, 'goal-ended-early', { waitType: waitType });
             renderNotificationsLog();
             
             var now = Math.round(new Date() / 1000);
@@ -385,12 +387,12 @@ var NotificationsModule = (function () {
             var tempEndStamp = Math.round(selectedDate.getTime() / 1000);
 
             if (tempEndStamp - startStamp > 0 || endStamp - tempEndStamp < 0) {
-                if (id) storeUserResponse(id, 'submit-goal-end-time', { 
-                    goalType: goalType, 
-                    endTimestamp: tempEndStamp 
+                if (id) storeUserResponse(id, 'submit-wait-end-time', {
+                    waitType: waitType,
+                    endTimestamp: tempEndStamp
                 });
-                StorageModule.changeWaitStatus(2, goalType, tempEndStamp);
-                ActionLogModule.placeWaitIntoLog(startStamp, tempEndStamp, goalType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
+                StorageModule.changeWaitStatus(2, waitType, tempEndStamp);
+                ActionLogModule.placeWaitIntoLog(startStamp, tempEndStamp, waitType, false, json, StatsCalculationsModule.convertSecondsToDateFormat);
                 renderNotificationsLog();
                 json.statistics.wait.activeWaitBoth = 0;
                 json.statistics.wait.activeWaitUse = 0;
@@ -420,7 +422,8 @@ var NotificationsModule = (function () {
 
     return {
         createNotification: createNotification,
-        createGoalEndNotification: createGoalEndNotification,
+        createWaitEndNotification: createWaitEndNotification,
+        createGoalEndNotification: createGoalEndNotification, // backward compat alias
         renderNotificationsLog: renderNotificationsLog,
         updateBadgeCount: updateBadgeCount,
         markAsRead: markAsRead,

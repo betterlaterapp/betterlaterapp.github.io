@@ -313,18 +313,18 @@ var StatsCalculationsModule = (function () {
     }
 
     /**
-     * Calculate longest goal from a set of goals
-     * @param {Array} goals - Array of goal records
-     * @returns {number} - Duration of longest goal in seconds
+     * Calculate longest wait from a set of waits
+     * @param {Array} waits - Array of wait records
+     * @returns {number} - Duration of longest wait in seconds
      */
-    function calculateLongestGoalFromSet(goals) {
+    function calculateLongestWaitFromSet(waits) {
         var largestDiff = 0;
 
-        for (var i = 0; i < goals.length; i++) {
-            var currStartStamp = goals[i].timestamp;
-            var currEndStamp = goals[i].goalStopped;
+        for (var i = 0; i < waits.length; i++) {
+            var currStartStamp = waits[i].timestamp;
+            var currEndStamp = waits[i].waitStopped;
             var currDiff = currEndStamp - currStartStamp;
-            
+
             if (largestDiff < currDiff) {
                 largestDiff = currDiff;
             }
@@ -332,6 +332,9 @@ var StatsCalculationsModule = (function () {
 
         return largestDiff;
     }
+
+    // Backward compatibility alias for any code still using old name
+    var calculateLongestGoalFromSet = calculateLongestWaitFromSet;
 
     // ============================================
     // Brief Stats Calculation Functions
@@ -1019,8 +1022,9 @@ var StatsCalculationsModule = (function () {
         convertSecondsToDateFormat: convertSecondsToDateFormat,
         calculateResistStreak: calculateResistStreak,
         calculateAverageTimeBetween: calculateAverageTimeBetween,
-        calculateLongestGoalFromSet: calculateLongestGoalFromSet,
-        
+        calculateLongestWaitFromSet: calculateLongestWaitFromSet,
+        calculateLongestGoalFromSet: calculateLongestGoalFromSet, // backward compat alias
+
         // Brief stats calculation functions
         getStartOfPeriod: getStartOfPeriod,
         getCurrentResistStreak: getCurrentResistStreak,

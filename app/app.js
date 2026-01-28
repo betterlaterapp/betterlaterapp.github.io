@@ -495,81 +495,81 @@ $(document).ready(function () {
                 ActivityTimerModule.updateTimeSpentStats();
             }
 
-            /* GOAL STATISTICS*/
-            var goalCount = jsonObject.action.filter(function (e) {
-                return e && e.clickType == "goal";
+            /* WAIT STATISTICS */
+            var waitCount = jsonObject.action.filter(function (e) {
+                return e && e.clickType == "wait";
             });
-            goalCount = goalCount.sort((a, b) => {
+            waitCount = waitCount.sort((a, b) => {
                 return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
             })
-            //goal status
-            //1 == active goal
-            //2 == partially completed goal
-            //3 == completed goal
+            //wait status
+            //1 == active wait
+            //2 == partially completed wait
+            //3 == completed wait
 
-            if (goalCount.length > 0) {
-                var activeGoals = goalCount.filter(function (e) {
+            if (waitCount.length > 0) {
+                var activeWaits = waitCount.filter(function (e) {
                     return e.status == 1
                 });
 
-                activeGoals = activeGoals.sort((a, b) => {
+                activeWaits = activeWaits.sort((a, b) => {
                     return parseInt(a.timestamp) > parseInt(b.timestamp) ? 1 : -1;
                 })
 
-                var inactiveGoals = goalCount.filter(function (e) {
+                var inactiveWaits = waitCount.filter(function (e) {
                     return e.status == 2 || e.status == 3
                 });
-                var inactiveGoalsWeek = goalCount.filter(function (e) {
+                var inactiveWaitsWeek = waitCount.filter(function (e) {
                     return (e.status == 2 || e.status == 3) && e.timestamp >= oneWeekAgoTimeStamp
                 });
-                var inactiveGoalsMonth = goalCount.filter(function (e) {
+                var inactiveWaitsMonth = waitCount.filter(function (e) {
                     return (e.status == 2 || e.status == 3) && e.timestamp >= oneMonthAgoTimeStamp
                 });
-                var inactiveGoalsYear = goalCount.filter(function (e) {
+                var inactiveWaitsYear = waitCount.filter(function (e) {
                     return (e.status == 2 || e.status == 3) && e.timestamp >= oneYearAgoTimeStamp
                 });
 
                 //timestamp of most recent click - to limit clicks in a row
-                json.statistics.wait.lastClickStamp = goalCount[goalCount.length - 1].timestamp;
-                json.statistics.wait.clickCounter = goalCount.length;
+                json.statistics.wait.lastClickStamp = waitCount[waitCount.length - 1].timestamp;
+                json.statistics.wait.clickCounter = waitCount.length;
 
-                if (activeGoals.length > 0) {
-                    var mostRecentGoal = activeGoals[activeGoals.length - 1];
+                if (activeWaits.length > 0) {
+                    var mostRecentWait = activeWaits[activeWaits.length - 1];
 
-                    //set var in json for if there is an active wait of X type - 
+                    //set var in json for if there is an active wait of X type -
                     //to be used on click of relevant buttons to end wait
-                    if (mostRecentGoal.goalType == "both") {
+                    if (mostRecentWait.waitType == "both") {
                         json.statistics.wait.activeWaitBoth = 1;
-                    } else if (mostRecentGoal.goalType == "use") {
+                    } else if (mostRecentWait.waitType == "use") {
                         json.statistics.wait.activeWaitUse = 1;
-                    } else if (mostRecentGoal.goalType == "bought") {
+                    } else if (mostRecentWait.waitType == "bought") {
                         json.statistics.wait.activeWaitBought = 1;
                     }
 
-                    var totalSecondsUntilGoalEnd = mostRecentGoal.goalStamp - timeNow;
-                    if (totalSecondsUntilGoalEnd <= 0) {
-                        // Goal ended while user was away
-                        NotificationsModule.createGoalEndNotification(mostRecentGoal);
+                    var totalSecondsUntilWaitEnd = mostRecentWait.waitStamp - timeNow;
+                    if (totalSecondsUntilWaitEnd <= 0) {
+                        // Wait ended while user was away
+                        NotificationsModule.createWaitEndNotification(mostRecentWait);
                     }
                     // Note: Active wait timer panels are restored by WaitTimerModule.restoreActiveWaitTimers()
                 }
 
-                if (inactiveGoals.length > 0) {
+                if (inactiveWaits.length > 0) {
                     // Use the wait statistics object
                     var waitStats = json.statistics.wait;
                     var longestStats = waitStats.longestWait;
-                    
+
                     //number of waits completed
-                    waitStats.completedWaits = inactiveGoals.length;
-                    $("#numberOfWaitsCompleted, #numberOfGoalsCompleted").html(inactiveGoals.length);
+                    waitStats.completedWaits = inactiveWaits.length;
+                    $("#numberOfWaitsCompleted, #numberOfGoalsCompleted").html(inactiveWaits.length);
 
                     // Calculate longest waits using StatsCalculationsModule
-                    var longestTotal = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoals);
+                    var longestTotal = StatsCalculationsModule.calculateLongestWaitFromSet(inactiveWaits);
                     longestStats["total"] = longestTotal;
                     $(".statistic.longestWait.total, .statistic.longestGoal.total").html(StatsCalculationsModule.convertSecondsToDateFormat(longestTotal, true));
 
-                    if (inactiveGoalsWeek.length > 0) {
-                        var longestWeek = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsWeek);
+                    if (inactiveWaitsWeek.length > 0) {
+                        var longestWeek = StatsCalculationsModule.calculateLongestWaitFromSet(inactiveWaitsWeek);
                         longestStats["week"] = longestWeek;
                         $(".statistic.longestWait.week, .statistic.longestGoal.week").html(StatsCalculationsModule.convertSecondsToDateFormat(longestWeek, true));
                     } else {
@@ -577,16 +577,16 @@ $(document).ready(function () {
                         $(".statistic.longestWait.week, .statistic.longestGoal.week").html("N/A");
                     }
 
-                    if (inactiveGoalsMonth.length > 0) {
-                        var longestMonth = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsMonth);
+                    if (inactiveWaitsMonth.length > 0) {
+                        var longestMonth = StatsCalculationsModule.calculateLongestWaitFromSet(inactiveWaitsMonth);
                         longestStats["month"] = longestMonth;
                         $(".statistic.longestWait.month, .statistic.longestGoal.month").html(StatsCalculationsModule.convertSecondsToDateFormat(longestMonth, true));
                     } else {
                         longestStats["month"] = "N/A";
                     }
 
-                    if (inactiveGoalsYear.length > 0) {
-                        var longestYear = StatsCalculationsModule.calculateLongestGoalFromSet(inactiveGoalsYear);
+                    if (inactiveWaitsYear.length > 0) {
+                        var longestYear = StatsCalculationsModule.calculateLongestWaitFromSet(inactiveWaitsYear);
                         longestStats["year"] = longestYear;
                         $(".statistic.longestWait.year, .statistic.longestGoal.year").html(StatsCalculationsModule.convertSecondsToDateFormat(longestYear, true));
                     } else {
@@ -597,7 +597,7 @@ $(document).ready(function () {
 
 
             //NEEEWWWWW USERRR
-            if ((useCount == 0 && craveCount == 0 && costCount == 0 && moodCount == 0 && goalCount == 0)
+            if ((useCount == 0 && craveCount == 0 && costCount == 0 && moodCount == 0 && waitCount == 0)
                 && json.baseline && json.baseline.specificSubject == false
                 && json.option.activeTab == "settings-content") {
                 var introMessage = "<b>Welcome back!</b> Start tracking your habit now by clicking any of the buttons on the right.";

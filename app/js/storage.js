@@ -145,16 +145,20 @@ var StorageModule = (function () {
                 jsonObject.action.forEach(function(action) {
                     if (action.clickType === 'goal') {
                         action.clickType = 'wait';
-                        // Keep goalType as waitType but also preserve goalType for backward compat
+                        // Rename goalType → waitType
                         if (action.goalType) {
                             action.waitType = action.goalType;
+                            delete action.goalType;
                         }
-                        // Rename timestamps
+                        // Rename goalStamp → waitStamp
                         if (action.goalStamp) {
                             action.waitStamp = action.goalStamp;
+                            delete action.goalStamp;
                         }
+                        // Rename goalStopped → waitStopped
                         if (action.goalStopped) {
                             action.waitStopped = action.goalStopped;
+                            delete action.goalStopped;
                         }
                     }
                 });
@@ -316,12 +320,12 @@ var StorageModule = (function () {
      * @param {number} ts - timestamp
      * @param {string} ct - clickType
      * @param {number} spt - spent amount (optional)
-     * @param {number} gs - goalStamp (optional)
-     * @param {string} gt - goalType (optional)
+     * @param {number} ws - waitStamp (optional, for wait actions)
+     * @param {string} wt - waitType (optional, for wait actions)
      * @param {string} cm - comment (optional)
      * @param {number} sm - smiley mood value (optional)
      */
-    function updateActionTable(ts, ct, spt, gs, gt, cm, sm) {
+    function updateActionTable(ts, ct, spt, ws, wt, cm, sm) {
         var jsonObject = retrieveStorageObject();
 
         var newRecord;
@@ -333,24 +337,16 @@ var StorageModule = (function () {
         } else if (ct == "bought") {
             newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, spent: spt.toString() };
 
-        } else if (ct == "wait" || ct == "goal") {
-            var st = 1;
-            var waitStopped = -1;
-            newRecord = { 
-                timestamp: ts.toString(), 
-                clickType: ct, 
-                clickStamp: now, 
-                waitStamp: gs.toString(), 
-                waitType: gt, 
-                status: st, 
-                waitStopped: waitStopped 
+        } else if (ct == "wait") {
+            newRecord = {
+                timestamp: ts.toString(),
+                clickType: 'wait',
+                clickStamp: now,
+                waitStamp: ws.toString(),
+                waitType: wt,
+                status: 1,
+                waitStopped: -1
             };
-            // Add backward compat fields for 'wait' type
-            if (ct == "wait") {
-                newRecord.goalStamp = gs.toString();
-                newRecord.goalType = gt;
-                newRecord.goalStopped = waitStopped;
-            }
 
         } else if (ct == "mood") {
             newRecord = { timestamp: ts.toString(), clickType: ct, clickStamp: now, comment: cm, smiley: sm };
@@ -365,65 +361,7 @@ var StorageModule = (function () {
     }
 
     /**
-     * Change goal status in storage
-     * Note: This function handles the storage part. UI updates should be done in app.js
-     * @param {number} newGoalStatus - New status value (1=active, 2=partially completed, 3=completed)
-     * @param {string} goalType - Type of goal
-     * @param {number} actualEnd - Optional timestamp when goal actually ended
-     * @param {number} goalExtendedTo - Optional new goal end timestamp if extending
-     * @returns {object} Updated goal object and whether it was extended
-     */
-    function changeGoalStatus(newGoalStatus, goalType, actualEnd, goalExtendedTo) {
-        //goal status
-        //1 == active goal
-        //2 == partially completed goal
-        //3 == completed goal
-
-        //convert localStorage to json
-        var jsonObject = retrieveStorageObject();
-
-        var goals = jsonObject.action.filter(function (e) {
-            return e && e.clickType == 'goal' && e.goalType == goalType
-        });
-        var mostRecentGoal = goals[goals.length - 1];
-        mostRecentGoal.status = newGoalStatus;
-
-        //actual end was passed to function	
-        if (actualEnd) {
-            mostRecentGoal.goalStopped = actualEnd;
-        } else {
-            //else set the actual end to end of goal endDate
-            mostRecentGoal.goalStopped = mostRecentGoal.goalStamp;
-        }
-
-        var wasExtended = false;
-        var totalSecondsUntilGoalEnd = null;
-
-        //user wants to extend current goal
-        if (goalExtendedTo) {
-            if (mostRecentGoal.goalStamp < goalExtendedTo) {
-                //goal was extended, not shortened
-                mostRecentGoal.goalStamp = goalExtendedTo;
-                setStorageObject(jsonObject);
-
-                var date = new Date();
-                var timestampSeconds = Math.round(date / 1000);
-                totalSecondsUntilGoalEnd = Math.round(goalExtendedTo - timestampSeconds);
-                wasExtended = true;
-            }
-        } else {
-            setStorageObject(jsonObject);
-        }
-
-        return {
-            wasExtended: wasExtended,
-            totalSecondsUntilGoalEnd: totalSecondsUntilGoalEnd,
-            goalWasShorter: goalExtendedTo && mostRecentGoal.goalStamp >= goalExtendedTo
-        };
-    }
-
-    /**
-     * Change wait status in storage (renamed from changeGoalStatus)
+     * Change wait status in storage
      * Note: This function handles the storage part. UI updates should be done in app.js
      * @param {number} newWaitStatus - New status value (1=active, 2=partially completed, 3=completed)
      * @param {string} waitType - Type of wait (use, bought, both)
@@ -435,10 +373,8 @@ var StorageModule = (function () {
         // wait status: 1=active, 2=partially completed, 3=completed
         var jsonObject = retrieveStorageObject();
 
-        // Support both old 'goal' clickType and new 'wait' clickType during migration
         var waits = jsonObject.action.filter(function (e) {
-            return e && (e.clickType == 'wait' || e.clickType == 'goal') && 
-                   (e.waitType == waitType || e.goalType == waitType);
+            return e && e.clickType == 'wait' && e.waitType == waitType;
         });
         var mostRecentWait = waits[waits.length - 1];
         mostRecentWait.status = newWaitStatus;
@@ -446,12 +382,9 @@ var StorageModule = (function () {
         // actual end was passed to function
         if (actualEnd) {
             mostRecentWait.waitStopped = actualEnd;
-            mostRecentWait.goalStopped = actualEnd; // backward compat
         } else {
             // else set the actual end to end of wait endDate
-            var endStamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
-            mostRecentWait.waitStopped = endStamp;
-            mostRecentWait.goalStopped = endStamp;
+            mostRecentWait.waitStopped = mostRecentWait.waitStamp;
         }
 
         var wasExtended = false;
@@ -459,11 +392,9 @@ var StorageModule = (function () {
 
         // user wants to extend current wait
         if (waitExtendedTo) {
-            var currentEndStamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
-            if (currentEndStamp < waitExtendedTo) {
+            if (mostRecentWait.waitStamp < waitExtendedTo) {
                 // wait was extended, not shortened
                 mostRecentWait.waitStamp = waitExtendedTo;
-                mostRecentWait.goalStamp = waitExtendedTo; // backward compat
                 setStorageObject(jsonObject);
 
                 var date = new Date();
@@ -478,9 +409,12 @@ var StorageModule = (function () {
         return {
             wasExtended: wasExtended,
             totalSecondsUntilWaitEnd: totalSecondsUntilWaitEnd,
-            waitWasShorter: waitExtendedTo && (mostRecentWait.waitStamp || mostRecentWait.goalStamp) >= waitExtendedTo
+            waitWasShorter: waitExtendedTo && mostRecentWait.waitStamp >= waitExtendedTo
         };
     }
+
+    // Backward compatibility alias
+    var changeGoalStatus = changeWaitStatus;
 
     /**
      * Undo the last action in storage

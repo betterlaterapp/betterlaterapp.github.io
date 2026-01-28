@@ -125,17 +125,16 @@ var WaitTimerModule = (function () {
         
         // Check action records for active waits (status === 1)
         var activeWaits = jsonObject.action.filter(function(e) {
-            return e && (e.clickType === 'wait' || e.clickType === 'goal') && e.status === 1;
+            return e && e.clickType === 'wait' && e.status === 1;
         });
-        
+
         if (activeWaits.length === 0) return false;
-        
+
         // Check if the most recent active wait hasn't expired yet
         var mostRecentWait = activeWaits[activeWaits.length - 1];
-        var waitEndTimestamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
         var now = Math.round(new Date() / 1000);
-        
-        return waitEndTimestamp > now;
+
+        return mostRecentWait.waitStamp > now;
     }
 
     /**
@@ -145,16 +144,16 @@ var WaitTimerModule = (function () {
     function getActiveWaitType() {
         var jsonObject = StorageModule.retrieveStorageObject();
         if (!jsonObject || !jsonObject.action) return null;
-        
+
         // Check action records for active waits (status === 1)
         var activeWaits = jsonObject.action.filter(function(e) {
-            return e && (e.clickType === 'wait' || e.clickType === 'goal') && e.status === 1;
+            return e && e.clickType === 'wait' && e.status === 1;
         });
-        
+
         if (activeWaits.length === 0) return null;
-        
+
         var mostRecentWait = activeWaits[activeWaits.length - 1];
-        return mostRecentWait.waitType || mostRecentWait.goalType || null;
+        return mostRecentWait.waitType || null;
     }
 
     /**
@@ -734,15 +733,15 @@ var WaitTimerModule = (function () {
 
         var waitType = getActiveWaitType();
         
-        // Find the most recent goal/wait action to get end timestamp
+        // Find the most recent wait action to get end timestamp
         var waits = jsonObject.action.filter(function(e) {
-            return e && (e.clickType === 'wait' || e.clickType === 'goal') && e.status === 1;
+            return e && e.clickType === 'wait' && e.status === 1;
         });
-        
+
         if (waits.length === 0) return;
-        
+
         var mostRecentWait = waits[waits.length - 1];
-        var waitEndTimestamp = mostRecentWait.waitStamp || mostRecentWait.goalStamp;
+        var waitEndTimestamp = mostRecentWait.waitStamp;
         
         // Only create panel if wait hasn't ended yet
         var now = Math.round(new Date() / 1000);

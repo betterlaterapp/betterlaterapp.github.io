@@ -527,19 +527,19 @@ var SettingsModule = (function () {
         //if action could have broken a goal
         if (undoneActionClickType == "used" || undoneActionClickType == "bought") {
             var jsonObject = StorageModule.retrieveStorageObject();
-            //cycle back through records until you find most recent goal
+            //cycle back through records until you find most recent wait
             for (var i = jsonObject["action"].length - 1; i >= 0; i--) {
                 var currRecord = jsonObject["action"][i];
-                var goalTypeIsRelevant = (currRecord.goalType == "both" || currRecord.goalType == undoneActionClickType);
-                if (goalTypeIsRelevant && currRecord.clickType == "goal") {
-                    //if this first finds a goal which would have been broken by undoneActionClickType, 
-                    //change this.status to active, exit loop 
-                    StorageModule.changeGoalStatus(1, currRecord.goalType, -1);
+                var waitTypeIsRelevant = (currRecord.waitType == "both" || currRecord.waitType == undoneActionClickType);
+                if (waitTypeIsRelevant && currRecord.clickType == "wait") {
+                    //if this first finds a wait which would have been broken by undoneActionClickType,
+                    //change this.status to active, exit loop
+                    StorageModule.changeWaitStatus(1, currRecord.waitType, -1);
                     break;
 
                 } else if (currRecord.clickType == undoneActionClickType) {
-                    //if this first finds an action.clickType == undoneActionClickType, 
-                    //then a goal could not have been broken, so exit loop without changing goal status
+                    //if this first finds an action.clickType == undoneActionClickType,
+                    //then a wait could not have been broken, so exit loop without changing wait status
                     break;
                 }
             }

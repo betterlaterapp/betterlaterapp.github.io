@@ -15,6 +15,7 @@ tests/output/
 *.swo
 *~
 .cursorrules
+CLAUDE.md
 
 # OS
 .DS_Store
