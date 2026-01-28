@@ -242,16 +242,16 @@ input[type="number"] {
 
 .app-background {
 	background: url('../assets/images/lake-reflect-background.jpg');
-    background-position: 0px -140px;
+    background-position: 0px -147px;
     animation: animatedBackground 26s ease-in-out infinite alternate;
 }
 
 @keyframes animatedBackground {
     from {
-        background-position: 0px -140px;
+        background-position: 0px -147px;
     }
     to {
-        background-position: 300px -137px;
+        background-position: 300px -147px;
     }
   }
 
@@ -3405,6 +3405,8 @@ input[type="number"] {
     min-height: 175px;
     cursor: pointer;
     position: relative;
+
+    border-bottom: 8px solid rgba(0, 0, 0, 0.6);
 }
 
 .goal-summary-header {
@@ -3451,7 +3453,8 @@ input[type="number"] {
 }
 
 .goal-summary-title {
-    font-size: 1.8rem;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 1.6rem;
     font-weight: 400;
     color: #343a40;
     margin-bottom: 12px;
@@ -3488,8 +3491,7 @@ input[type="number"] {
 }
 
 .goal-stat-item.goal-stat-right {
-    align-items: flex-end;
-    text-align: right;
+    align-items: center;
 }
 
 .goal-stat-value {
@@ -3637,6 +3639,7 @@ input[type="number"] {
 }
 
 .goal-accordion-item.expanded .goal-details {
+    background: rgba(0, 0, 0, 0.06);
     max-height: 2400px;
     padding-top: 25px;
     transition: max-height 0.3s ease-in;
@@ -3924,28 +3927,43 @@ input[type="number"] {
 
 .milestone-marker {
     position: absolute;
-    top: 0;
-    width: 1px;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.15);
+    bottom: 0;
+    width: 2px;
+    height: 12px; /* Half the bar height */
+    background: rgba(0, 0, 0, 1);
     transform: translateX(-50%);
     z-index: 4;
     pointer-events: none;
 }
 
-/* Completed = user "did it" at this milestone - use teal/cyan to distinguish from progress green */
-.milestone-marker.completed {
-    background: rgba(32, 201, 151, 0.4);
-    width: 1px;
-}
-
-.milestone-marker.missed {
-    background: rgba(220, 53, 69, 0.6);
-    width: 1px;
-}
-
 .milestone-marker.upcoming {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 1);
+}
+
+/* Day markers - taller markers at midnight */
+.day-marker {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 24px; /* 1.5x the regular 16px milestone marker height */
+    background: rgba(197, 197, 197, 1);
+    transform: translateX(-50%);
+    z-index: 5;
+}
+
+/* Day labels between midnight markers */
+.day-label {
+    position: absolute;
+    bottom: 16px;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(197, 197, 197, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 6;
+    pointer-events: none;
+    border-bottom: 1px solid rgba(197, 197, 197, 1);
 }
 
 /* Goal stat value with missed indicator */
@@ -3982,7 +4000,7 @@ input[type="number"] {
 }
 
 .goal-type-badge.badge-ahead {
-    background: linear-gradient(135deg, rgba(32, 201, 151, 0.9), rgba(40, 167, 69, 0.9));
+    background: rgba(5, 152, 69, 0.527);
     color: #fff;
     border: 1px solid rgba(32, 201, 151, 0.95);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -4045,12 +4063,11 @@ input[type="number"] {
 }
 
 .goal-dual-progress .goal-progress-bar {
-    height: 16px;
-    background: #e9ecef;
+    height: 32px;
     position: relative;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .goal-dual-progress .goal-progress-fill {
@@ -4061,9 +4078,9 @@ input[type="number"] {
 
 /* Time progress - top 50% of bar */
 .goal-dual-progress .goal-progress-fill.time-progress {
-    top: 0;
-    height: 100%;
-    background: rgba(108, 117, 125, 0.4);
+    bottom: 0;
+    height: 50%;
+    background: rgba(108, 117, 125, 0.6);
     z-index: 1;
 }
 
@@ -4085,14 +4102,17 @@ input[type="number"] {
 .goal-time-marker {
     position: absolute;
     top: 0;
-    width: 2px;
-    height: 100%;
-    background: #495057;
-    z-index: 3;
+    width: 1px;
+    height: 150%;
+    background: #343a40;
+    z-index: 7;
     transform: translateX(-50%);
+    border-radius: 1px;
 }
 
+/* Legend removed - kept for potential future use */
 .goal-progress-legend {
+    display: none;
     display: flex;
     justify-content: flex-start;
     gap: 16px;
@@ -4201,7 +4221,6 @@ input[type="number"] {
 .milestone-day.milestone-missed a {
     background: #dc3545 !important;
     color: white !important;
-    border-radius: 50%;
 }
 
 .milestone-day.milestone-upcoming a {
@@ -4225,29 +4244,52 @@ input[type="number"] {
 }
 
 /* Goal Value Highlighting in Summary Title */
+/* Goal values highlight group */
+.goal-values-highlight {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
 .goal-value-current {
     font-weight: 700;
-    color: #9aa2a9;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 2px 6px;
-    border-radius: 4px;
+    color: #c82333;
+    font-size: 1.6rem;
 }
 
 .goal-value-target {
     font-weight: 700;
-    color: #1e9039;
-    background: rgba(30, 144, 57, 0.1);
-    padding: 2px 6px;
-    border-radius: 4px;
+    color: #157a2c;
+    font-size: 1.8rem;
+}
+
+.goal-curve-arrow {
+    font-size: .9em;
+    line-height: 1;
+    margin: 0px 12px;
+}
+
+.goal-curve-arrow.curve-power {
+    color: #6c757d;
+}
+
+.goal-curve-arrow.curve-sigmoid {
+    color: #157a2c;
 }
 
 .goal-on-track .goal-value-target {
-    color: #1e9039;
+    color: #24b144;
 }
 
 .goal-behind .goal-value-target {
-    color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+    color: #c82333;
+}
+
+.goal-behind .goal-curve-arrow {
+    color: #c82333;
 }
 
 /* Summary progress bar (visible when collapsed) */
@@ -4307,7 +4349,7 @@ input[type="number"] {
 
 .goal-progress-bar {
     height: 8px;
-    background: #e9ecef;
+    background: #ffffff;
     border-radius: 4px;
     overflow: hidden;
 }

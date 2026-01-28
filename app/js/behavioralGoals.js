@@ -738,10 +738,14 @@ var BehavioralGoalsModule = (function () {
         }
         periodLabel = goal.measurementTimeline === 1 ? 'day' : (goal.measurementTimeline === 7 ? 'week' : 'month');
         
-        // Goal title with highlighted current and goal values
-        var goalTitle = '<span class="goal-value-current">' + goal.currentAmount + '</span> → ' + 
-                        '<span class="goal-value-target">' + goal.goalAmount + '</span> ' + 
-                        unitLabel + '/' + periodLabel;
+        // Goal title with highlighted values group and curve arrow
+        // Arrow reflects the curve type: power (exponential) for do less, sigmoid for do more
+        var curveArrow = isDoLess ? '⤵' : '⤴';  // Exponential down vs sigmoid up
+        var goalTitle = '<span class="goal-values-highlight">' + 
+                        '<span class="goal-value-current">' + goal.currentAmount + '</span>' +
+                        '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
+                        '<span class="goal-value-target">' + goal.goalAmount + '</span>' +
+                        '</span> ' + unitLabel + '/' + periodLabel;
         
         // Milestone label and time from the SCHEDULE (matches displayed milestones)
         var milestoneLabel = isDoLess ? 'Wait until' : 'Do it by';
@@ -793,7 +797,7 @@ var BehavioralGoalsModule = (function () {
         var trackBadgeClass = trackStatus.status === 'on-track' ? 'badge-on-track' : 
                               (trackStatus.status === 'ahead' ? 'badge-ahead' : 'badge-behind');
         var trackBadgeText = trackStatus.status === 'on-track' ? 'On track' :
-                             (trackStatus.status === 'ahead' ? trackStatus.count + ' ahead' : trackStatus.count + ' behind');
+                             (trackStatus.status === 'ahead' ? trackStatus.count + ' uses ahead' : trackStatus.count + ' behind');
         
         var html = '<div class="goal-accordion-item ' + colorClass + '" data-goal-id="' + goal.id + '" data-goal-type="quantitative">' +
             '<button class="goal-delete-btn" data-goal-id="' + goal.id + '" title="Delete goal"><i class="fas fa-times"></i></button>' +
@@ -819,15 +823,12 @@ var BehavioralGoalsModule = (function () {
                     '</div>' +
                 '</div>' +
                 '<div class="goal-dual-progress">' +
-                    '<div class="goal-progress-legend">' +
-                        '<span class="legend-item"><span class="legend-dot time"></span>Time</span>' +
-                        '<span class="legend-item"><span class="legend-dot progress"></span>Amount done</span>' +
-                    '</div>' +
                     '<div class="goal-progress-bar goal-progress-with-markers">' +
                         '<div class="goal-progress-fill time-progress" style="width: ' + timeProgressPct + '%"></div>' +
                         '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + progressCompletedPct + '%"></div>' +
                         '<div class="goal-time-marker" style="left: ' + timeProgressPct + '%"></div>' +
                         milestoneMarkers +
+                        generateDayMarkers(goalStartMs, goalEndMs) +
                     '</div>' +
                 '</div>' +
             '</div>' +
@@ -1100,6 +1101,62 @@ var BehavioralGoalsModule = (function () {
             
             html += '<div class="' + markerClass + '" style="left: ' + position.toFixed(2) + '%" title="Milestone ' + m.index + ' - ' + new Date(m.timestamp).toLocaleTimeString() + '"></div>';
         }
+        
+        return html;
+    }
+    
+    /**
+     * Generate day markers (at midnight) with day labels for progress bar.
+     */
+    function generateDayMarkers(goalStartMs, goalEndMs) {
+        var totalDuration = goalEndMs - goalStartMs;
+        var html = '';
+        var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        // Find the first midnight after goalStart
+        var startDate = new Date(goalStartMs);
+        var firstMidnight = new Date(startDate);
+        firstMidnight.setHours(24, 0, 0, 0); // Next midnight
+        
+        // Generate markers for each midnight within the goal period
+        var currentMidnight = firstMidnight.getTime();
+        var prevPosition = 0;
+        
+        while (currentMidnight < goalEndMs) {
+            var position = ((currentMidnight - goalStartMs) / totalDuration) * 100;
+            position = Math.min(100, Math.max(0, position));
+            
+            var dayDate = new Date(currentMidnight);
+            var dayName = dayNames[dayDate.getDay()];
+            
+            // Day marker (taller tick at midnight)
+            html += '<div class="day-marker" style="left: ' + position.toFixed(2) + '%"></div>';
+            
+            // Day label positioned between previous marker and this one
+            var labelPosition = (prevPosition + position) / 2;
+            if (prevPosition > 0) {
+                // Get the day name for the day BEFORE this midnight
+                var prevDay = new Date(currentMidnight - 12 * 60 * 60 * 1000); // 12 hours before = middle of previous day
+                var prevDayName = dayNames[prevDay.getDay()];
+                html += '<div class="day-label" style="left: ' + labelPosition.toFixed(2) + '%">' + prevDayName + '</div>';
+            }
+            
+            prevPosition = position;
+            currentMidnight += 24 * 60 * 60 * 1000; // Next day
+        }
+        
+        // Add label for the last day segment (from last midnight to goalEnd)
+        if (prevPosition > 0 && prevPosition < 100) {
+            var lastLabelPosition = (prevPosition + 100) / 2;
+            var lastDay = new Date(goalEndMs - 12 * 60 * 60 * 1000);
+            var lastDayName = dayNames[lastDay.getDay()];
+            html += '<div class="day-label" style="left: ' + lastLabelPosition.toFixed(2) + '%">' + lastDayName + '</div>';
+        }
+        
+        // Add label for first segment (from goalStart to first midnight)
+        var firstLabelPosition = ((firstMidnight.getTime() - goalStartMs) / totalDuration) * 100 / 2;
+        var firstDayName = dayNames[startDate.getDay()];
+        html += '<div class="day-label" style="left: ' + firstLabelPosition.toFixed(2) + '%">' + firstDayName + '</div>';
         
         return html;
     }

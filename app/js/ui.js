@@ -450,7 +450,7 @@ var UIModule = (function() {
         // Use a short delay to let slideToggle start showing the element
         setTimeout(function() {
             if ($targetDialog.length && $targetDialog.offset()) {
-                $('html, body').animate({
+        $('html, body').animate({
                     scrollTop: $targetDialog.offset().top - navBarHeight
                 }, 500);
             }
