@@ -115,8 +115,8 @@ var TabsModule = (function () {
         $(document).on('click', '.goals-tab-toggler', function (e) {
             e.preventDefault();
             switchToTab('goals-content', function() {
-                if (typeof BehavioralGoalsModule !== 'undefined') {
-                    BehavioralGoalsModule.renderBehavioralGoalsList();
+                if (typeof GoalsModule !== 'undefined') {
+                    GoalsModule.renderBehavioralGoalsList();
                 }
             });
             $('.goals-tab-toggler').addClass('active');

@@ -619,7 +619,7 @@ $(document).ready(function () {
         UIModule.init(json);
         ActionLogModule.init(json);
         WaitModule.init(json);
-        BehavioralGoalsModule.init(json);
+        GoalsModule.init(json);
         ButtonsModule.init(json);
         
         // Initialize ActivityTimerModule for time spent tracking

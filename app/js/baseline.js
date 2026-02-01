@@ -66,6 +66,16 @@ var BaselineModule = (function() {
         $(".baseline-questionnaire input").on("change", function () {
             saveBaselineValues();
         });
+
+        // Prevent negative numbers in baseline inputs
+        $(document).on('input', '.baseline-questionnaire input[type="number"]', function() {
+            var $input = $(this);
+            var val = parseFloat($input.val());
+            var min = parseFloat($input.attr('min')) || 0;
+            if (val < min) {
+                $input.val(min);
+            }
+        });
     }
 
     function saveBaselineValues() {
@@ -493,7 +503,7 @@ var BaselineModule = (function() {
     }
     
     /**
-     * Convert timeline string to days for completion timeline
+     * Convert timeline string to measurement period in days
      */
     function timelineToDays(timeline) {
         switch (timeline) {
@@ -503,7 +513,20 @@ var BaselineModule = (function() {
             default: return 7;
         }
     }
-    
+
+    /**
+     * Get recommended completion timeline based on measurement timeline
+     * Goals for 3-7 days are most likely to be successful
+     */
+    function getRecommendedCompletionDays(timeline) {
+        switch (timeline) {
+            case 'day': return 2;   // 2 days for daily habits
+            case 'week': return 7;  // 1 week for weekly habits
+            case 'month': return 30; // 30 days for monthly habits
+            default: return 7;
+        }
+    }
+
     /**
      * Directly create a behavioral goal from baseline values and redirect to goals page
      * @param {string} goalType - 'quantifiable' or 'qualitative'
@@ -511,28 +534,34 @@ var BaselineModule = (function() {
     function createGoalFromBaseline(goalType) {
         var selectedType = $('#current-status-type-select').val();
         var behavioralGoal = null;
-        
+
         if (goalType === 'qualitative' || selectedType === 'wellness') {
-            // For wellness/qualitative
+            // For wellness/qualitative - use 7 days as default
             var tenetText = $('.baseline-wellness-text').val() || 'Baseline wellness goal';
             var selectedMood = $('.baseline-mood-tracker .smiley.selected').data('mood');
             if (selectedMood === undefined) selectedMood = 2;
-            
-            behavioralGoal = BehavioralGoalsModule.createQualitativeGoal(tenetText, 30, selectedMood, '');
+
+            behavioralGoal = QualitativeGoalsModule.createQualitativeGoal(tenetText, 7, selectedMood, '');
         } else if (selectedType === 'usage') {
             var amount = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
-            var timelineDays = timelineToDays($('.baseline-usage-timeline-select').val());
-            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('times', amount, amount, timelineDays, 30);
+            var timeline = $('.baseline-usage-timeline-select').val();
+            var measurementDays = timelineToDays(timeline);
+            var completionDays = getRecommendedCompletionDays(timeline);
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('times', amount, amount, measurementDays, completionDays);
         } else if (selectedType === 'time') {
             var hours = parseInt($('.baseline-currentTimeHours').val()) || 0;
             var minutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
             var amount = (hours * 60) + minutes;
-            var timelineDays = timelineToDays($('.baseline-time-timeline-select').val());
-            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('minutes', amount, amount, timelineDays, 30);
+            var timeline = $('.baseline-time-timeline-select').val();
+            var measurementDays = timelineToDays(timeline);
+            var completionDays = getRecommendedCompletionDays(timeline);
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('minutes', amount, amount, measurementDays, completionDays);
         } else if (selectedType === 'spending') {
             var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
-            var timelineDays = timelineToDays($('.baseline-spending-timeline-select').val());
-            behavioralGoal = BehavioralGoalsModule.createQuantitativeGoal('dollars', amount, amount, timelineDays, 30);
+            var timeline = $('.baseline-spending-timeline-select').val();
+            var measurementDays = timelineToDays(timeline);
+            var completionDays = getRecommendedCompletionDays(timeline);
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('dollars', amount, amount, measurementDays, completionDays);
         }
         
         if (behavioralGoal) {
@@ -541,7 +570,7 @@ var BaselineModule = (function() {
             
             // Give it a moment to switch tabs before rendering
             setTimeout(function() {
-                BehavioralGoalsModule.renderBehavioralGoalsList();
+                GoalsModule.renderBehavioralGoalsList();
             }, 100);
             
             NotificationsModule.createNotification('Goal created successfully!', null, { type: 'goal_created' });

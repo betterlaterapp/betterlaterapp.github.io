@@ -22,6 +22,21 @@ var BriefStatsModule = (function () {
         if (StorageModule.hasStorageData()) {
             updateAllStats();
         }
+
+        // Add click handler for milestone stat to navigate to goals pane
+        setupMilestoneClickHandler();
+    }
+
+    /**
+     * Set up click handler for milestone stat (Wait until / Do it by)
+     * Clicking navigates to the goals tab
+     */
+    function setupMilestoneClickHandler() {
+        $(document).on('click', '.stat-brief.stat-milestone', function(e) {
+            e.preventDefault();
+            // Navigate to goals tab
+            $('.goals-tab-toggler').first().click();
+        });
     }
     
     /**
