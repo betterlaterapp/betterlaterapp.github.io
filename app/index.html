@@ -623,8 +623,15 @@
                     <label>Goal amount</label>
                     <input type="number" min="0" max="500" class="goal-input create-goalDonePerWeek" placeholder="0">
                 </div>
+                <div class="create-usage-chunk-row" style="display: none;">
+                    <hr/>
+                    <div class="goal-input-row">
+                        <label>Avg. per session</label>
+                        <input type="number" min="1" max="100" class="goal-input create-usageChunkSize" placeholder="1" value="1">
+                    </div>
+                </div>
             </div>
-            
+
             <!-- Time Goal Inputs -->
             <div class="goal-type-inputs time-goal-inputs" style="display: none;">
                 <hr/>
@@ -693,8 +700,37 @@
                         <span class="label">m</span>
                     </div>
                 </div>
+                <hr/>
+                <div class="goal-input-row create-session-avg-row">
+                    <label>Avg. per session</label>
+                    <div class="time-picker-container create-time-picker">
+                        <select class="time-picker-hour create-sessionTimeHours">
+                            <option value="0">0</option>
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
+                        <span class="label">h</span>
+                        <select class="time-picker-minute create-sessionTimeMinutes">
+                            <option value="0" selected>00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <span class="label">m</span>
+                    </div>
+                </div>
             </div>
-            
+
             <!-- Spending Goal Inputs -->
             <div class="goal-type-inputs spending-goal-inputs" style="display: none;">
                 <hr/>
@@ -756,7 +792,6 @@
                     <input type="number" min="1" max="365" class="goal-input create-completion-timeline-input" placeholder="7" value="7">
                     <span class="timeline-unit">days</span>
                 </div>
-                <div class="goal-timeline-helper">3-7 days tends to be most successful</div>
                 <div class="goal-milestone-warning" style="display: none;"></div>
             </div>
             
@@ -1931,16 +1966,46 @@
                                         <div class="status-type-inputs usage-status-inputs" style="display: none;">
                                             <hr/>
                                             <label>I currently do it</label>
-                                            <div class="goal-timeline-row">
+                                            <div class="goal-timeline-row baseline-usage-row">
                                                 <input type="number" min="0" max="500" class="goal-input baseline-amountDonePerWeek" placeholder="0">
+                                                <div class="baseline-unit-container">
+                                                    <select class="baseline-usage-unit-select unit-select-with-custom">
+                                                        <option value="times" selected>times</option>
+                                                        <option value="reps">reps</option>
+                                                        <option value="laps">laps</option>
+                                                        <option value="sets">sets</option>
+                                                        <option value="grams">grams</option>
+                                                        <option value="oz">oz</option>
+                                                        <option value="ml">ml</option>
+                                                        <option value="cups">cups</option>
+                                                        <option value="pages">pages</option>
+                                                        <option value="__custom__">+ Add custom...</option>
+                                                    </select>
+                                                    <div class="custom-unit-input" style="display: none;">
+                                                        <input type="text"
+                                                               class="baseline-custom-unit custom-unit-text"
+                                                               placeholder="Enter unit"
+                                                               maxlength="20">
+                                                        <button class="custom-unit-save-btn" type="button">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                                 <select class="timeline-select baseline-usage-timeline-select">
                                                     <option value="day">per day</option>
                                                     <option value="week" selected>per week</option>
                                                     <option value="month">per month</option>
                                                 </select>
                                             </div>
+                                            <div class="baseline-usage-chunk-row" style="display: none;">
+                                                <label>Looks like you do this in chunks. How many do you do at a time on average?</label>
+                                                <div class="chunk-input-row">
+                                                    <input type="number" min="1" max="100" class="goal-input baseline-usageChunkSize" placeholder="1" value="1">
+                                                    <span class="chunk-unit-label">per session</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        
+
                                         <!-- Time Status Inputs -->
                                         <div class="status-type-inputs time-status-inputs" style="display: none;">
                                             <hr/>
@@ -1976,6 +2041,34 @@
                                                     <option value="week" selected>per week</option>
                                                     <option value="month">per month</option>
                                                 </select>
+                                            </div>
+                                            <div class="baseline-session-avg-row">
+                                                <label>Average time per session</label>
+                                                <div class="time-picker-container baseline-session-time-picker">
+                                                    <select class="time-picker-hour baseline-sessionTimeHours">
+                                                        <option value="0">0</option>
+                                                        <option value="1" selected>1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                        <option value="6">6</option>
+                                                        <option value="7">7</option>
+                                                        <option value="8">8</option>
+                                                        <option value="9">9</option>
+                                                        <option value="10">10</option>
+                                                        <option value="11">11</option>
+                                                        <option value="12">12</option>
+                                                    </select>
+                                                    <span class="label">h</span>
+                                                    <select class="time-picker-minute baseline-sessionTimeMinutes">
+                                                        <option value="0" selected>00</option>
+                                                        <option value="15">15</option>
+                                                        <option value="30">30</option>
+                                                        <option value="45">45</option>
+                                                    </select>
+                                                    <span class="label">m</span>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -2156,20 +2249,20 @@
                             <a id="wait-button" href="#">
 
                                 <div class="icon">
-                                    <span class="desires-decrease">
+                                    <!-- <span class="desires-decrease"> -->
                                         <img src="../assets/images/bl-logo-small.jpg" class="img-fluid p-2"
                                             style="opacity: .7" />
-                                    </span>
+                                    <!-- </span>
                                     <span class="desires-increase d-none">
                                         <i class="far fa-calendar-plus fa-3x"></i>
-                                    </span>
+                                    </span> -->
                                 </div>
                                 <p class="button-text">
                                     <span class="desires-decrease">
                                         Wait
                                     </span>
                                     <span class="desires-increase d-none">
-                                        Schedule next
+                                        Procras tinate
                                     </span>
                                 </p>
                             </a>

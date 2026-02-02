@@ -76,6 +76,37 @@ var BaselineModule = (function() {
                 $input.val(min);
             }
         });
+
+        // Show/hide usage chunk input based on amount and timeline
+        $(document).on('input change', '.baseline-amountDonePerWeek, .baseline-usage-timeline-select', function() {
+            updateUsageChunkVisibility();
+        });
+    }
+
+    /**
+     * Check if usage amount qualifies as high-frequency (>40/day equivalent)
+     * and show/hide the chunk size input accordingly
+     */
+    function updateUsageChunkVisibility() {
+        var amount = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
+        var timeline = $('.baseline-usage-timeline-select').val();
+
+        // Convert to per-day equivalent
+        var perDay;
+        if (timeline === 'day') {
+            perDay = amount;
+        } else if (timeline === 'week') {
+            perDay = amount / 7;
+        } else { // month
+            perDay = amount / 30;
+        }
+
+        // Show chunk input if >40 per day
+        if (perDay > 40) {
+            $('.baseline-usage-chunk-row').slideDown();
+        } else {
+            $('.baseline-usage-chunk-row').slideUp();
+        }
     }
 
     function saveBaselineValues() {
@@ -100,11 +131,15 @@ var BaselineModule = (function() {
                 neutralHabit: true,
                 timesDone: 0,
                 usageTimeline: 'week',
+                usageUnit: 'times',
+                usageChunkSize: 0,
                 moneySpent: 0,
                 spendingTimeline: 'week',
                 timeSpentHours: 0,
                 timeSpentMinutes: 0,
                 timeTimeline: 'week',
+                sessionTimeHours: 1,
+                sessionTimeMinutes: 0,
                 valuesTimesDone: false,
                 valuesTime: false,
                 valuesMoney: false,
@@ -242,7 +277,6 @@ var BaselineModule = (function() {
 
         // --- Restore Question Set 1: specific subject ---
         $("input.serious-user").prop('checked', baseline.specificSubject);
-        $("input.passerby-user").prop('checked', !baseline.specificSubject);
         
         // Show/hide serious question-sets based on saved selection (excluding question 4 and 5 which have special logic)
         if (baseline.specificSubject) {
@@ -280,6 +314,21 @@ var BaselineModule = (function() {
         if (baseline.usageTimeline) {
             $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
         }
+        if (baseline.usageUnit) {
+            var unitSelect = $('.baseline-usage-unit-select');
+            // If it's a custom unit not in the dropdown, add it
+            if (!unitSelect.find('option[value="' + baseline.usageUnit + '"]').length) {
+                unitSelect.find('option[value="__custom__"]').before(
+                    '<option value="' + baseline.usageUnit + '">' + baseline.usageUnit + '</option>'
+                );
+            }
+            unitSelect.val(baseline.usageUnit);
+        }
+        if (baseline.usageChunkSize) {
+            $('.baseline-usageChunkSize').val(baseline.usageChunkSize);
+        }
+        // Check if usage chunk input should be visible based on restored values
+        updateUsageChunkVisibility();
         if (baseline.timeSpentHours) {
             $('.baseline-currentTimeHours').val(baseline.timeSpentHours);
             hasStatusValue = true;
@@ -290,6 +339,12 @@ var BaselineModule = (function() {
         }
         if (baseline.timeTimeline) {
             $('.baseline-time-timeline-select').val(baseline.timeTimeline);
+        }
+        if (baseline.sessionTimeHours !== undefined) {
+            $('.baseline-sessionTimeHours').val(baseline.sessionTimeHours);
+        }
+        if (baseline.sessionTimeMinutes !== undefined) {
+            $('.baseline-sessionTimeMinutes').val(baseline.sessionTimeMinutes);
         }
         if (baseline.moneySpent) {
             $('.baseline-amountSpentPerWeek').val(baseline.moneySpent);
@@ -476,10 +531,19 @@ var BaselineModule = (function() {
         if (selectedType === 'usage') {
             baseline.timesDone = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
             baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
+            baseline.usageUnit = $('.baseline-usage-unit-select').val() || 'times';
+            // Only save chunk size if the input is visible (high-frequency usage)
+            if ($('.baseline-usage-chunk-row').is(':visible')) {
+                baseline.usageChunkSize = parseInt($('.baseline-usageChunkSize').val()) || 1;
+            } else {
+                baseline.usageChunkSize = 0;
+            }
         } else if (selectedType === 'time') {
             baseline.timeSpentHours = parseInt($('.baseline-currentTimeHours').val()) || 0;
             baseline.timeSpentMinutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
             baseline.timeTimeline = $('.baseline-time-timeline-select').val();
+            baseline.sessionTimeHours = parseInt($('.baseline-sessionTimeHours').val()) || 1;
+            baseline.sessionTimeMinutes = parseInt($('.baseline-sessionTimeMinutes').val()) || 0;
         } else if (selectedType === 'spending') {
             baseline.moneySpent = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
             baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
@@ -547,7 +611,15 @@ var BaselineModule = (function() {
             var timeline = $('.baseline-usage-timeline-select').val();
             var measurementDays = timelineToDays(timeline);
             var completionDays = getRecommendedCompletionDays(timeline);
-            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('times', amount, amount, measurementDays, completionDays);
+            // Pass chunk size if visible (high-frequency usage)
+            var options = {};
+            if ($('.baseline-usage-chunk-row').is(':visible')) {
+                var chunkSize = parseInt($('.baseline-usageChunkSize').val()) || 1;
+                if (chunkSize > 0) {
+                    options.chunkSize = chunkSize;
+                }
+            }
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('times', amount, amount, measurementDays, completionDays, options);
         } else if (selectedType === 'time') {
             var hours = parseInt($('.baseline-currentTimeHours').val()) || 0;
             var minutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
@@ -555,7 +627,15 @@ var BaselineModule = (function() {
             var timeline = $('.baseline-time-timeline-select').val();
             var measurementDays = timelineToDays(timeline);
             var completionDays = getRecommendedCompletionDays(timeline);
-            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('minutes', amount, amount, measurementDays, completionDays);
+            // Pass session time as chunk size
+            var sessionHours = parseInt($('.baseline-sessionTimeHours').val()) || 1;
+            var sessionMinutes = parseInt($('.baseline-sessionTimeMinutes').val()) || 0;
+            var chunkSize = (sessionHours * 60) + sessionMinutes;
+            var options = {};
+            if (chunkSize > 0) {
+                options.chunkSize = chunkSize;
+            }
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('minutes', amount, amount, measurementDays, completionDays, options);
         } else if (selectedType === 'spending') {
             var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
             var timeline = $('.baseline-spending-timeline-select').val();

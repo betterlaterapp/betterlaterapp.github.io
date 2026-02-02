@@ -19,35 +19,35 @@ var ButtonsModule = (function() {
             $('.use-dialog-tab-content[data-tab-content="' + tabId + '"]').addClass('active').show();
         });
 
-        // Custom unit selector handler
-        $(document).on('change', '.how-much-unit-select', function() {
+        // Custom unit selector handler (works with .how-much-unit-select and .unit-select-with-custom)
+        $(document).on('change', '.how-much-unit-select, .unit-select-with-custom', function() {
             var value = $(this).val();
             if (value === '__custom__') {
-                $(this).hide();
                 $(this).siblings('.custom-unit-input').show().find('input').focus();
             }
         });
 
         // Save custom unit handler
         $(document).on('click', '.custom-unit-save-btn', function() {
-            var input = $(this).siblings('.how-much-custom-unit');
+            var input = $(this).siblings('.how-much-custom-unit, .custom-unit-text');
             var customUnit = input.val().trim();
-            
+
             if (customUnit) {
                 // Add to storage
                 StorageModule.addCustomUnit(customUnit);
-                
-                // Add to dropdown and select it
-                var select = $(this).closest('.how-much-unit-container').find('.how-much-unit-select');
+
+                // Find the associated select (in either container type)
+                var container = $(this).closest('.how-much-unit-container, .baseline-unit-container');
+                var select = container.find('.how-much-unit-select, .unit-select-with-custom');
                 var optionExists = select.find('option[value="' + customUnit + '"]').length > 0;
-                
+
                 if (!optionExists) {
                     select.find('option[value="__custom__"]').before(
                         '<option value="' + customUnit + '">' + customUnit + '</option>'
                     );
                 }
                 select.val(customUnit).show();
-                
+
                 // Hide custom input
                 $(this).closest('.custom-unit-input').hide();
                 input.val('');
@@ -118,23 +118,27 @@ var ButtonsModule = (function() {
      */
     function populateCustomUnits() {
         var customUnits = StorageModule.getCustomUnits();
-        var select = $('.how-much-unit-select');
-        
-        // Remove existing custom units (keep default ones)
-        select.find('option').each(function() {
-            var val = $(this).val();
-            if (val && val !== '__custom__' && !isDefaultUnit(val)) {
-                $(this).remove();
-            }
-        });
+        // Populate both the how-much dialog selector and the baseline unit selector
+        var selectors = $('.how-much-unit-select, .unit-select-with-custom');
 
-        // Add custom units before the "Add custom" option
-        customUnits.forEach(function(unit) {
-            if (!select.find('option[value="' + unit + '"]').length) {
-                select.find('option[value="__custom__"]').before(
-                    '<option value="' + unit + '">' + unit + '</option>'
-                );
-            }
+        selectors.each(function() {
+            var select = $(this);
+            // Remove existing custom units (keep default ones)
+            select.find('option').each(function() {
+                var val = $(this).val();
+                if (val && val !== '__custom__' && !isDefaultUnit(val)) {
+                    $(this).remove();
+                }
+            });
+
+            // Add custom units before the "Add custom" option
+            customUnits.forEach(function(unit) {
+                if (!select.find('option[value="' + unit + '"]').length) {
+                    select.find('option[value="__custom__"]').before(
+                        '<option value="' + unit + '">' + unit + '</option>'
+                    );
+                }
+            });
         });
     }
 

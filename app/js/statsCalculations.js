@@ -681,11 +681,19 @@ var StatsCalculationsModule = (function () {
         var currentAmount = goal.currentAmount || 0;
         var goalAmount = goal.goalAmount || 0;
         var measurementDays = goal.measurementTimeline || 7;
-        
+        var chunkSize = goal.chunkSize || 0;
+
         // Treat 0 values as 1 for interval calculations (per spec)
         var currentForCalc = Math.max(1, currentAmount);
         var goalForCalc = Math.max(1, goalAmount);
-        
+
+        // Apply chunk size to group milestones (e.g., avg session time for time goals)
+        // This converts "minutes per period" to "sessions per period"
+        if (chunkSize > 0) {
+            currentForCalc = Math.max(1, Math.round(currentForCalc / chunkSize));
+            goalForCalc = Math.max(1, Math.round(goalForCalc / chunkSize));
+        }
+
         // Calculate intervals in milliseconds
         // First interval = how often at current rate (e.g., 24/day = 1 per hour)
         // Last interval = how often at goal rate (e.g., 3/day = 1 per 8 hours)
@@ -999,25 +1007,32 @@ var StatsCalculationsModule = (function () {
         var goalAmount = goal.goalAmount || 0;
         var measurementDays = goal.measurementTimeline || 7;
         var completionDays = goal.completionTimeline || 7;
-        
+        var chunkSize = goal.chunkSize || 0;
+
         // Treat 0 values as 1 for interval calculations
         var currentForCalc = Math.max(1, currentAmount);
         var goalForCalc = Math.max(1, goalAmount);
-        
+
+        // Apply chunk size to group milestones (e.g., avg session time for time goals)
+        if (chunkSize > 0) {
+            currentForCalc = Math.max(1, Math.round(currentForCalc / chunkSize));
+            goalForCalc = Math.max(1, Math.round(goalForCalc / chunkSize));
+        }
+
         // Calculate intervals
         var measurementPeriodMs = measurementDays * 24 * 60 * 60 * 1000;
         var durationMs = completionDays * 24 * 60 * 60 * 1000;
         var firstIntervalMs = measurementPeriodMs / currentForCalc;
         var lastIntervalMs = measurementPeriodMs / goalForCalc;
-        
+
         // Derive count from duration and weighted average interval
         var curveType = lastIntervalMs > firstIntervalMs ? 'power' : 'power-out';
         var weightedAvgInterval = calculateWeightedAverageInterval(
-            firstIntervalMs, 
-            lastIntervalMs, 
+            firstIntervalMs,
+            lastIntervalMs,
             curveType
         );
-        
+
         var total = Math.round(durationMs / weightedAvgInterval);
         return Math.max(1, total);
     }

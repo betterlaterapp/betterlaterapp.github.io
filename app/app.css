@@ -1077,7 +1077,6 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     font-size: 0.9rem;
     border: 1px solid #ced4da;
     border-radius: 6px;
-    background: #fff;
 }
 
 .baseline-value-input-group .baseline-timeline-select:focus {
@@ -1342,7 +1341,6 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 0.85rem;
-    background: #fff;
     cursor: pointer;
     min-width: 120px;
     -webkit-appearance: none;
@@ -3043,7 +3041,6 @@ input[type="number"] {
     font-size: 1rem;
     border: 1px solid #ced4da;
     border-radius: 8px;
-    background: #fff;
     cursor: pointer;
 }
 
@@ -3352,7 +3349,6 @@ input[type="number"] {
     font-size: 1rem;
     border: 1px solid #ced4da;
     border-radius: 6px;
-    background: #fff;
     cursor: pointer;
 }
 
@@ -3418,6 +3414,131 @@ input[type="number"] {
 
 .baseline-wellness-submit {
     width: 100%;
+}
+
+/* Baseline usage unit selector */
+.baseline-unit-container {
+    position: relative;
+    flex: 0 1 120px;
+}
+
+.baseline-usage-unit-select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    cursor: pointer;
+    height: 42px;
+}
+
+.baseline-unit-container .custom-unit-input {
+    display: flex;
+    width: 268px;
+    gap: 6px;
+    margin-top: 8px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: #fff;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.baseline-unit-container .custom-unit-text {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+.baseline-unit-container .custom-unit-save-btn {
+    padding: 6px 10px;
+    background: #4d83b5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Baseline usage chunk row (for high-frequency habits) */
+.baseline-usage-chunk-row {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #dee2e6;
+}
+
+.baseline-usage-chunk-row label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.4;
+}
+
+.chunk-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chunk-input-row .goal-input {
+    width: 80px;
+    text-align: center;
+}
+
+.chunk-unit-label {
+    font-size: 0.95rem;
+    color: #6c757d;
+}
+
+/* Baseline session average row */
+.baseline-session-avg-row {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed #e9ecef;
+}
+
+.baseline-session-avg-row label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.baseline-session-time-picker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.baseline-session-time-picker select {
+    font-size: 1.2rem;
+    padding: 6px 24px 6px 8px;
+}
+
+.baseline-session-time-picker .label {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Create goal session average row */
+.create-session-avg-row label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Create goal usage chunk row (for high-frequency habits) */
+.create-usage-chunk-row .goal-input-row label {
+    font-size: 0.9rem;
+    color: #6c757d;
 }
 
 .baseline-wellness-text {
@@ -3604,7 +3725,7 @@ input[type="number"] {
 
 .goal-summary-title {
     background: rgba(0, 0, 0, 0.06);
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 400;
     color: #343a40;
     margin-bottom: 12px;
@@ -4810,7 +4931,6 @@ input[type="number"] {
     font-size: 1rem;
     border: 2px solid #e9ecef;
     border-radius: 8px;
-    background: #fff;
     cursor: pointer;
     transition: border-color 0.2s;
     height: 46px;

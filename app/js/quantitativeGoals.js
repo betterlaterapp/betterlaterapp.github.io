@@ -7,7 +7,8 @@ var QuantitativeGoalsModule = (function() {
     /**
      * Create a new quantitative behavioral goal
      */
-    function createQuantitativeGoal(unit, currentAmount, goalAmount, measurementTimeline, completionTimeline) {
+    function createQuantitativeGoal(unit, currentAmount, goalAmount, measurementTimeline, completionTimeline, options) {
+        options = options || {};
         var behavioralGoal = {
             id: GoalsModule.generateBehavioralGoalId(),
             type: 'quantitative',
@@ -20,6 +21,11 @@ var QuantitativeGoalsModule = (function() {
             status: 'active',
             progress: []
         };
+
+        // Add optional chunk size for milestone grouping (e.g., avg session time in minutes)
+        if (options.chunkSize !== undefined && options.chunkSize > 0) {
+            behavioralGoal.chunkSize = options.chunkSize;
+        }
 
         return GoalsModule.saveBehavioralGoal(behavioralGoal);
     }
@@ -257,6 +263,39 @@ var QuantitativeGoalsModule = (function() {
     }
 
     /**
+     * Check if usage amount qualifies as high-frequency (>40/day equivalent)
+     * and show/hide the chunk size input in create goal dialog
+     */
+    function updateCreateUsageChunkVisibility() {
+        var currentAmount = parseInt($('.create-amountDonePerWeek').val()) || 0;
+        var goalAmount = parseInt($('.create-goalDonePerWeek').val()) || 0;
+        var amount = Math.max(currentAmount, goalAmount);
+        var timeline = $('.create-usage-timeline-select').val();
+
+        // Convert to per-day equivalent
+        var perDay;
+        if (timeline === 'day') {
+            perDay = amount;
+        } else if (timeline === 'week') {
+            perDay = amount / 7;
+        } else { // month
+            perDay = amount / 30;
+        }
+
+        // Show chunk input if >40 per day
+        if (perDay > 40) {
+            $('.create-usage-chunk-row').slideDown();
+        } else {
+            $('.create-usage-chunk-row').slideUp();
+        }
+    }
+
+    // Bind event handlers for usage chunk visibility (runs once on module load)
+    $(document).on('input change', '.create-amountDonePerWeek, .create-goalDonePerWeek, .create-usage-timeline-select', function() {
+        updateCreateUsageChunkVisibility();
+    });
+
+    /**
      * Seed current amount fields from baseline values
      */
     function seedCurrentAmountsFromBaseline(baseline) {
@@ -269,6 +308,11 @@ var QuantitativeGoalsModule = (function() {
         if (baseline.goalTimesDone !== undefined) {
             $('.create-goalDonePerWeek').val(baseline.goalTimesDone);
         }
+        if (baseline.usageChunkSize) {
+            $('.create-usageChunkSize').val(baseline.usageChunkSize);
+        }
+        // Check if usage chunk row should be visible
+        updateCreateUsageChunkVisibility();
 
         if (baseline.timeTimeline) {
             $('.create-time-timeline-select').val(baseline.timeTimeline);
@@ -280,6 +324,10 @@ var QuantitativeGoalsModule = (function() {
         if (baseline.goalTimeHours !== undefined || baseline.goalTimeMinutes !== undefined) {
             $('.create-goalTimeHours').val(baseline.goalTimeHours || 0);
             $('.create-goalTimeMinutes').val(baseline.goalTimeMinutes || 0);
+        }
+        if (baseline.sessionTimeHours !== undefined || baseline.sessionTimeMinutes !== undefined) {
+            $('.create-sessionTimeHours').val(baseline.sessionTimeHours !== undefined ? baseline.sessionTimeHours : 1);
+            $('.create-sessionTimeMinutes').val(baseline.sessionTimeMinutes || 0);
         }
 
         if (baseline.spendingTimeline) {
@@ -306,12 +354,20 @@ var QuantitativeGoalsModule = (function() {
             baseline.usageTimeline = $('.create-usage-timeline-select').val() || 'week';
             baseline.timesDone = parseInt($('.create-amountDonePerWeek').val()) || 0;
             baseline.goalTimesDone = parseInt($('.create-goalDonePerWeek').val()) || 0;
+            // Only save chunk size if visible (high-frequency usage)
+            if ($('.create-usage-chunk-row').is(':visible')) {
+                baseline.usageChunkSize = parseInt($('.create-usageChunkSize').val()) || 1;
+            } else {
+                baseline.usageChunkSize = 0;
+            }
         } else if (goalType === 'time') {
             baseline.timeTimeline = $('.create-time-timeline-select').val() || 'week';
             baseline.timeSpentHours = parseInt($('.create-currentTimeHours').val()) || 0;
             baseline.timeSpentMinutes = parseInt($('.create-currentTimeMinutes').val()) || 0;
             baseline.goalTimeHours = parseInt($('.create-goalTimeHours').val()) || 0;
             baseline.goalTimeMinutes = parseInt($('.create-goalTimeMinutes').val()) || 0;
+            baseline.sessionTimeHours = parseInt($('.create-sessionTimeHours').val()) || 1;
+            baseline.sessionTimeMinutes = parseInt($('.create-sessionTimeMinutes').val()) || 0;
         } else if (goalType === 'spending') {
             baseline.spendingTimeline = $('.create-spending-timeline-select').val() || 'week';
             baseline.moneySpent = parseInt($('.create-amountSpentPerWeek').val()) || 0;
@@ -337,16 +393,27 @@ var QuantitativeGoalsModule = (function() {
                 return null;
             }
 
-            behavioralGoal = createQuantitativeGoal('times', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            // Pass chunkSize if visible (high-frequency usage)
+            var options = {};
+            if ($('.create-usage-chunk-row').is(':visible')) {
+                var chunkSize = parseInt($('.create-usageChunkSize').val()) || 1;
+                if (chunkSize > 0) {
+                    options.chunkSize = chunkSize;
+                }
+            }
+            behavioralGoal = createQuantitativeGoal('times', currentAmount, goalAmount, measurementTimeline, completionTimeline, options);
 
         } else if (selectedType === 'time') {
             var currentHours = parseInt($('.create-currentTimeHours').val()) || 0;
             var currentMinutes = parseInt($('.create-currentTimeMinutes').val()) || 0;
             var goalHours = parseInt($('.create-goalTimeHours').val()) || 0;
             var goalMinutes = parseInt($('.create-goalTimeMinutes').val()) || 0;
+            var sessionHours = parseInt($('.create-sessionTimeHours').val()) || 1;
+            var sessionMinutes = parseInt($('.create-sessionTimeMinutes').val()) || 0;
 
             var currentAmount = (currentHours * 60) + currentMinutes;
             var goalAmount = (goalHours * 60) + goalMinutes;
+            var chunkSize = (sessionHours * 60) + sessionMinutes;
             var measurementTimeline = GoalsModule.timelineToDays($('.create-time-timeline-select').val());
 
             if (currentAmount === 0 && goalAmount === 0) {
@@ -354,7 +421,8 @@ var QuantitativeGoalsModule = (function() {
                 return null;
             }
 
-            behavioralGoal = createQuantitativeGoal('minutes', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            // Pass chunkSize (avg session time in minutes) for milestone grouping
+            behavioralGoal = createQuantitativeGoal('minutes', currentAmount, goalAmount, measurementTimeline, completionTimeline, { chunkSize: chunkSize });
 
         } else if (selectedType === 'spending') {
             var currentAmount = parseInt($('.create-amountSpentPerWeek').val()) || 0;
@@ -401,6 +469,13 @@ var QuantitativeGoalsModule = (function() {
             data.completionTimeline = parseInt(questionSetElement.find('.completion-timeline-input').val()) || 7;
             data.unit = 'minutes';
 
+            // Get session time from baseline for chunkSize
+            var jsonObject = StorageModule.retrieveStorageObject();
+            var baseline = jsonObject.option && jsonObject.option.baseline ? jsonObject.option.baseline : {};
+            var sessionHours = baseline.sessionTimeHours !== undefined ? baseline.sessionTimeHours : 1;
+            var sessionMinutes = baseline.sessionTimeMinutes || 0;
+            data.chunkSize = (sessionHours * 60) + sessionMinutes;
+
             if (data.currentAmount === 0 && data.goalAmount === 0) {
                 errors.push('Please enter current or goal time amounts');
             }
@@ -421,7 +496,11 @@ var QuantitativeGoalsModule = (function() {
             return null;
         }
 
-        return createQuantitativeGoal(data.unit, data.currentAmount, data.goalAmount, data.measurementTimeline, data.completionTimeline);
+        var options = {};
+        if (data.chunkSize) {
+            options.chunkSize = data.chunkSize;
+        }
+        return createQuantitativeGoal(data.unit, data.currentAmount, data.goalAmount, data.measurementTimeline, data.completionTimeline, options);
     }
 
     // Public API
