@@ -141,9 +141,9 @@ export function getDefaultTestData(overrides: Partial<TestData> = {}): TestData 
     },
     baseline: {
       specificSubject: true,
-      decreaseHabit: true,
-      increaseHabit: false,
-      neutralHabit: false,
+      doLess: true,
+      doMore: false,
+      doEqual: false,
       userSubmitted: true,
       valuesTimesDone: true,
       valuesTime: true,
@@ -349,9 +349,9 @@ export interface WaitStatistics {
 
 export interface BaselineSettings {
   specificSubject: boolean;
-  decreaseHabit: boolean;
-  increaseHabit: boolean;
-  neutralHabit: boolean;
+  doLess: boolean;
+  doMore: boolean;
+  doEqual: boolean;
   userSubmitted?: boolean;
   valuesTimesDone: boolean;
   valuesTime: boolean;

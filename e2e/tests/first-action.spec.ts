@@ -20,9 +20,9 @@ test.describe('Better Later - First Action Flow', () => {
     await setupUserWithBaseline(page, {
       baseline: {
         specificSubject: true,
-        decreaseHabit: true,
-        increaseHabit: false,
-        neutralHabit: false,
+        doLess: true,
+        doMore: false,
+        doEqual: false,
         userSubmitted: true,
         valuesTimesDone: true,
         valuesTime: true,

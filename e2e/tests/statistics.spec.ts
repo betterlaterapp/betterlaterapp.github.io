@@ -104,7 +104,7 @@ test.describe('Better Later - Statistics & Reports', () => {
     });
     
     // Click undo
-    const undoButton = page.locator('#undo-button');
+    const undoButton = page.locator('#undoActionButton');
     if (await undoButton.isVisible()) {
       await undoButton.click();
       await page.waitForTimeout(500);

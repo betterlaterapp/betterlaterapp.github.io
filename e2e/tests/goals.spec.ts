@@ -29,6 +29,9 @@ test.describe('Better Later - Goal System', () => {
     // Wait for goal dialog
     const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
+
+    // Select custom time picker
+    await page.click('#waitCustomRadio')
     
     // Calculate time 2 hours from now
     const futureDate = new Date();
@@ -82,6 +85,10 @@ test.describe('Better Later - Goal System', () => {
     // Wait for goal dialog
     const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
+
+    // Select custom time picker
+    await page.click('#waitCustomRadio')
+
     
     // Set a goal 1 hour from now
     const futureDate = new Date();

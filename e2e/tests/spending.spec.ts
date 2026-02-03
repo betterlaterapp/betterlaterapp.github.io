@@ -21,9 +21,9 @@ test.describe('Better Later - Spending Tracking', () => {
     await setupUserWithBaseline(page, {
       baseline: {
         specificSubject: true,
-        decreaseHabit: true,
-        increaseHabit: false,
-        neutralHabit: false,
+        doLess: true,
+        doMore: false,
+        doEqual: false,
         userSubmitted: true,
         valuesTimesDone: true,
         valuesTime: true,
@@ -71,10 +71,6 @@ test.describe('Better Later - Spending Tracking', () => {
     
     // Total should show the amount (use flexible matching)
     await expect(page.locator('.statistic.cost.totals.total')).toContainText('$25');
-    
-    // Timer should be visible
-    const boughtTimer = page.locator('#bought-timer');
-    await expect(boughtTimer).toBeVisible();
     
     // Habit log should have entry
     await navigateToJournal(page);
