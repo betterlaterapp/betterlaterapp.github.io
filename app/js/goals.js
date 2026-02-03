@@ -129,7 +129,7 @@ var GoalsModule = (function() {
     function isDoLessGoal(goal) {
         var jsonObject = StorageModule.retrieveStorageObject();
         var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
-        return baseline.decreaseHabit === true;
+        return baseline.doLess === true;
     }
 
     /**
@@ -468,7 +468,7 @@ var GoalsModule = (function() {
 
         var jsonObject = StorageModule.retrieveStorageObject();
         var baseline = (jsonObject && jsonObject.option && jsonObject.option.baseline) || {};
-        var isDoLess = baseline.decreaseHabit === true;
+        var isDoLess = baseline.doLess === true;
 
         var currentAmount = 0;
         var goalAmount = 0;

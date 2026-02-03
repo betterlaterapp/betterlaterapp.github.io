@@ -251,8 +251,8 @@
                     <div class="wait-duration-content">
                         <div class="time-picker-container">
                             <h3 class="text-center">
-                                <span class="desires-decrease">How long do you want to wait?</span>
-                                <span class="desires-increase d-none">When do you want to do it?</span>
+                                <span class="do-less">How long do you want to wait?</span>
+                                <span class="do-more d-none">When do you want to do it?</span>
                             </h3>
                             
                             <!-- Radio: Quick wait (default) -->
@@ -371,10 +371,10 @@
                 <div class="col-12">
                     <div class="input-area">
                         <h3 class="text-center">
-                            <span class="desires-decrease">
+                            <span class="do-less">
                                 I spent:
                             </span>
-                            <span class="desires-increase d-none">
+                            <span class="do-more d-none">
                                 I invested:
                             </span>
                         </h3>
@@ -626,7 +626,7 @@
                 <div class="create-usage-chunk-row" style="display: none;">
                     <hr/>
                     <div class="goal-input-row">
-                        <label>Avg. per session</label>
+                        <label>Avg. times done per session</label>
                         <input type="number" min="1" max="100" class="goal-input create-usageChunkSize" placeholder="1" value="1">
                     </div>
                 </div>
@@ -1141,10 +1141,10 @@
 
                                     <div class="stat-recepticle">
                                         <p>
-                                            <span class="desires-decrease">
+                                            <span class="do-less">
                                                 Resists / done ratio
                                             </span>
-                                            <span class="desires-increase d-none">
+                                            <span class="do-more d-none">
                                                 Didn't / did ratio
                                             </span>
 
@@ -1173,10 +1173,10 @@
                                     <div class="stat-recepticle highlighted">
 
                                         <p>
-                                            <span class="desires-decrease">
+                                            <span class="do-less">
                                                 Resists in a row
                                             </span>
-                                            <span class="desires-increase d-none">
+                                            <span class="do-more d-none">
                                                 Procrastinated in a row
                                             </span>
 
@@ -1188,10 +1188,10 @@
                                                     test
                                                 </span>
                                                 <p>
-                                                    <span class="desires-decrease">
+                                                    <span class="do-less">
                                                         Current Streak
                                                     </span>
-                                                    <span class="desires-increase d-none">
+                                                    <span class="do-more d-none">
                                                         Current
                                                     </span>
                                                 </p>
@@ -1207,10 +1207,10 @@
                                                 <div class="white-bg"></div>
                                                 <span class="statistic use total resistStreak"> test </span>
                                                 <p>
-                                                    <span class="desires-decrease">
+                                                    <span class="do-less">
                                                         Best Streak
                                                     </span>
-                                                    <span class="desires-increase d-none">
+                                                    <span class="do-more d-none">
                                                         Most times
                                                     </span>
                                                 </p>
@@ -1374,10 +1374,43 @@
                             <!-- Baseline Values Section -->
                             <div class="baseline-values-settings">
                                 <h3>Baseline Values</h3>
+
+                                <!-- Direction toggles (like Question 2 from baseline questionnaire) -->
+                                <p class="text-muted baseline-values-description" style="font-size: 0.85rem; margin-bottom: 8px;">
+                                    Would you rather...
+                                </p>
+                                <div class="question behavior-direction-question settings-behavior-direction pt-0 mb-3">
+                                    <div class="behavior-direction-options">
+                                        <div class="form-check behavior-option">
+                                            <label class="form-check-label p-0">
+                                                <input type="radio" class="settings-doLess form-check-input"
+                                                    name="settings-incdecradio">
+                                                <i class="fas fa-arrow-down behavior-arrow decrease-arrow"></i>
+                                                <span>Do it less</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-check behavior-option">
+                                            <label class="form-check-label p-0">
+                                                <input type="radio" class="settings-doMore form-check-input"
+                                                    name="settings-incdecradio">
+                                                <i class="fas fa-arrow-up behavior-arrow increase-arrow"></i>
+                                                <span>Do it more</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-check behavior-option">
+                                        <label class="form-check-label p-0">
+                                            <input type="radio" class="settings-doEqual form-check-input"
+                                                name="settings-incdecradio">
+                                            <span>Just observe</span>
+                                        </label>
+                                    </div>
+                                </div>
+
                                 <p class="text-muted baseline-values-description" style="font-size: 0.85rem; margin-bottom: 12px;">
                                     Which of these metrics matter to you?
                                 </p>
-                                
+
                                 <!-- Importance checkboxes (duplicated from baseline questionnaire) -->
                                 <div class="importance-grid settings-importance-grid">
                                     <label class="importance-option settings-importance-option">
@@ -1424,14 +1457,25 @@
                                         Times done baseline
                                     </label>
                                     <div class="baseline-value-input-group">
-                                        <input type="number" min="0" max="500" 
-                                            class="form-control baseline-input settings-amountDonePerWeek" 
+                                        <input type="number" min="0" max="500"
+                                            class="form-control baseline-input settings-amountDonePerWeek"
                                             placeholder="0">
                                         <select class="form-control baseline-timeline-select settings-usage-timeline-select">
                                             <option value="day">per day</option>
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
                                         </select>
+                                    </div>
+                                    <div class="settings-chunk-row mt-2" style="display: none;">
+                                        <label class="baseline-value-label" style="font-size: 0.85rem; color: #6c757d;">
+                                            Average per session (chunk size)
+                                        </label>
+                                        <div class="baseline-value-input-group">
+                                            <input type="number" min="1" max="100"
+                                                class="form-control baseline-input settings-usageChunkSize"
+                                                placeholder="1" value="1">
+                                            <span class="chunk-unit-label">per session</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -1441,12 +1485,12 @@
                                         Time spent baseline
                                     </label>
                                     <div class="baseline-value-input-group time-inputs">
-                                        <input type="number" min="0" max="23" 
-                                            class="form-control baseline-input settings-currentTimeHours" 
+                                        <input type="number" min="0" max="23"
+                                            class="form-control baseline-input settings-currentTimeHours"
                                             placeholder="0">
                                         <span class="time-separator">h</span>
-                                        <input type="number" min="0" max="59" 
-                                            class="form-control baseline-input settings-currentTimeMinutes" 
+                                        <input type="number" min="0" max="59"
+                                            class="form-control baseline-input settings-currentTimeMinutes"
                                             placeholder="0">
                                         <span class="time-separator">m</span>
                                         <select class="form-control baseline-timeline-select settings-time-timeline-select">
@@ -1454,6 +1498,21 @@
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
                                         </select>
+                                    </div>
+                                    <div class="settings-session-time-row mt-2">
+                                        <label class="baseline-value-label" style="font-size: 0.85rem; color: #6c757d;">
+                                            Average time per session
+                                        </label>
+                                        <div class="baseline-value-input-group time-inputs">
+                                            <input type="number" min="0" max="12"
+                                                class="form-control baseline-input settings-sessionTimeHours"
+                                                placeholder="0" value="1">
+                                            <span class="time-separator">h</span>
+                                            <input type="number" min="0" max="59" step="15"
+                                                class="form-control baseline-input settings-sessionTimeMinutes"
+                                                placeholder="0" value="0">
+                                            <span class="time-separator">m</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -1879,7 +1938,7 @@
                                         <div class="behavior-direction-options">
                                             <div class="form-check behavior-option">
                                                 <label class="form-check-label p-0">
-                                                    <input type="radio" class="decreaseHabit form-check-input"
+                                                    <input type="radio" class="doLess form-check-input"
                                                         name="incdecradio">
                                                     <i class="fas fa-arrow-down behavior-arrow decrease-arrow"></i>
                                                     <span>Do it less</span>
@@ -1887,7 +1946,7 @@
                                             </div>
                                             <div class="form-check behavior-option">
                                                 <label class="form-check-label p-0">
-                                                    <input type="radio" class="increaseHabit form-check-input"
+                                                    <input type="radio" class="doMore form-check-input"
                                                         name="incdecradio">
                                                     <i class="fas fa-arrow-up behavior-arrow increase-arrow"></i>
                                                     <span>Do it more</span>
@@ -1896,7 +1955,7 @@
                                         </div>
                                         <div class="form-check behavior-option">
                                             <label class="form-check-label p-0">
-                                                <input type="radio" class="neutralHabit form-check-input"
+                                                <input type="radio" class="doEqual form-check-input"
                                                     name="incdecradio">
                                                 <span>Just observe</span>
                                             </label>
@@ -2249,19 +2308,19 @@
                             <a id="wait-button" href="#">
 
                                 <div class="icon">
-                                    <!-- <span class="desires-decrease"> -->
+                                    <!-- <span class="do-less"> -->
                                         <img src="../assets/images/bl-logo-small.jpg" class="img-fluid p-2"
                                             style="opacity: .7" />
                                     <!-- </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         <i class="far fa-calendar-plus fa-3x"></i>
                                     </span> -->
                                 </div>
                                 <p class="button-text">
-                                    <span class="desires-decrease">
+                                    <span class="do-less">
                                         Wait
                                     </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         Procras tinate
                                     </span>
                                 </p>
@@ -2283,10 +2342,10 @@
                             <div id="use-total" class="clickCounter">0</div>
                             <a id="use-button" href="#">
                                 <div class="icon">
-                                    <span class="desires-decrease">
+                                    <span class="do-less">
                                         <i class="fas fa-cookie-bite fa-3x"></i>
                                     </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         <i class="fas fa-chart-line fa-3x"></i>
                                     </span>
                                 </div>
@@ -2303,10 +2362,10 @@
                                     <i class="fas fa-ban fa-3x"></i>
                                 </div>
                                 <p class="button-text">
-                                    <span class="desires-decrease">
+                                    <span class="do-less">
                                         Resist
                                     </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         Didn't
                                     </span>
                                 </p>
@@ -2321,10 +2380,10 @@
                                     <i class="fas fa-dollar-sign fa-3x"></i>
                                 </div>
                                 <p class="button-text">
-                                    <span class="desires-decrease">
+                                    <span class="do-less">
                                         Spent
                                     </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         Invested
                                     </span>
                                 </p>
@@ -2341,10 +2400,10 @@
                                     <i class="fas fa-undo-alt fa-3x"></i>
                                 </div>
                                 <p class="button-text mb-0">
-                                    <span class="desires-decrease">
+                                    <span class="do-less">
                                         Undo
                                     </span>
-                                    <span class="desires-increase d-none">
+                                    <span class="do-more d-none">
                                         Undo
                                     </span>
                                 </p>

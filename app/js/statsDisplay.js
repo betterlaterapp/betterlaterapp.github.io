@@ -328,12 +328,12 @@ var StatsDisplayModule = (function () {
     /**
      * Get legend labels based on metric and habit direction
      * @param {string} metric - 'usage', 'time', or 'cost'
-     * @param {boolean} isDecreaseHabit - Whether this is a "do less" habit
+     * @param {boolean} isdoLess - Whether this is a "do less" habit
      * @returns {Object} - { primary: string, secondary: string|null }
      */
-    function getLegendLabels(metric, isDecreaseHabit) {
+    function getLegendLabels(metric, isdoLess) {
         if (metric === 'usage') {
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Do it less + Times done: red=did it, green=resisted
                 return { primary: 'Did It', secondary: 'Resisted' };
             } else {
@@ -341,7 +341,7 @@ var StatsDisplayModule = (function () {
                 return { primary: "Didn't Do It", secondary: 'Did It' };
             }
         } else if (metric === 'time') {
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Do it less + Time spent: red=time spent, green=time waited
                 return { primary: 'Time Spent', secondary: 'Time Waited' };
             } else {
@@ -349,7 +349,7 @@ var StatsDisplayModule = (function () {
                 return { primary: 'Time Procrastinated', secondary: 'Time Spent' };
             }
         } else if (metric === 'cost') {
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Do it less + Money spent: red=money spent, green=(none)
                 return { primary: 'Money Spent', secondary: null };
             } else {
@@ -375,10 +375,10 @@ var StatsDisplayModule = (function () {
         var period = reportValues.period;
         var reportStart = reportValues.reportStart;
         var reportEnd = reportValues.reportEnd;
-        var isDecreaseHabit = json.option && json.option.baseline && json.option.baseline.decreaseHabit;
+        var isdoLess = json.option && json.option.baseline && json.option.baseline.doLess;
 
         // Update legend labels based on metric and habit direction
-        var legendLabels = getLegendLabels(metric, isDecreaseHabit);
+        var legendLabels = getLegendLabels(metric, isdoLess);
         
         // Update legend display
         if (legendLabels.primary) {
@@ -443,7 +443,7 @@ var StatsDisplayModule = (function () {
             // For "do less": series[0]=resisted (green), series[1]=did it (red)
             // For "do more": series[0]=didn't (red), series[1]=did it (green)
             // Chartist renders series[0] first (primary/red), series[1] second (secondary/green)
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Red = did it, Green = resisted
                 data = {
                     labels: labels,
@@ -484,7 +484,7 @@ var StatsDisplayModule = (function () {
                 return Math.round((s / divisor) * 10) / 10;
             });
             
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Red = time spent, Green = time waited
                 data = {
                     labels: labels,
@@ -519,7 +519,7 @@ var StatsDisplayModule = (function () {
                 }
             };
         } else if (metric === 'cost') {
-            if (isDecreaseHabit) {
+            if (isdoLess) {
                 // Red = money spent (only one series)
                 data = {
                     labels: labels,

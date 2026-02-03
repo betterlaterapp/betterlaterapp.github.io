@@ -192,7 +192,7 @@ var BriefStatsModule = (function () {
      * @returns {boolean}
      */
     function isDoLess(baseline) {
-        return baseline.decreaseHabit === true;
+        return baseline.doLess === true;
     }
     
     /**
@@ -201,7 +201,7 @@ var BriefStatsModule = (function () {
      * @returns {boolean}
      */
     function isDoMore(baseline) {
-        return baseline.increaseHabit === true;
+        return baseline.doMore === true;
     }
     
     /**

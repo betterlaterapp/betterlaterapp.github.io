@@ -517,8 +517,11 @@ var ActivityTimerModule = (function () {
                 // Notify user about forgotten timer
                 var hours = Math.floor(elapsed / 3600);
                 var message = 'You have a timer running for ' + hours + '+ hours. Did you forget to stop it?';
-                var responseTools = '<button class="notification-response-tool stop-forgotten-timer" data-timer-id="' + timer.id + '">Stop Timer</button>';
-                NotificationsModule.createNotification(message, responseTools, { type: 'forgotten_timer' });
+                NotificationsModule.createNotification(message, null, {
+                    type: 'forgotten_timer',
+                    responseType: 'forgotten_timer',
+                    responseData: { timerId: timer.id }
+                });
             }
         });
     }

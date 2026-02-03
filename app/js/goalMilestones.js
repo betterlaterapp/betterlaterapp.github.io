@@ -16,7 +16,7 @@ var GoalMilestonesModule = (function() {
      */
     function generateScheduleMilestones(goal, jsonObject) {
         var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
-        var isDoLess = baseline.decreaseHabit === true;
+        var isDoLess = baseline.doLess === true;
         var actions = jsonObject.action || [];
 
         var now = Date.now();

@@ -126,9 +126,9 @@ var BaselineModule = (function() {
             jsonObject.option.baseline = {
                 userSubmitted: false,
                 specificSubject: false,
-                increaseHabit: false,
-                decreaseHabit: false,
-                neutralHabit: true,
+                doMore: false,
+                doLess: false,
+                doEqual: true,
                 timesDone: 0,
                 usageTimeline: 'week',
                 usageUnit: 'times',
@@ -148,9 +148,9 @@ var BaselineModule = (function() {
         }
 
         // --- Collect all form values ---
-        var isDecrease = $(".decreaseHabit").is(":checked");
-        var isIncrease = $(".increaseHabit").is(":checked");
-        var isNeutral = $(".neutralHabit").is(":checked");
+        var isDecrease = $(".doLess").is(":checked");
+        var isIncrease = $(".doMore").is(":checked");
+        var isNeutral = $(".doEqual").is(":checked");
         var valuesTimesDone = $(".valuesTimesDone").is(":checked");
         var valuesTime = $(".valuesTime").is(":checked");
         var valuesMoney = $(".valuesMoney").is(":checked");
@@ -160,9 +160,9 @@ var BaselineModule = (function() {
         // --- Update baseline object ---
         var baseline = jsonObject.option.baseline;
         baseline.specificSubject = isSerious;
-        baseline.decreaseHabit = isDecrease;
-        baseline.increaseHabit = isIncrease;
-        baseline.neutralHabit = isNeutral;
+        baseline.doLess = isDecrease;
+        baseline.doMore = isIncrease;
+        baseline.doEqual = isNeutral;
         baseline.valuesTimesDone = valuesTimesDone;
         baseline.valuesTime = valuesTime;
         baseline.valuesMoney = valuesMoney;
@@ -238,14 +238,14 @@ var BaselineModule = (function() {
     }
 
     function updateBodyClasses(isDecrease, isIncrease, isNeutral) {
-        $('body').removeClass("desires-decrease desires-increase desires-neutral");
+        $('body').removeClass("do-less do-more do-equal");
         
         if (isDecrease) {
-            $('body').addClass("desires-decrease");
+            $('body').addClass("do-less");
         } else if (isIncrease) {
-            $('body').addClass("desires-increase");
+            $('body').addClass("do-more");
         } else {
-            $('body').addClass("desires-neutral");
+            $('body').addClass("do-equal");
         }
     }
 
@@ -272,7 +272,7 @@ var BaselineModule = (function() {
         var baseline = jsonObject.option.baseline;
 
         // --- Restore body classes ---
-        updateBodyClasses(baseline.decreaseHabit, baseline.increaseHabit, baseline.neutralHabit);
+        updateBodyClasses(baseline.doLess, baseline.doMore, baseline.doEqual);
         
 
         // --- Restore Question Set 1: specific subject ---
@@ -288,9 +288,9 @@ var BaselineModule = (function() {
         $(".make-goal-question").hide();
 
         // --- Restore Question Set 2: desire direction ---
-        $("input.decreaseHabit").prop('checked', baseline.decreaseHabit);
-        $("input.increaseHabit").prop('checked', baseline.increaseHabit);
-        $("input.neutralHabit").prop('checked', baseline.neutralHabit);
+        $("input.doLess").prop('checked', baseline.doLess);
+        $("input.doMore").prop('checked', baseline.doMore);
+        $("input.doEqual").prop('checked', baseline.doEqual);
         
         // --- Restore Question Set 3: importance checkboxes ---
         $("input.valuesTimesDone").prop('checked', baseline.valuesTimesDone);
@@ -666,7 +666,8 @@ var BaselineModule = (function() {
     return {
         init: init,
         loadBaselineValues: loadBaselineValues,
-        saveBaselineValues: saveBaselineValues  // Expose for settings page sync
+        saveBaselineValues: saveBaselineValues,  // Expose for settings page sync
+        updateBodyClasses: updateBodyClasses  // Expose for settings page direction toggles
     };
 })();
 

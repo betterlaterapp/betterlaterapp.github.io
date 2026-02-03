@@ -1,5 +1,5 @@
 var NotificationsModule = (function () {
-    var NOTIFICATION_STAY_DURATION = 3000;
+    var NOTIFICATION_STAY_DURATION = 4500;
     var NOTIFICATION_FADE_DURATION = 3000;
     var MAX_NOTIFICATIONS = 40;
 
@@ -122,6 +122,13 @@ var NotificationsModule = (function () {
             'goal_ended_early': 'Goal Ended Early',
             'goal_ended_away': 'Goal Ended While Away',
             'goal_extend_prompt': 'Goal Extension',
+            'wait_completed': 'Wait Completed',
+            'wait_ended_away': 'Wait Ended',
+            'wait_extend_prompt': 'Wait Extension',
+            'wait_ended_early': 'Wait Ended Early',
+            'wait_acknowledged': 'Wait Completed',
+            'timer_conflict': 'Timer Conflict',
+            'forgotten_timer': 'Forgotten Timer',
             'welcome': 'Welcome',
             'affirmation': 'Affirmation',
             'info': 'Info'
@@ -135,6 +142,13 @@ var NotificationsModule = (function () {
             'goal_ended_early': 'type-warning',
             'goal_ended_away': 'type-info',
             'goal_extend_prompt': 'type-info',
+            'wait_completed': 'type-success',
+            'wait_ended_away': 'type-info',
+            'wait_extend_prompt': 'type-info',
+            'wait_ended_early': 'type-warning',
+            'wait_acknowledged': 'type-success',
+            'timer_conflict': 'type-warning',
+            'forgotten_timer': 'type-warning',
             'welcome': 'type-info',
             'affirmation': 'type-success',
             'info': 'type-default'
@@ -144,11 +158,19 @@ var NotificationsModule = (function () {
 
     function formatUserResponse(response) {
         var labels = {
-            'goal-ended-on-time': 'Completed goal successfully',
-            'goal-ended-early': 'Goal ended early',
-            'submit-goal-end-time': 'Submitted goal end time',
-            'extend-goal': 'Extended goal',
-            'end-goal': 'Ended goal'
+            'goal-ended-on-time': 'Completed wait successfully',
+            'goal-ended-early': 'Wait ended early',
+            'submit-goal-end-time': 'Submitted end time',
+            'submit-wait-end-time': 'Submitted end time',
+            'extend-goal': 'Extended wait',
+            'end-goal': 'Ended wait',
+            'wait-complete-extend': 'Started new wait',
+            'wait-complete-done': 'Acknowledged completion',
+            'cancel-timer-for-wait': 'Cancelled timer',
+            'keep-timer': 'Kept timer running',
+            'extend-wait': 'Extended wait',
+            'end-wait': 'Ended wait',
+            'stop-forgotten-timer': 'Stopped timer'
         };
         var label = labels[response.type] || 'Responded';
         var date = new Date(response.timestamp);
@@ -161,22 +183,82 @@ var NotificationsModule = (function () {
         setTimeout(function() { $notification.remove(); }, NOTIFICATION_FADE_DURATION);
     }
 
+    /**
+     * Generate HTML for response tools based on type
+     * @param {string} responseType - Type identifier for the response tools
+     * @param {object} responseData - Additional data needed to generate the HTML
+     * @returns {string} HTML string for the response tools
+     */
+    function generateResponseToolsHtml(responseType, responseData) {
+        responseData = responseData || {};
+
+        switch (responseType) {
+            case 'wait_ended_away':
+                return '<button class="notification-response-tool goal-ended-on-time">Yes</button>' +
+                       '<button class="notification-response-tool goal-ended-early">No</button>';
+
+            case 'wait_completed':
+                return '<button class="notification-response-tool wait-complete-extend" href="#">' +
+                           '<i class="fas fa-plus-circle"></i> Extend Wait' +
+                       '</button>' +
+                       '<button class="notification-response-tool wait-complete-done" href="#">' +
+                           '<i class="fas fa-check-circle"></i> I\'m Done' +
+                       '</button>';
+
+            case 'goal_ended_early':
+                var minFormatted = responseData.minDate || '-0';
+                var maxFormatted = responseData.maxDate || '-0';
+                return '<div id="goalEndTimePicker" class="time-picker-container">' +
+                    '<select class="time-picker-hour">' +
+                    '<option value="0">12</option><option value="1">1</option><option value="2">2</option>' +
+                    '<option value="3">3</option><option value="4">4</option><option value="5">5</option>' +
+                    '<option value="6">6</option><option value="7">7</option><option value="8">8</option>' +
+                    '<option value="9">9</option><option value="10">10</option><option value="11">11</option>' +
+                    '</select><select class="time-picker-am-pm"><option value="AM">AM</option><option value="PM">PM</option></select></div>' +
+                    '<div id="datepicker-notification" style="display:inline-block;"></div>' +
+                    '<script>$("#datepicker-notification").datepicker({minDate:' + minFormatted + ',maxDate:' + maxFormatted + '});' +
+                    'var h=new Date().getHours();$("#goalEndTimePicker .time-picker-hour").val(h%12);if(h>=12)$("#goalEndTimePicker .time-picker-am-pm").val("PM");</script><br/>' +
+                    '<button class="notification-response-tool submit-new-goal-time">Submit</button>';
+
+            case 'forgotten_timer':
+                var timerId = responseData.timerId || '';
+                return '<button class="notification-response-tool stop-forgotten-timer" data-timer-id="' + timerId + '">Stop Timer</button>';
+
+            case 'timer_conflict':
+                return '<button class="notification-response-tool cancel-timer-for-wait" href="#">' +
+                    'Yes, cancel timer</button>' +
+                    '<button class="notification-response-tool keep-timer" href="#">' +
+                    'No, keep timer</button>';
+
+            case 'wait_extend_prompt':
+                return '<button class="notification-response-tool extend-wait" href="#">' +
+                    'Yes</button>' +
+                    '<button class="notification-response-tool end-wait" href="#">' +
+                    'No</button>';
+
+            default:
+                return '';
+        }
+    }
+
     function createNotification(message, responseTools, options) {
         options = options || {};
         var isPersistent = options.persistent !== false;
-        var hasResponseTools = !!responseTools;
         var notificationType = options.type || 'info';
         var notificationId = generateId();
-        
+
+        // Determine if we have response tools - either legacy HTML string or new responseType
+        var hasResponseTools = !!(responseTools || options.responseType);
+
         if (isPersistent && hasDuplicateNotification(message)) {
             return null;
         }
-        
-        var responseHint = hasResponseTools 
-            ? '<p class="notification-response-hint"><i class="fas fa-hand-pointer"></i> Tap to respond on notifications page</p>' 
+
+        var responseHint = hasResponseTools
+            ? '<p class="notification-response-hint"><i class="fas fa-hand-pointer"></i> Tap to respond on notifications page</p>'
             : '';
         var responseClass = hasResponseTools ? ' has-response-tools' : '';
-        
+
         var template = '<div class="notification notification-overlay' + responseClass + '" data-id="' + notificationId + '">' +
             '<div class="notification-message">' +
             '<p class="notification-text">' + message + '</p>' +
@@ -185,26 +267,37 @@ var NotificationsModule = (function () {
 
         var $notification = $(template);
         $('#notification-overlay').append($notification);
-        
+
         setTimeout(function() { $notification.addClass('notification-visible'); }, 10);
 
         if (isPersistent) {
-            saveNotification({
+            var notificationObj = {
                 id: notificationId,
                 message: message,
                 timestamp: Date.now(),
                 read: false,
                 hasResponseTools: hasResponseTools,
-                type: notificationType,
-                responseToolsHtml: responseTools || null
-            });
+                type: notificationType
+            };
+
+            // Store responseType and responseData instead of raw HTML
+            if (options.responseType) {
+                notificationObj.responseType = options.responseType;
+                notificationObj.responseData = options.responseData || null;
+            } else if (responseTools) {
+                // Legacy support: if raw HTML is passed, try to infer responseType from notificationType
+                notificationObj.responseType = notificationType;
+                notificationObj.responseData = options.responseData || null;
+            }
+
+            saveNotification(notificationObj);
         }
 
         setTimeout(function() {
             clearOverlayNotification($notification);
             animateNotificationBell();
         }, NOTIFICATION_STAY_DURATION);
-        
+
         return notificationId;
     }
 
@@ -213,10 +306,11 @@ var NotificationsModule = (function () {
                             waitHandle.waitType === "bought" ? "buying" : "buying and doing";
 
         var message = 'Your most recent wait ended since your last visit. Did you make it without ' + waitTypeGerund + ' it?';
-        var responseTools = '<button class="notification-response-tool goal-ended-on-time">Yes</button>' +
-                           '<button class="notification-response-tool goal-ended-early">No</button>';
 
-        createNotification(message, responseTools, { type: 'wait_ended_away' });
+        createNotification(message, null, {
+            type: 'wait_ended_away',
+            responseType: 'wait_ended_away'
+        });
     }
 
     // Backward compatibility alias for any code still using old name
@@ -245,8 +339,17 @@ var NotificationsModule = (function () {
                 '<p class="notification-log-message">' + notif.message + '</p>' +
                 '<span class="notification-log-date">' + dateStr + '</span>';
             
-            if (notif.hasResponseTools && !notif.read && notif.responseToolsHtml) {
-                html += '<div class="notification-log-response-tools">' + notif.responseToolsHtml + '</div>';
+            if (notif.hasResponseTools && !notif.read) {
+                var responseHtml = '';
+                if (notif.responseType) {
+                    responseHtml = generateResponseToolsHtml(notif.responseType, notif.responseData);
+                } else if (notif.responseToolsHtml) {
+                    // Legacy support for old notifications with stored HTML
+                    responseHtml = notif.responseToolsHtml;
+                }
+                if (responseHtml) {
+                    html += '<div class="notification-log-response-tools">' + responseHtml + '</div>';
+                }
             }
             
             if (notif.userResponse) {
@@ -288,14 +391,14 @@ var NotificationsModule = (function () {
             var id = $(this).closest('.notification-log-item').data('id');
             storeUserResponse(id, 'extend-goal', null);
             renderNotificationsLog();
-            GoalsModule.extendActiveGoal(json);
+            WaitModule.extendActiveWait(json);
         });
 
         $('#notifications-log').on('click', '.end-goal', function () {
             var id = $(this).closest('.notification-log-item').data('id');
             storeUserResponse(id, 'end-goal', null);
             renderNotificationsLog();
-            GoalsModule.endActiveGoal(json);
+            WaitModule.endActiveWait(json);
         });
 
         $('#notifications-log').on('click', '.mark-read-btn', function() {
@@ -356,26 +459,18 @@ var NotificationsModule = (function () {
         else if ($this.hasClass("goal-ended-early")) {
             if (id) storeUserResponse(id, 'goal-ended-early', { waitType: waitType });
             renderNotificationsLog();
-            
+
             var now = Math.round(new Date() / 1000);
             var minFormatted = Math.floor((now - new Date(parseInt(startStamp)).getTime()) / 86400);
             var maxFormatted = Math.floor((now - new Date(parseInt(endStamp)).getTime()) / 86400);
             minFormatted = minFormatted === 0 ? "-0" : -minFormatted;
             maxFormatted = maxFormatted === 0 ? "-0" : -maxFormatted;
 
-            var responseTools = '<div id="goalEndTimePicker" class="time-picker-container">' +
-                '<select class="time-picker-hour">' +
-                '<option value="0">12</option><option value="1">1</option><option value="2">2</option>' +
-                '<option value="3">3</option><option value="4">4</option><option value="5">5</option>' +
-                '<option value="6">6</option><option value="7">7</option><option value="8">8</option>' +
-                '<option value="9">9</option><option value="10">10</option><option value="11">11</option>' +
-                '</select><select class="time-picker-am-pm"><option value="AM">AM</option><option value="PM">PM</option></select></div>' +
-                '<div id="datepicker-notification" style="display:inline-block;"></div>' +
-                '<script>$("#datepicker-notification").datepicker({minDate:' + minFormatted + ',maxDate:' + maxFormatted + '});' +
-                'var h=new Date().getHours();$("#goalEndTimePicker .time-picker-hour").val(h%12);if(h>=12)$("#goalEndTimePicker .time-picker-am-pm").val("PM");</script><br/>' +
-                '<button class="notification-response-tool submit-new-goal-time">Submit</button>';
-
-            createNotification("Bummer. When do you think you broke your goal?", responseTools, { type: 'goal_ended_early' });
+            createNotification("Bummer. When do you think you broke your goal?", null, {
+                type: 'goal_ended_early',
+                responseType: 'goal_ended_early',
+                responseData: { minDate: minFormatted, maxDate: maxFormatted }
+            });
         }
         else if ($this.hasClass("submit-new-goal-time")) {
             var selectedDate = $('#datepicker-notification').datepicker('getDate');

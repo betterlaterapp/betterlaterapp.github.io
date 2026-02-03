@@ -300,7 +300,12 @@ var SettingsModule = (function () {
         $('.baseline-values-settings .baseline-input, .baseline-values-settings .baseline-timeline-select').on('change', function() {
             saveBaselineValuesFromSettings();
         });
-        
+
+        // Update chunk visibility when times done amount or timeline changes
+        $('.settings-amountDonePerWeek, .settings-usage-timeline-select').on('change input', function() {
+            updateSettingsChunkVisibility();
+        });
+
         // Handle settings importance checkboxes
         $('.settings-importance-option input[type="checkbox"]').on('change', function() {
             var $checkbox = $(this);
@@ -361,17 +366,55 @@ var SettingsModule = (function () {
                 UIModule.hideInactiveStatistics(json);
             }
         });
+
+        // Handle direction toggle changes (doMore, doLess, justObserve)
+        $('.settings-behavior-direction input[type="radio"]').on('change', function() {
+            var $radio = $(this);
+
+            // Determine which direction is selected
+            var isDecrease = $('.settings-doLess').is(':checked');
+            var isIncrease = $('.settings-doMore').is(':checked');
+            var isNeutral = $('.settings-doEqual').is(':checked');
+
+            // Update storage
+            var jsonObject = StorageModule.retrieveStorageObject();
+            if (!jsonObject.option) jsonObject.option = {};
+            if (!jsonObject.option.baseline) jsonObject.option.baseline = {};
+            jsonObject.option.baseline.doLess = isDecrease;
+            jsonObject.option.baseline.doMore = isIncrease;
+            jsonObject.option.baseline.doEqual = isNeutral;
+            StorageModule.setStorageObject(jsonObject);
+
+            // Sync baseline questionnaire radio buttons
+            $('input.doLess').prop('checked', isDecrease);
+            $('input.doMore').prop('checked', isIncrease);
+            $('input.doEqual').prop('checked', isNeutral);
+
+            // Update body classes for UI styling
+            if (typeof BaselineModule !== 'undefined' && BaselineModule.updateBodyClasses) {
+                BaselineModule.updateBodyClasses(isDecrease, isIncrease, isNeutral);
+            }
+        });
     }
-    
+
     /**
      * Sync baseline values UI with stored values
      */
     function syncBaselineValuesUI(jsonObject) {
         var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
-        
+
+        // Sync direction toggles
+        $('.settings-doLess').prop('checked', baseline.doLess === true);
+        $('.settings-doMore').prop('checked', baseline.doMore === true);
+        $('.settings-doEqual').prop('checked', baseline.doEqual === true);
+        // Default to doEqual if nothing is selected
+        if (!baseline.doLess && !baseline.doMore && !baseline.doEqual) {
+            $('.settings-doEqual').prop('checked', true);
+        }
+
         // Track if any category is enabled
         var anyEnabled = false;
-        
+
         // Sync settings importance checkboxes
         $('.settings-valuesTimesDone').prop('checked', baseline.valuesTimesDone === true);
         $('.settings-valuesTime').prop('checked', baseline.valuesTime === true);
@@ -384,10 +427,13 @@ var SettingsModule = (function () {
             $('[data-baseline-category="valuesTimesDone"]').show();
             $('.settings-amountDonePerWeek').val(baseline.timesDone || '');
             $('.settings-usage-timeline-select').val(baseline.usageTimeline || 'week');
+            $('.settings-usageChunkSize').val(baseline.usageChunkSize || 1);
+            // Show chunk row if amount is high (>40/day equivalent)
+            updateSettingsChunkVisibility();
         } else {
             $('[data-baseline-category="valuesTimesDone"]').hide();
         }
-        
+
         // Time Spent baseline
         if (baseline.valuesTime) {
             anyEnabled = true;
@@ -395,6 +441,8 @@ var SettingsModule = (function () {
             $('.settings-currentTimeHours').val(baseline.timeSpentHours || '');
             $('.settings-currentTimeMinutes').val(baseline.timeSpentMinutes || '');
             $('.settings-time-timeline-select').val(baseline.timeTimeline || 'week');
+            $('.settings-sessionTimeHours').val(baseline.sessionTimeHours || 1);
+            $('.settings-sessionTimeMinutes').val(baseline.sessionTimeMinutes || 0);
         } else {
             $('[data-baseline-category="valuesTime"]').hide();
         }
@@ -430,18 +478,24 @@ var SettingsModule = (function () {
         if (baseline.valuesTimesDone) {
             var amountDone = parseInt($('.settings-amountDonePerWeek').val()) || 0;
             var usageTimeline = $('.settings-usage-timeline-select').val();
+            var chunkSize = parseInt($('.settings-usageChunkSize').val()) || 1;
             baseline.timesDone = amountDone;
             baseline.usageTimeline = usageTimeline;
+            baseline.usageChunkSize = chunkSize;
         }
-        
+
         // Time Spent
         if (baseline.valuesTime) {
             var timeHours = parseInt($('.settings-currentTimeHours').val()) || 0;
             var timeMinutes = parseInt($('.settings-currentTimeMinutes').val()) || 0;
             var timeTimeline = $('.settings-time-timeline-select').val();
+            var sessionHours = parseInt($('.settings-sessionTimeHours').val()) || 1;
+            var sessionMinutes = parseInt($('.settings-sessionTimeMinutes').val()) || 0;
             baseline.timeSpentHours = timeHours;
             baseline.timeSpentMinutes = timeMinutes;
             baseline.timeTimeline = timeTimeline;
+            baseline.sessionTimeHours = sessionHours;
+            baseline.sessionTimeMinutes = sessionMinutes;
         }
         
         // Money Spent
@@ -460,8 +514,36 @@ var SettingsModule = (function () {
         
         // Also sync the baseline questionnaire inputs
         syncBaselineQuestionnaireFromSettings(baseline);
+
+        // Update chunk visibility based on amount
+        updateSettingsChunkVisibility();
     }
-    
+
+    /**
+     * Show/hide chunk row based on usage amount (>40/day equivalent)
+     */
+    function updateSettingsChunkVisibility() {
+        var amount = parseInt($('.settings-amountDonePerWeek').val()) || 0;
+        var timeline = $('.settings-usage-timeline-select').val();
+
+        // Convert to per-day equivalent
+        var perDay;
+        if (timeline === 'day') {
+            perDay = amount;
+        } else if (timeline === 'week') {
+            perDay = amount / 7;
+        } else { // month
+            perDay = amount / 30;
+        }
+
+        // Show chunk input if >40 per day
+        if (perDay > 40) {
+            $('.settings-chunk-row').slideDown();
+        } else {
+            $('.settings-chunk-row').slideUp();
+        }
+    }
+
     /**
      * Sync baseline questionnaire inputs with settings values
      */
@@ -473,7 +555,10 @@ var SettingsModule = (function () {
         if (baseline.usageTimeline) {
             $('.baseline-usage-timeline-select').val(baseline.usageTimeline);
         }
-        
+        if (baseline.usageChunkSize !== undefined) {
+            $('.baseline-usageChunkSize').val(baseline.usageChunkSize);
+        }
+
         // Time Spent
         if (baseline.timeSpentHours !== undefined) {
             $('.baseline-currentTimeHours').val(baseline.timeSpentHours);
@@ -484,7 +569,13 @@ var SettingsModule = (function () {
         if (baseline.timeTimeline) {
             $('.baseline-time-timeline-select').val(baseline.timeTimeline);
         }
-        
+        if (baseline.sessionTimeHours !== undefined) {
+            $('.baseline-sessionTimeHours').val(baseline.sessionTimeHours);
+        }
+        if (baseline.sessionTimeMinutes !== undefined) {
+            $('.baseline-sessionTimeMinutes').val(baseline.sessionTimeMinutes);
+        }
+
         // Money Spent
         if (baseline.moneySpent !== undefined) {
             $('.baseline-amountSpentPerWeek').val(baseline.moneySpent);

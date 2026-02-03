@@ -91,7 +91,7 @@ var QuantitativeGoalsModule = (function() {
         var jsonObject = StorageModule.retrieveStorageObject();
         var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
         var actions = jsonObject.action || [];
-        var isDoLess = baseline.decreaseHabit === true;
+        var isDoLess = baseline.doLess === true;
 
         var daysRemaining = GoalsModule.calculateDaysRemaining(goal);
         var daysElapsed = GoalsModule.calculateDaysElapsed(goal);
@@ -167,10 +167,14 @@ var QuantitativeGoalsModule = (function() {
         periodLabel = goal.measurementTimeline === 1 ? 'day' : (goal.measurementTimeline === 7 ? 'week' : 'month');
 
         var curveArrow = isDoLess ? '⤵' : '⤴';
+        var isEqual = goal.currentAmount == goal.goalAmount;
+        var curveClass = (isDoLess ? 'down-power' : 'up-sigmoid');
         var goalTitle = '<span class="goal-values-highlight">' +
-                        '<span class="goal-value-current">' + goal.currentAmount + '</span>' +
-                        '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
-                        '<span class="goal-value-target">' + goal.goalAmount + '</span>' +
+                            '<span class="curve-background ' + ( isEqual ? 'equal' : curveClass) + '">' + 
+                                '<span class="goal-value-current">' + goal.currentAmount + '</span>' +
+                                '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
+                                '<span class="goal-value-target">' + goal.goalAmount + '</span>' +
+                            '</span>' +
                         '</span> ' + unitLabel + '/' + periodLabel;
 
         var milestoneLabel = isDoLess ? 'Wait until' : 'Do it by';
@@ -200,14 +204,16 @@ var QuantitativeGoalsModule = (function() {
         var goalStartMs = goal.createdAt;
         var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
 
-        var progressCompletedPct = isDoLess
-            ? Math.min(100, Math.round((actionCount / totalMilestones) * 100))
-            : Math.min(100, Math.round((1 - (actionCount / totalMilestones)) * 100));
+        // Progress is milestones done / milestones allotted (starts at 0% for both doMore and doLess)
+        var progressCompletedPct = Math.min(100, Math.round((actionCount / totalMilestones) * 100));
 
         var trackBadgeClass = trackStatus.status === 'on-track' ? 'badge-on-track' :
                               (trackStatus.status === 'ahead' ? 'badge-ahead' : 'badge-behind');
         var trackBadgeText = trackStatus.status === 'on-track' ? 'On track' :
                              (trackStatus.status === 'ahead' ? trackStatus.count + ' uses ahead' : trackStatus.count + ' behind');
+
+        var milestonesDoneText = isDoLess ? "used" : "completed";
+        var milestonesAllottment = isDoLess ? "Available" : "Needeed";
 
         var html = '<div class="goal-accordion-item ' + colorClass + '" data-goal-id="' + goal.id + '" data-goal-type="quantitative">' +
             '<button class="goal-delete-btn" data-goal-id="' + goal.id + '" title="Delete goal"><i class="fas fa-times"></i></button>' +
@@ -220,7 +226,7 @@ var QuantitativeGoalsModule = (function() {
                     '<div class="goal-stat-item goal-stat-left">' +
                         '<span class="goal-type-badge ' + trackBadgeClass + '">' + trackBadgeText + '</span>' +
                         '<span class="goal-stat-value">' + Math.max(0, totalMilestones - actionCount) + ' milestones left</span>' +
-                        '<span class="goal-stat-label">' + actionCount + ' used / ' + milestonesPassedCount + ' available</span>' +
+                        '<span class="goal-stat-label">' + actionCount + ' ' + milestonesDoneText + ' / ' + milestonesPassedCount + ' ' + milestonesAllottment + '</span>' +
                     '</div>' +
                     '<div class="goal-stat-item goal-stat-right">' +
                         '<div class="stat-milestone-datetime">' +

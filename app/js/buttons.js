@@ -216,7 +216,7 @@ var ButtonsModule = (function() {
             json.statistics.use.cravingsInARow++;
             $("#cravingsResistedInARow").html(json.statistics.use.cravingsInARow);
 
-            if (json.option.baseline.decreaseHabit == true) {
+            if (json.option.baseline.doLess == true) {
                 UIModule.shootConfetti();
             }
             
@@ -355,7 +355,7 @@ var ButtonsModule = (function() {
     }
 
     function handleUseButtonDialog() {
-        if (json.option.baseline.decreaseHabit === false) {
+        if (json.option.baseline.doLess === false) {
             UIModule.shootConfetti();
         }
 

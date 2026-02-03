@@ -212,8 +212,8 @@ var WaitModule = (function () {
         var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
 
         // Notify user that wait ended
-        var isDecreaseHabit = json.option.baseline.decreaseHabit;
-        var message = isDecreaseHabit 
+        var isdoLess = json.option.baseline.doLess;
+        var message = isdoLess 
             ? "Congrats! You made it through the wait! " + affirmation
             : "Time's up! Ready to take action? " + affirmation;
         NotificationsModule.createNotification(message, null, { type: 'wait_completed' });
@@ -238,12 +238,10 @@ var WaitModule = (function () {
         // Check if there's an active activity timer - can't create wait while timer running
         if (typeof ActivityTimerModule !== 'undefined' && ActivityTimerModule.hasActiveTimers()) {
             var message = "You have an active timer running. Would you like to cancel it to start a wait?";
-            var responseTools =
-                '<button class="notification-response-tool cancel-timer-for-wait" href="#">' +
-                'Yes, cancel timer</button>' +
-                '<button class="notification-response-tool keep-timer" href="#">' +
-                'No, keep timer</button>';
-            NotificationsModule.createNotification(message, responseTools, { type: 'timer_conflict' });
+            NotificationsModule.createNotification(message, null, {
+                type: 'timer_conflict',
+                responseType: 'timer_conflict'
+            });
             return;
         }
 
@@ -327,17 +325,15 @@ var WaitModule = (function () {
 
             if (hasActiveWait) {
                 // Ask if user wants to extend wait
-                var isDecreaseHabit = json.option.baseline.decreaseHabit;
-                var message = isDecreaseHabit
+                var isdoLess = json.option.baseline.doLess;
+                var message = isdoLess
                     ? "You already have an active wait. Would you like to extend it?"
                     : "You already have a reminder set. Would you like to change it?";
-                var responseTools =
-                    '<button class="notification-response-tool extend-wait" href="#" >' +
-                    'Yes</button>' +
-                    '<button class="notification-response-tool end-wait" href="#">' +
-                    'No</button>';
 
-                NotificationsModule.createNotification(message, responseTools, { type: 'wait_extend_prompt' });
+                NotificationsModule.createNotification(message, null, {
+                    type: 'wait_extend_prompt',
+                    responseType: 'wait_extend_prompt'
+                });
             } else {
                 // Keep lastClickStamp up to date while using app
                 waitStats.lastClickStamp = timestampSeconds;

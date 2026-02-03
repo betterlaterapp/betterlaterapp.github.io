@@ -164,7 +164,7 @@ var WaitTimerModule = (function () {
      */
     function createWaitTimerPanel(waitEndTimestamp, waitType) {
         var jsonObject = StorageModule.retrieveStorageObject();
-        var isDecreaseHabit = jsonObject.option.baseline.decreaseHabit;
+        var isdoLess = jsonObject.option.baseline.doLess;
         var timerId = 'wait_' + Math.round(new Date() / 1000);
         
         var now = Math.round(new Date() / 1000);
@@ -173,7 +173,7 @@ var WaitTimerModule = (function () {
 
         // Determine button configuration based on habit direction
         var buttonsHtml = '';
-        if (isDecreaseHabit) {
+        if (isdoLess) {
             // 'Do less' habit: Delayed Gratification language
             buttonsHtml = 
                 '<button class="wait-timer-distract-btn btn-timer-control">' +
@@ -194,8 +194,8 @@ var WaitTimerModule = (function () {
         }
 
         // Title based on habit direction
-        var titleText = isDecreaseHabit ? 'Waiting it out...' : 'Countdown to action...';
-        var subtitleText = isDecreaseHabit 
+        var titleText = isdoLess ? 'Waiting it out...' : 'Countdown to action...';
+        var subtitleText = isdoLess 
             ? 'Stay strong! You\'ve got this.' 
             : 'Time until you should do it again';
 
@@ -383,39 +383,32 @@ var WaitTimerModule = (function () {
         }
         
         // Determine habit direction for messaging
-        var isDecreaseHabit = jsonObject.option && jsonObject.option.baseline && jsonObject.option.baseline.decreaseHabit;
+        var isdoLess = jsonObject.option && jsonObject.option.baseline && jsonObject.option.baseline.doLess;
         
         // Show completion notification with extend option
-        showWaitCompletionNotification(timerId, waitType, isDecreaseHabit);
+        showWaitCompletionNotification(timerId, waitType, isdoLess);
     }
     
     /**
      * Show notification when wait timer completes, offering extension
      * @param {string} timerId - Timer ID
      * @param {string} waitType - 'use', 'bought', or 'both'
-     * @param {boolean} isDecreaseHabit - Whether this is a 'do less' habit
+     * @param {boolean} isdoLess - Whether this is a 'do less' habit
      */
-    function showWaitCompletionNotification(timerId, waitType, isDecreaseHabit) {
+    function showWaitCompletionNotification(timerId, waitType, isdoLess) {
         var jsonObject = StorageModule.retrieveStorageObject();
         var affirmations = jsonObject && jsonObject.affirmations 
             ? jsonObject.affirmations 
             : ['Great job!', 'Keep it up!', 'You did it!'];
         var affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
         
-        var message = isDecreaseHabit 
+        var message = isdoLess 
             ? '🎉 Congrats! You made it through the wait! ' + affirmation
             : '⏰ Time\'s up! Ready to take action? ' + affirmation;
         
-        var responseTools = 
-            '<button class="notification-response-tool wait-complete-extend" href="#">' +
-                '<i class="fas fa-plus-circle"></i> Extend Wait' +
-            '</button>' +
-            '<button class="notification-response-tool wait-complete-done" href="#">' +
-                '<i class="fas fa-check-circle"></i> I\'m Done' +
-            '</button>';
-        
-        NotificationsModule.createNotification(message, responseTools, { 
+        NotificationsModule.createNotification(message, null, {
             type: 'wait_completed',
+            responseType: 'wait_completed',
             waitType: waitType,
             timerId: timerId
         });

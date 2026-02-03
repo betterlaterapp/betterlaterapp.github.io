@@ -123,9 +123,9 @@ $(document).ready(function () {
             },
             "baseline": {
                 "specificSubject": false,
-                "increaseHabit": false,
-                "decreaseHabit": false,
-                "neutralHabit": true,
+                "doMore": false,
+                "doLess": false,
+                "doEqual": true,
                 "timesDone": 0,
                 "usageTimeline": "week",
                 "moneySpent": 0,
@@ -692,7 +692,7 @@ $(document).ready(function () {
             // NOTE: v4 structure has baseline and customUnits under option
             var newJsonString = '{ "version": 5, "action": [], "behavioralGoals": [], "activeTimers": [], ' +
                 '  "option": { "activeTab" : "baseline-content",' +
-                '"baseline": {"userSubmitted": false, "specificSubject": false, "increaseHabit": false, "decreaseHabit": false, "neutralHabit": true, "timesDone": 0, "usageTimeline": "week", "moneySpent": 0, "spendingTimeline": "week", "timeSpentHours": 0, "timeSpentMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
+                '"baseline": {"userSubmitted": false, "specificSubject": false, "doMore": false, "doLess": false, "doEqual": true, "timesDone": 0, "usageTimeline": "week", "moneySpent": 0, "spendingTimeline": "week", "timeSpentHours": 0, "timeSpentMinutes": 0, "timeTimeline": "week", "valuesTimesDone": false, "valuesTime": false, "valuesMoney": false, "valuesHealth": false},' +
                 '"customUnits": [],' +
                 '"liveStatsToDisplay": { "goalButton": true, "waitButton": true, "undoButton": true, "untilWaitEnd": true, "longestWait": true, "usedButton": true, "cravedButton": true, "sinceLastDone": true, "timesDone": false, "avgBetweenDone": true, "didntPerDid": true, "resistedInARow": true, "spentButton": true, "sinceLastSpent": true, "avgBetweenSpent": true, "totalSpent": true, "moodTracker": true, "timeSpentDoing": true, "activeTimer": true },' +
                 '"logItemsToDisplay" : {"wait": true, "used": true, "craved": true, "bought": true, "mood": true, "timed": true},' +

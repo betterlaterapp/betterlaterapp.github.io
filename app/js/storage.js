@@ -268,9 +268,57 @@ var StorageModule = (function () {
             jsonObject.version = 5;
         }
 
+        // Migration v5 -> v6: Convert notification responseToolsHtml to responseType
+        if (version < 6) {
+            console.log("Migrating storage from v5 to v6...");
+
+            if (jsonObject.notifications && Array.isArray(jsonObject.notifications)) {
+                jsonObject.notifications.forEach(function(notif) {
+                    // If notification has responseToolsHtml but no responseType, infer it from type
+                    if (notif.responseToolsHtml && !notif.responseType) {
+                        notif.responseType = notif.type || 'info';
+
+                        // Remove the stored HTML since we now generate it dynamically
+                        delete notif.responseToolsHtml;
+                    }
+                });
+            }
+
+            jsonObject.version = 6;
+        }
+
+        // Migration v6 -> v7: Rename baseline direction properties
+        // decreaseHabit -> doLess, increaseHabit -> doMore, neutralHabit -> doEqual
+        if (version < 7) {
+            console.log("Migrating storage from v6 to v7...");
+
+            var baseline = jsonObject.option && jsonObject.option.baseline;
+            if (baseline) {
+                // Migrate decreaseHabit -> doLess
+                if (baseline.decreaseHabit !== undefined) {
+                    baseline.doLess = baseline.decreaseHabit;
+                    delete baseline.decreaseHabit;
+                }
+
+                // Migrate increaseHabit -> doMore
+                if (baseline.increaseHabit !== undefined) {
+                    baseline.doMore = baseline.increaseHabit;
+                    delete baseline.increaseHabit;
+                }
+
+                // Migrate neutralHabit -> doEqual
+                if (baseline.neutralHabit !== undefined) {
+                    baseline.doEqual = baseline.neutralHabit;
+                    delete baseline.neutralHabit;
+                }
+            }
+
+            jsonObject.version = 7;
+        }
+
         setStorageObject(jsonObject);
-        if (version < 5) {
-            console.log("Storage migration to v5 complete.");
+        if (version < 7) {
+            console.log("Storage migration to v7 complete.");
         }
     }
 
@@ -282,8 +330,8 @@ var StorageModule = (function () {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            // Check if at latest version (v5)
-            return jsonObject && jsonObject.version >= 5;
+            // Check if at latest version (v7)
+            return jsonObject && jsonObject.version >= 7;
         } catch (e) {
             return false;
         }

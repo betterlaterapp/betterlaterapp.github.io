@@ -4,21 +4,21 @@ body, body * {
 }
 
 /* Show/hide content based on decrease/increase behavior preference */
-/* Default (or when body has desires-decrease): Show decrease wording, hide increase wording */
-body .desires-increase,
-body.desires-decrease .desires-increase {
+/* Default (or when body has do-less): Show decrease wording, hide increase wording */
+body .do-more,
+body.do-less .do-more {
 	display: none !important;
 }
-body .desires-decrease,
-body.desires-decrease .desires-decrease {
+body .do-less,
+body.do-less .do-less {
 	display: inline !important;
 }
 
-/* When body has desires-increase class: Show increase wording, hide decrease wording */
-body.desires-increase .desires-increase {
+/* When body has do-more class: Show increase wording, hide decrease wording */
+body.do-more .do-more {
 	display: inline !important;
 }
-body.desires-increase .desires-decrease {
+body.do-more .do-less {
 	display: none !important;
 }
 
@@ -843,17 +843,17 @@ input[type="number"] {
     }
 
     /* Decrease mode: red icons when selected */
-    body.desires-decrease .importance-option input:checked + .importance-card .importance-icon .icon-mask {
+    body.do-less .importance-option input:checked + .importance-card .importance-icon .icon-mask {
         background-color: #911521;
     }
 
     /* Increase mode: green icons when selected */
-    body.desires-increase .importance-option input:checked + .importance-card .importance-icon .icon-mask {
+    body.do-more .importance-option input:checked + .importance-card .importance-icon .icon-mask {
         background-color: #1e9039;
     }
 
     /* Observe mode: grey icons when selected */
-    body.desires-neutral .importance-option input:checked + .importance-card .importance-icon .icon-mask {
+    body.do-equal .importance-option input:checked + .importance-card .importance-icon .icon-mask {
         background-color: #495057;
     }
 
@@ -914,29 +914,29 @@ input[type="number"] {
     }
 
     /* Decrease mode - green down (good), red up (bad) */
-    body.desires-decrease .behavior-direction-question .decrease-arrow {
+    body.do-less .behavior-direction-question .decrease-arrow {
         color: #1e9039;
     }
 
-    body.desires-decrease .behavior-direction-question .increase-arrow {
+    body.do-less .behavior-direction-question .increase-arrow {
         color: #911521;
     }
 
     /* Increase mode - red down (bad), green up (good) */
-    body.desires-increase .behavior-direction-question .decrease-arrow {
+    body.do-more .behavior-direction-question .decrease-arrow {
         color: #911521;
     }
 
-    body.desires-increase .behavior-direction-question .increase-arrow {
+    body.do-more .behavior-direction-question .increase-arrow {
         color: #1e9039;
     }
 
     /* Observe mode - contrasting greys */
-    body.desires-neutral .behavior-direction-question .decrease-arrow {
+    body.do-equal .behavior-direction-question .decrease-arrow {
         color: #495057;
     }
 
-    body.desires-neutral .behavior-direction-question .increase-arrow {
+    body.do-equal .behavior-direction-question .increase-arrow {
         color: #adb5bd;
     }
 
@@ -956,29 +956,29 @@ input[type="number"] {
     }
 
 /* OBSERVE MODE - Two contrasting neutral greys */
-body.desires-neutral .bar-chart .legend .color.primary {
+body.do-equal .bar-chart .legend .color.primary {
     background: #495057;
 }
 
-body.desires-neutral .bar-chart .legend .color.secondary {
+body.do-equal .bar-chart .legend .color.secondary {
     background: #adb5bd;
 }
 
-body.desires-neutral .ct-series-a line {
+body.do-equal .ct-series-a line {
     stroke: #495057 !important;
 }
 
-body.desires-neutral .ct-series-b line {
+body.do-equal .ct-series-b line {
     stroke: #adb5bd !important;
 }
 
-body.desires-neutral .weekly-report .statistic .percent-changed.up,
-body.desires-neutral .weekly-report .statistic .percent-changed.down {
+body.do-equal .weekly-report .statistic .percent-changed.up,
+body.do-equal .weekly-report .statistic .percent-changed.down {
     color: #6c757d;
 }
 
-body.desires-neutral .weekly-report .goal-report .amount-changed.up,
-body.desires-neutral .weekly-report .goal-report .amount-changed.down {
+body.do-equal .weekly-report .goal-report .amount-changed.up,
+body.do-equal .weekly-report .goal-report .amount-changed.down {
     color: #6c757d;
 }
 
@@ -1546,7 +1546,9 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 }
 
 .stat-comparison-box.stat-vs-box {
-    background: rgba(40, 50, 60, 0.6);
+    position: relative;
+    left: -12px;
+    background: rgba(40, 50, 60, 0.8);
     border: 1px solid #2a3a4a;
 }
 
@@ -1785,12 +1787,12 @@ body.desires-neutral .weekly-report .goal-report .amount-changed.down {
 }
 
 /* Show/hide based on habit direction - only apply when not individually hidden */
-body.desires-increase .do-less-only:not(.d-none),
-body.desires-neutral .do-less-only:not(.d-none) {
+body.do-more .do-less-only:not(.d-none),
+body.do-equal .do-less-only:not(.d-none) {
     display: none !important;
 }
 
-body.desires-decrease .do-more-only:not(.d-none) {
+body.do-less .do-more-only:not(.d-none) {
     display: none !important;
 }
 
@@ -1912,12 +1914,12 @@ body.desires-decrease .do-more-only:not(.d-none) {
             
             clear: right;
         }
-        .desires-decrease .weekly-report .statistic .percent-changed.down,
-        .desires-increase .weekly-report .statistic .percent-changed.up {
+        .do-less .weekly-report .statistic .percent-changed.down,
+        .do-more .weekly-report .statistic .percent-changed.up {
             color: #1e9039;
         }
-        .desires-decrease .weekly-report .statistic .percent-changed.up,
-        .desires-increase .weekly-report .statistic .percent-changed.down {
+        .do-less .weekly-report .statistic .percent-changed.up,
+        .do-more .weekly-report .statistic .percent-changed.down {
             color: #911521;
         }
 
@@ -1933,12 +1935,12 @@ body.desires-decrease .do-more-only:not(.d-none) {
         .weekly-report .goal-report .amount-changed {
             font-weight: 600;
         } 
-        .desires-decrease .weekly-report .goal-report .amount-changed.down,
-        .desires-increase .weekly-report .goal-report .amount-changed.up {
+        .do-less .weekly-report .goal-report .amount-changed.down,
+        .do-more .weekly-report .goal-report .amount-changed.up {
             color: #1e9039;
         }
-        .desires-decrease .weekly-report .goal-report .amount-changed.up,
-        .desires-increase .weekly-report .goal-report .amount-changed.down {
+        .do-less .weekly-report .goal-report .amount-changed.up,
+        .do-more .weekly-report .goal-report .amount-changed.down {
             color: #911521;
         }
 
@@ -1991,7 +1993,7 @@ body.desires-decrease .do-more-only:not(.d-none) {
     font-size: .8rem;
     z-index: 10;
 }
-.stat-group .stat-recepticle span:not(.desires-decrease):not(.desires-increase) {
+.stat-group .stat-recepticle span:not(.do-less):not(.do-more) {
     text-align: center;
     z-index: 10;
 }
@@ -2012,7 +2014,7 @@ body.desires-decrease .do-more-only:not(.d-none) {
 
 }
 
-.stat-recepticle span:not(.desires-decrease):not(.desires-increase) {
+.stat-recepticle span:not(.do-less):not(.do-more) {
     display: inline-block;
     font-weight: 600;
     font-size: 1.2rem;
@@ -3731,6 +3733,9 @@ input[type="number"] {
     margin-bottom: 12px;
     line-height: 1.4;
     flex-grow: 1;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
 }
 
 /* Goal Stats Row (closed state) */
@@ -3894,6 +3899,10 @@ input[type="number"] {
     color: #adb5bd;
     transition: transform 0.2s ease;
     vertical-align: middle;
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 10px;
 }
 
 .goal-accordion-item.expanded .goal-expand-icon {
@@ -4227,7 +4236,7 @@ input[type="number"] {
     position: absolute;
     bottom: 0;
     width: 2px;
-    height: 40px;
+    height: 30px;
     background: rgba(197, 197, 197, 1);
     transform: translateX(-50%);
     z-index: 5;
@@ -4671,15 +4680,37 @@ input[type="number"] {
     background: white;
 }
 
-/* Goal Value Highlighting in Summary Title */
-/* Goal values highlight group */
 .goal-values-highlight {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    background: rgba(0, 0, 0, 0.06);
     padding: 4px 10px;
     border-radius: 6px;
+    background: rgba(0, 0, 0, 0.06);
+    margin-right: 8px;
+    
+}
+
+.curve-background {
+    background-position-x: 0%;
+    background-position-y: 0%;
+    background-repeat: repeat;
+    background-size: auto;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.curve-background.down-power {
+    background-image: url("../assets/images/arrows-down-power-curve.png");
+}
+
+.curve-background.up-sigmoid {
+    background-image : url("../assets/images/arrows-up-sigmoid.png");
+}
+
+.curve-background.equal {
+    background-image: url("../assets/images/arrows-mid-equal.png");
 }
 
 .goal-value-current {
@@ -4705,6 +4736,7 @@ input[type="number"] {
     height: 28px;
     border-radius: 50%;
     font-weight: bold;
+    opacity: 0;
 }
 
 .goal-curve-arrow.curve-power {
@@ -5487,8 +5519,8 @@ input[type="number"] {
     bottom: 0;
     width: 100%;
     height: 100%;
-    max-height: none;
-    max-width: none;
+    max-height: none;  
+    max-width: 540px;
     overflow: hidden;
     z-index: 9999;
     background: #141518;
