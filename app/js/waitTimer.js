@@ -12,7 +12,7 @@ var WaitTimerModule = (function () {
     var isLoadingMemes = false; // Prevent multiple simultaneous loads
     
     // Hardcoded meme configuration - update MEME_COUNT when more images are renamed
-    var MEME_COUNT = 15; // Number of images named 1.jpg through N.jpg
+    var MEME_COUNT = 1175; // Number of images named 1.jpg through N.jpg
     var MEME_EXTENSION = 'jpg'; // All images use this extension
 
     /**
