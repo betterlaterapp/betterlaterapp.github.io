@@ -57,6 +57,10 @@ window.refreshServiceWorker = async () => {
     if (!('serviceWorker' in navigator)) {
         return;
     }
+    
+    // Set a flag to trigger migration on the next load after update
+    localStorage.setItem('betterLaterPendingMigration', 'true');
+
     try {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {

@@ -24,13 +24,13 @@ if('serviceWorker' in navigator){
                 }
                 
                 // No existing registration, register now
-                navigator.serviceWorker
-                    .register('sw_cached_pages.js')
-                    .then(function(registered){
-                        console.log('Service worker registered: ' + registered);
-                    })
-                    .catch(function(err){
-                        console.log('Service worker error: ' + err);
+            navigator.serviceWorker
+                .register('../sw_cached_pages.js')
+                .then(function(registered){
+                    console.log('Service worker registered: ' + registered);
+                })
+                .catch(function(err){
+                    console.log('Service worker error: ' + err);
                     });
             });
         }
@@ -54,7 +54,7 @@ window.refreshServiceWorker = function() {
                     console.log('Service workers unregistered');
                     
                     // Re-register the service worker
-                    return navigator.serviceWorker.register('sw_cached_pages.js');
+                    return navigator.serviceWorker.register('../sw_cached_pages.js');
                 })
                 .then(function(registration) {
                     console.log('Service worker re-registered:', registration);

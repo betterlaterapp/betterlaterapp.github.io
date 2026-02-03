@@ -15,6 +15,7 @@ tests/output/
 *.swo
 *~
 .cursorrules
+CLAUDE.md
 
 # OS
 .DS_Store
@@ -44,3 +45,10 @@ playwright/.cache/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Distraction memes - ignore images not following naming convention ([number].jpg)
+assets/distraction-memes/*
+!assets/distraction-memes/[0-9].jpg
+!assets/distraction-memes/[0-9][0-9].jpg
+!assets/distraction-memes/[0-9][0-9][0-9].jpg
+!assets/distraction-memes/[0-9][0-9][0-9][0-9].jpg
