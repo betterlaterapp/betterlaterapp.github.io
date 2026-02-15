@@ -166,13 +166,13 @@ var QuantitativeGoalsModule = (function() {
         }
         periodLabel = goal.measurementTimeline === 1 ? 'day' : (goal.measurementTimeline === 7 ? 'week' : 'month');
 
-        var curveArrow = isDoLess ? '⤵' : '⤴';
+        var curveDirection = goal.currentAmount >= goal.goalAmount ? 'down' : 'up';
         var isEqual = goal.currentAmount == goal.goalAmount;
-        var curveClass = (isDoLess ? 'down-power' : 'up-sigmoid');
+        var curveClass = curveDirection + (isDoLess ? '-power' : '-sigmoid'); // likely == down-power || up-sigmoid
         var goalTitle = '<span class="goal-values-highlight">' +
                             '<span class="curve-background ' + ( isEqual ? 'equal' : curveClass) + '">' + 
                                 '<span class="goal-value-current">' + goal.currentAmount + '</span>' +
-                                '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
+                                // '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
                                 '<span class="goal-value-target">' + goal.goalAmount + '</span>' +
                             '</span>' +
                         '</span> ' + unitLabel + '/' + periodLabel;

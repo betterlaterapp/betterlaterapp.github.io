@@ -187,7 +187,7 @@ var BaselineModule = (function() {
         jsonObject.option.liveStatsToDisplay.usedGoalButton = valuesTimesDone;
         
         // "Resisted" button only for action-oriented tracking
-        jsonObject.option.liveStatsToDisplay.cravedButton = valuesTimesDone;
+        jsonObject.option.liveStatsToDisplay.cravedButton = isDecrease || valuesTimesDone || valuesMoney;
         
         // "Spent" button for money tracking
         jsonObject.option.liveStatsToDisplay.spentButton = valuesMoney;
