@@ -3899,7 +3899,6 @@ input[type="number"] {
     color: #adb5bd;
     transition: transform 0.2s ease;
     vertical-align: middle;
-    flex: 1;
     display: flex;
     justify-content: flex-end;
     padding-right: 10px;
@@ -4340,8 +4339,8 @@ input[type="number"] {
 /* Dual Progress Bar */
 .goal-dual-progress {
     margin-top: auto;
-    margin-left: -14px;
-    margin-right: -14px;
+    margin-left: -13px;
+    margin-right: -11px;
     margin-bottom: -16px;
 }
 
@@ -4683,6 +4682,7 @@ input[type="number"] {
 .goal-values-highlight {
     display: inline-flex;
     align-items: center;
+    flex: 1;
     gap: 2px;
     padding: 4px 10px;
     border-radius: 6px;
@@ -4699,10 +4699,22 @@ input[type="number"] {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+
+    display: flex;
+    justify-content: space-between;
+    flex: 1;
 }
 
 .curve-background.down-power {
     background-image: url("../assets/images/arrows-down-power-curve.png");
+}
+
+.curve-background.up-power {
+    background-image : url("../assets/images/arrows-up-power.png");
+}
+
+.curve-background.down-sigmoid {
+    background-image: url("../assets/images/arrows-down-sigmoid.png");
 }
 
 .curve-background.up-sigmoid {
