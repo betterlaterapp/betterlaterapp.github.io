@@ -345,7 +345,7 @@ var BriefStatsModule = (function () {
         var behavioralGoals = jsonObject.behavioralGoals || [];
         
         // Check for goals first - milestone stats take priority
-        // Per brief-stats-logic.txt: milestones require BOTH hasBaseline AND hasGoal
+        // Milestones require BOTH hasBaseline AND hasGoal
         if (focus === 'timesDone' && hasBaselineTimesDone(baseline) && hasGoalTimesDone(jsonObject)) {
             var goal = Calc.getActiveGoalForUnit(behavioralGoals, 'times');
             var milestone = getNextScheduledMilestone(goal, actions, doLess);
@@ -602,31 +602,21 @@ var BriefStatsModule = (function () {
         console.log('[BriefStats] getTimesDoneComparisonStat:', { doLess, doMore, hasBaseline, timeline });
         
         if (doLess) {
-            if (hasBaseline) {
-                // times done today vs baseline done / day
-                var current = Calc.getCountForPeriod(actions, 'day');
-                var baselinePerDay = Calc.baselineToPerDay(baseline.timesDone, timeline);
-                console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline', { current, baselinePerDay });
-                return {
-                    type: 'statVsBest',
-                    label: 'Today vs baseline',
-                    current: current,
-                    comparison: Math.round(baselinePerDay),
-                    format: 'number'
-                };
-            } else {
-                // streak: resists VS. longest streak
-                var currentStreak = Calc.getCurrentResistStreak(actions);
-                var longestStreak = Calc.calculateResistStreak(actions);
-                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
-                return {
-                    type: 'statVsBest',
-                    label: 'Resist streak',
-                    current: currentStreak,
-                    comparison: longestStreak,
-                    format: 'number'
-                };
-            }
+            // streak: resists VS. longest streak
+            var currentStreak = Calc.getCurrentResistStreak(actions);
+            var longestStreak = Calc.calculateResistStreak(actions);
+            console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
+            return {
+                type: 'statVsBest',
+                statLabel: 'Resist streak',
+                currLabel: 'Current',
+                vsLabel: 'Best',
+                current: currentStreak,
+                comparison: longestStreak,
+                format: 'number',
+                doLess: doLess
+            };
+            
         } else if (doMore) {
             if (hasBaseline) {
                 // done today vs baseline done / day
@@ -635,10 +625,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline', { current, baselinePerDay });
                 return {
                     type: 'statVsBest',
-                    label: 'Today vs baseline',
+                    statLabel: 'Done vs start',
+                    currLabel: 'Today',
+                    vsLabel: 'Base',
                     current: current,
                     comparison: Math.round(baselinePerDay),
-                    format: 'number'
+                    format: 'number',
+                    doLess: !doMore
                 };
             } else {
                 // times done today vs average done / day
@@ -647,10 +640,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doMore + noBaseline: Today vs avg', { current, avgPerDay });
                 return {
                     type: 'statVsAvg',
-                    label: 'Today vs avg',
+                    statLabel: 'Done per day',
+                    currLabel: 'Today',
+                    vsLabel: 'Average',
                     current: current,
                     comparison: avgPerDay,
-                    format: 'number'
+                    format: 'number',
+                    doLess: !doMore
                 };
             }
         } else {
@@ -661,10 +657,13 @@ var BriefStatsModule = (function () {
             if (longestStreak > 0) {
                 return {
                     type: 'statVsBest',
-                    label: 'Resist streak',
+                    statLabel: 'Resist streak',
+                    currLabel: 'Current',
+                    vsLabel: 'Best',
                     current: currentStreak,
                     comparison: longestStreak,
-                    format: 'number'
+                    format: 'number',
+                    doLess: true // neutral assumes do less
                 };
             }
         }
@@ -692,22 +691,29 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline (time)', { current, baselinePerDay });
                 return {
                     type: 'statVsAvg',
-                    label: 'Today vs baseline',
+                    statLabel: 'Time spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Base',
                     current: current,
                     comparison: Math.round(baselinePerDay),
-                    format: 'time'
+                    format: 'time',
+                    doLess: doLess
                 };
             } else {
+                // NOTE: this could be time waited vs best
                 // streak: resists VS. longest streak
                 var currentStreak = Calc.getCurrentResistStreak(actions);
                 var longestStreak = Calc.calculateResistStreak(actions);
                 console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
                 return {
                     type: 'statVsBest',
-                    label: 'Resist streak',
+                    statLabel: 'Resist streak',
+                    currLabel: 'Current',
+                    vsLabel: 'Best',
                     current: currentStreak,
                     comparison: longestStreak,
-                    format: 'number'
+                    format: 'number',
+                    doLess: doLess
                 };
             }
         } else if (doMore) {
@@ -721,10 +727,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline (time)', { current, baselinePerDay });
                 return {
                     type: 'statVsBest',
-                    label: 'Today vs baseline',
+                    statLabel: 'Time Spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Base',
                     current: current,
                     comparison: Math.round(baselinePerDay),
-                    format: 'time'
+                    format: 'time',
+                    doLess: !doMore
                 };
             } else {
                 // time spent today vs best time spent / day
@@ -734,9 +743,13 @@ var BriefStatsModule = (function () {
                 return {
                     type: 'statVsBest',
                     label: 'Today vs best',
+                    statLabel: 'Time Spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Best',
                     current: current,
                     comparison: bestPerDay,
-                    format: 'time'
+                    format: 'time',
+                    doLess: !doMore
                 };
             }
         } else {
@@ -748,9 +761,13 @@ var BriefStatsModule = (function () {
                 return {
                     type: 'statVsBest',
                     label: 'Today vs best',
+                    statLabel: 'Time Spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Best',
                     current: current,
                     comparison: bestPerDay,
-                    format: 'time'
+                    format: 'time',
+                    doLess: true //neutral assumes do less
                 };
             }
         }
@@ -775,10 +792,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doLess + hasBaseline: Today vs baseline ($)', { current, baselinePerDay });
                 return {
                     type: 'statVsAvg',
-                    label: 'Today vs baseline',
+                    statLabel: 'Money Spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Base',
                     current: Math.round(current),
                     comparison: Math.round(baselinePerDay),
-                    format: 'money'
+                    format: 'money',
+                    doLess: doLess
                 };
             } else {
                 // streak: resists VS. longest streak
@@ -787,10 +807,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
                 return {
                     type: 'statVsBest',
-                    label: 'Resist streak',
+                    statLabel: 'Resist streak',
+                    currLabel: 'current',
+                    vsLabel: 'Best',
                     current: currentStreak,
                     comparison: longestStreak,
-                    format: 'number'
+                    format: 'number',
+                    doLess: doLess
                 };
             }
         } else if (doMore) {
@@ -801,10 +824,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline ($)', { current, baselinePerDay });
                 return {
                     type: 'statVsAvg',
-                    label: 'Today vs baseline',
+                    statLabel: 'Money Invested',
+                    currLabel: 'Today',
+                    vsLabel: 'Base',
                     current: Math.round(current),
                     comparison: Math.round(baselinePerDay),
-                    format: 'money'
+                    format: 'money',
+                    doLess: !doMore
                 };
             } else {
                 // money spent today vs best money spent / day
@@ -813,10 +839,13 @@ var BriefStatsModule = (function () {
                 console.log('[BriefStats] → doMore + noBaseline: Today vs best ($)', { current, bestPerDay });
                 return {
                     type: 'statVsBest',
-                    label: 'Today vs best',
+                    statLabel: 'Money Invested',
+                    currLabel: 'Today',
+                    vsLabel: 'Best',
                     current: Math.round(current),
                     comparison: Math.round(bestPerDay),
-                    format: 'money'
+                    format: 'money',
+                    doLess: !doMore
                 };
             }
         } else {
@@ -828,9 +857,13 @@ var BriefStatsModule = (function () {
                 return {
                     type: 'statVsBest',
                     label: 'Today vs best',
+                    statLabel: 'Money Spent',
+                    currLabel: 'Today',
+                    vsLabel: 'Best',
                     current: Math.round(current),
                     comparison: Math.round(bestPerDay),
-                    format: 'money'
+                    format: 'money',
+                    doLess: true //neutral assumes do less
                 };
             }
         }
@@ -871,11 +904,8 @@ var BriefStatsModule = (function () {
         var $stat = $('.stat-brief.stat-comparison');
         $stat.find('.stat-current').text(currentDisplay);
         $stat.find('.stat-vs').text(comparisonDisplay);
-        $stat.find('.stat-label').text(statConfig.label);
-        
-        // Update the vs label based on stat type
-        var vsLabel = statConfig.type === 'statVsAvg' ? 'Avg' : 'Best';
-        $stat.find('.stat-vs-label').text(vsLabel);
+        $stat.find('.stat-label').text(statConfig.statLabel);
+        $stat.find('.stat-vs-label').text(statConfig.vsLabel);
         
         // Add type class for styling
         $stat.removeClass('stat-vs-best stat-vs-avg stat-stat-vs-best stat-stat-vs-avg stat-exceeds');
@@ -886,7 +916,7 @@ var BriefStatsModule = (function () {
         var comparisonVal = parseFloat(statConfig.comparison) || 0;
         if (currentVal > comparisonVal && comparisonVal > 0) {
             $stat.addClass('stat-exceeds');
-            console.log('[BriefStats] 🎉 Current exceeds ' + vsLabel + '!', { current: currentVal, comparison: comparisonVal });
+            console.log('[BriefStats] 🎉 Current exceeds ' + statConfig.vsLabel + '!', { current: currentVal, comparison: comparisonVal });
         }
         
         $stat.removeClass('d-none');

@@ -165,6 +165,7 @@ var WaitTimerModule = (function () {
     function createWaitTimerPanel(waitEndTimestamp, waitType) {
         var jsonObject = StorageModule.retrieveStorageObject();
         var isdoLess = jsonObject.option.baseline.doLess;
+        var isDoEqual = jsonObject.option.baseline.doEqual
         var timerId = 'wait_' + Math.round(new Date() / 1000);
         
         var now = Math.round(new Date() / 1000);
@@ -173,7 +174,7 @@ var WaitTimerModule = (function () {
 
         // Determine button configuration based on habit direction
         var buttonsHtml = '';
-        if (isdoLess) {
+        if (isdoLess || isDoEqual) {
             // 'Do less' habit: Delayed Gratification language
             buttonsHtml = 
                 '<button class="wait-timer-distract-btn btn-timer-control">' +
@@ -194,8 +195,8 @@ var WaitTimerModule = (function () {
         }
 
         // Title based on habit direction
-        var titleText = isdoLess ? 'Waiting it out...' : 'Countdown to action...';
-        var subtitleText = isdoLess 
+        var titleText = isdoLess || isDoEqual ? 'Waiting it out...' : 'Countdown to action...';
+        var subtitleText = isdoLess || isDoEqual
             ? 'Stay strong! You\'ve got this.' 
             : 'Time until you should do it again';
 

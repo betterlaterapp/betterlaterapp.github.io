@@ -333,28 +333,28 @@ var StatsDisplayModule = (function () {
      */
     function getLegendLabels(metric, isdoLess) {
         if (metric === 'usage') {
-            if (isdoLess) {
+            if (!isdoLess) {
+                // Do it more + Times done: red=didn't do it, green=did it
+                return { primary: "Didn't", secondary: 'Did It' };
+            } else {
                 // Do it less + Times done: red=did it, green=resisted
                 return { primary: 'Did It', secondary: 'Resisted' };
-            } else {
-                // Do it more + Times done: red=didn't do it, green=did it
-                return { primary: "Didn't Do It", secondary: 'Did It' };
             }
         } else if (metric === 'time') {
-            if (isdoLess) {
+            if (!isdoLess) {
+                // Do it more + Time spent: red=time procrastinated, green=time spent
+                return { primary: 'Time Wasted', secondary: 'Time Spent' };
+            } else {
                 // Do it less + Time spent: red=time spent, green=time waited
                 return { primary: 'Time Spent', secondary: 'Time Waited' };
-            } else {
-                // Do it more + Time spent: red=time procrastinated, green=time spent
-                return { primary: 'Time Procrastinated', secondary: 'Time Spent' };
             }
         } else if (metric === 'cost') {
-            if (isdoLess) {
-                // Do it less + Money spent: red=money spent, green=(none)
-                return { primary: 'Money Spent', secondary: null };
-            } else {
+            if (!isdoLess) {
                 // Do it more + Money spent: red=(none), green=money invested
                 return { primary: null, secondary: 'Money Invested' };
+            } else {
+                // Do it less + Money spent: red=money spent, green=(none)
+                return { primary: 'Money Spent', secondary: null };
             }
         }
         return { primary: 'Primary', secondary: 'Secondary' };

@@ -121,6 +121,7 @@ select {
 	background-repeat: no-repeat;
 	background-position: right 8px center;
 	background-size: 12px;
+    padding-right: 22px !important;
 }
 
 /* Time picker selects - larger size with proper styling */
@@ -700,7 +701,7 @@ input[type="number"] {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 20px 15px;
+        padding: 20px 5px;
         background: #f8f9fa;
         border: 2px solid #dee2e6;
         border-radius: 12px;
@@ -986,7 +987,7 @@ body.do-equal .weekly-report .goal-report .amount-changed.down {
 .baseline-values-settings {
     margin-top: 20px;
     margin-bottom: 30px;
-    padding: 20px;
+    padding: 5px;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -1055,7 +1056,7 @@ body.do-equal .weekly-report .goal-report .amount-changed.down {
 }
 
 .baseline-value-input-group.time-inputs .baseline-input {
-    width: 60px;
+    width: 44px;
 }
 
 .baseline-value-input-group .time-separator {
@@ -1591,8 +1592,14 @@ body.do-equal .weekly-report .goal-report .amount-changed.down {
     animation: pulse-glow 1.5s ease-in-out;
 }
 
-.stat-brief.stat-comparison.stat-exceeds .stat-current {
-    color: #ffa4a4;
+.do-less .stat-brief.stat-comparison.stat-exceeds .stat-current {
+    color: #dd4646;
+    font-size: 2.2rem;
+}
+
+.do-more .stat-brief.stat-comparison.stat-exceeds .stat-current {
+
+    color: #3bba2d;
     font-size: 2.2rem;
     animation: celebrate 0.6s ease-out;
 }
@@ -2128,7 +2135,7 @@ body.do-less .do-more-only:not(.d-none) {
 }
 
 .log-more-info select {
-    min-width: 80px;
+    min-width: 65px;
 }
 
 .log-more-info textarea {
@@ -2238,7 +2245,7 @@ input[type="number"] {
 }
 
 .wait-quick-btn {
-    padding: 14px 8px;
+    padding: 14px 6px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     background: #fff;
@@ -3062,7 +3069,7 @@ input[type="number"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 7px;
     margin-bottom: 14px;
     padding: 4px 0;
 }
@@ -3081,7 +3088,7 @@ input[type="number"] {
     border-radius: 6px;
     padding: 10px 12px;
     font-size: 1rem;
-    width: 100px;
+    width: 50px;
     text-align: center;
 }
 
@@ -3127,7 +3134,7 @@ input[type="number"] {
 /* Timeline Select */
 .timeline-select {
     padding: 10px 30px 10px 12px;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     border-radius: 6px;
 }
 
@@ -3257,14 +3264,14 @@ input[type="number"] {
 .baseline-time-picker {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
 }
 
 .create-goal .time-picker-container.create-time-picker select,
 .baseline-time-picker select {
-    font-size: 1.1rem;
+    font-size: 1rem;
     padding: 8px 28px 8px 10px;
-    min-width: 70px;
+    min-width: 50px;
 }
 
 .create-goal .time-picker-container.create-time-picker .label,
@@ -3368,7 +3375,7 @@ input[type="number"] {
 .baseline-time-picker {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 2px;
 }
 
 .baseline-time-picker select {
@@ -3674,8 +3681,8 @@ input[type="number"] {
 .goal-summary {
     display: flex;
     flex-direction: column;
-    padding: 16px;
-    min-height: 175px;
+    min-height: 160px;
+    padding: 12px 6px;
     cursor: pointer;
     position: relative;
 
@@ -3741,23 +3748,22 @@ input[type="number"] {
 /* Goal Stats Row (closed state) */
 .goal-summary-stats {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding-bottom: 12px;
-    padding-top: 12px;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .goal-stat-item {
     display: flex;
     flex-direction: column;
-    min-width: 60px;
+    min-width: 50px;
 }
 
 .goal-stat-item.goal-stat-left {
     align-items: flex-start;
     text-align: left;
+    margin-top: 15px;
+    margin-bottom: 10px;
 }
 
 .goal-stat-item.goal-stat-left .goal-type-badge {
@@ -3769,7 +3775,7 @@ input[type="number"] {
 }
 
 .goal-stat-value {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #758390;
 }
@@ -3799,7 +3805,7 @@ input[type="number"] {
 }
 
 .goal-stat-item .stat-milestone-time {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #ff5533;
     font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
@@ -3825,7 +3831,7 @@ input[type="number"] {
 }
 
 .goal-stat-label {
-    font-size: .9rem;
+    font-size: .8rem;
     color: #a9b5bf;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -3853,8 +3859,8 @@ input[type="number"] {
 }
 
 .goal-inline-checkin .inline-smiley {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     opacity: 0.5;
     transition: opacity 0.15s, transform 0.15s;
@@ -4339,8 +4345,8 @@ input[type="number"] {
 /* Dual Progress Bar */
 .goal-dual-progress {
     margin-top: auto;
-    margin-left: -13px;
-    margin-right: -11px;
+    margin-left: -7px;
+    margin-right: -5px;
     margin-bottom: -16px;
 }
 
@@ -4370,7 +4376,7 @@ input[type="number"] {
 .goal-dual-progress .goal-progress-fill.time-progress {
     bottom: 0;
     height: 50%;
-    background: rgba(197, 197, 197, 1);
+    background: rgba(222, 222, 222, 1);
     z-index: 1;
 }
 
@@ -4859,26 +4865,6 @@ input[type="number"] {
     text-align: right;
 }
 
-/* Mobile adjustments */
-@media (max-width: 576px) {
-    .goal-summary {
-        min-height: 160px;
-        padding: 12px;
-    }
-    
-    .goal-summary-stats {
-        gap: 12px;
-    }
-    
-    .goal-stat-item {
-        min-width: 50px;
-    }
-    
-    .goal-inline-checkin .inline-smiley {
-        width: 24px;
-        height: 24px;
-    }
-}
 
 /* ==========================================
    "Did it" Dialog Tabs
@@ -4895,7 +4881,7 @@ input[type="number"] {
 
 .use-dialog-tab {
     flex: 1;
-    padding: 10px 12px;
+    padding: 10px;
     border: none;
     background: transparent;
     border-radius: 6px;
@@ -5317,7 +5303,7 @@ input[type="number"] {
 .wait-timer-panel {
     background: linear-gradient(135deg, #4a1942 0%, #6b2d5c 50%, #8b3a75 100%);
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 16px 10px;
     margin-bottom: 32px;
     color: #fff;
     position: relative;
@@ -5397,7 +5383,6 @@ input[type="number"] {
     padding-left: 7px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: flex-end;
     gap: 12px;
 }
