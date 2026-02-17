@@ -380,6 +380,50 @@
                         </h3>
                         <label><input id="spentInput" type="number" style="margin-left: 8px;" /> $ </label>
                     </div>
+
+                    <div class="time-picker-container cost-time-picker">
+                        <h3 class="text-center">When did you spend on it?</p>
+                        <div class="form-check time-picker-now">
+                            <input class="form-check-input" type="radio" name="costRadios" id="nowCostRadio" value="now" checked>
+                            <label class="form-check-label" for="nowCostRadio">
+                                Now
+                            </label>
+                        </div>
+
+                        <div class="form-check time-picker-before">
+                            <input class="form-check-input" type="radio" name="costRadios" id="pastTimeCostRadio" value="pastTime">
+                            <label class="form-check-label" for="pastTimeCostRadio">
+                                <select class="time-picker-hour" data-min="0" data-max="23" data-step="1">
+                                    <option value="0">12</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                </select>
+                                <span class="label">:</span>
+                                <select class="time-picker-minute" data-min="0" data-max="59" data-step="1">
+                                    <option value="0">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select class="time-picker-am-pm">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="cost-24-hour-day-indicator" style="color: grey; display: none;">
+                            <p>Yesterday</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6" style="padding-right:7px;">
                     <button href="#" class="cancel btn btn-outline-dark btn-md btn-block">
@@ -1011,7 +1055,7 @@
                                                             <i class="fas fa-caret-down"></i>
                                                             <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
                                                         </div>
-                                                        <label>Done Vs. last period:</label>
+                                                        <label class="use-change-label">Done Vs. last week:</label>
                                                     </div>
 
                                                     <div class="statistic">
@@ -1028,7 +1072,7 @@
                                                             <span
                                                                 id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
                                                         </div>
-                                                        <label>Spent Vs. last period:</label>
+                                                        <label class="cost-change-label">Spent Vs. last week:</label>
 
                                                     </div>
                                                     <div class="statistic">
@@ -1048,7 +1092,7 @@
                                                             <tr>
                                                                 <th scope="col"></th>
                                                                 <th scope="col">Goal</th>
-                                                                <th scope="col">This Period</th>
+                                                                <th scope="col" class="goal-report-period-label">This Week</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>

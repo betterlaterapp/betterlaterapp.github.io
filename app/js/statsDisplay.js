@@ -660,16 +660,21 @@ var StatsDisplayModule = (function () {
             totalLastPeriod = reportValues.timed.lastPeriod;
         }
 
+        // Determine period label for "vs last ___"
+        var periodLabel = period === 'day' ? 'yesterday' : period === 'week' ? 'last week' : 'last month';
+
         // Set change vs last period
         if (json.option.reportItemsToDisplay.useChangeVsLastWeek && metric === 'usage') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            if (percentChanged === "N/A") {
-                $("#useChangeVsLastWeek").html("N/A");
+            // Hide if no data or N/A
+            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
+                $("#useChangeVsLastWeek").parent().parent().hide();
             } else {
+                $('.use-change-label').text('Done Vs. ' + periodLabel + ':');
                 var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
                 $("#useChangeVsLastWeek").html(finishedStat);
+                $("#useChangeVsLastWeek").parent().parent().show();
             }
-            $("#useChangeVsLastWeek").parent().parent().show();
         } else {
             $("#useChangeVsLastWeek").parent().parent().hide();
         }
@@ -685,16 +690,16 @@ var StatsDisplayModule = (function () {
 
         if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && metric === 'usage') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.timesDone, 
+                json.option.baseline.timesDone,
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
-                $("#useChangeVsBaseline").html("N/A");
+                $("#useChangeVsBaseline").parent().parent().hide();
             } else {
                 var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
                 $("#useChangeVsBaseline").html(finishedStat);
+                $("#useChangeVsBaseline").parent().parent().show();
             }
-            $("#useChangeVsBaseline").parent().parent().show();
         } else {
             $("#useChangeVsBaseline").parent().parent().hide();
         }
@@ -702,29 +707,31 @@ var StatsDisplayModule = (function () {
         // Cost comparisons
         if (json.option.reportItemsToDisplay.costChangeVsLastWeek && metric === 'cost') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            if (percentChanged === "N/A") {
-                $("#costChangeVsLastWeek").html("N/A");
+            // Hide if no data or N/A
+            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
+                $("#costChangeVsLastWeek").parent().parent().hide();
             } else {
+                $('.cost-change-label').text('Spent Vs. ' + periodLabel + ':');
                 var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
                 $("#costChangeVsLastWeek").html(finishedStat);
+                $("#costChangeVsLastWeek").parent().parent().show();
             }
-            $("#costChangeVsLastWeek").parent().parent().show();
         } else {
             $("#costChangeVsLastWeek").parent().parent().hide();
         }
 
         if (json.option.reportItemsToDisplay.costChangeVsBaseline && metric === 'cost') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.moneySpent, 
+                json.option.baseline.moneySpent,
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
-                $("#costChangeVsBaseline").html("N/A");
+                $("#costChangeVsBaseline").parent().parent().hide();
             } else {
                 var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
                 $("#costChangeVsBaseline").html(finishedStat);
+                $("#costChangeVsBaseline").parent().parent().show();
             }
-            $("#costChangeVsBaseline").parent().parent().show();
         } else {
             $("#costChangeVsBaseline").parent().parent().hide();
         }
@@ -770,6 +777,10 @@ var StatsDisplayModule = (function () {
         } else {
             $("#goalSpentPerWeek").parent().parent().hide();
         }
+
+        // Update goal report period label
+        var goalPeriodLabel = period === 'day' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
+        $('.goal-report-period-label').text(goalPeriodLabel);
 
         // Remove table headers if nothing to display
         if (!(json.option.reportItemsToDisplay.useGoalVsThisWeek && metric === 'usage') && 
