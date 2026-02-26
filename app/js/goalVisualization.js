@@ -256,6 +256,46 @@ var GoalVisualizationModule = (function() {
     }
 
     /**
+     * Calculate goal progress percentage within current day view
+     * Returns the % of milestones completed within the given day's window
+     */
+    function getDayGoalProgress(allMilestones, goalStartMs, goalEndMs, dayOffset, totalDays) {
+        var bounds = getDayBoundaries(goalStartMs, goalEndMs, dayOffset, totalDays);
+        var milestonesInDay = allMilestones.filter(function(m) {
+            return m.timestamp >= bounds.dayStart && m.timestamp <= bounds.dayEnd;
+        });
+        if (milestonesInDay.length === 0) return 0;
+        var completed = milestonesInDay.filter(function(m) {
+            return m.status === 'completed';
+        }).length;
+        return Math.min(100, Math.round((completed / milestonesInDay.length) * 100));
+    }
+
+    /**
+     * Calculate goal progress percentage within current week view
+     * Returns the % of milestones completed within the given week's window.
+     * When totalDays <= 7 the bar IS the full timeline so all milestones are used.
+     */
+    function getWeekGoalProgress(allMilestones, goalStartMs, goalEndMs, weekOffset, totalDays) {
+        if (totalDays <= 7) {
+            if (allMilestones.length === 0) return 0;
+            var completed = allMilestones.filter(function(m) {
+                return m.status === 'completed';
+            }).length;
+            return Math.min(100, Math.round((completed / allMilestones.length) * 100));
+        }
+        var bounds = getWeekBoundaries(goalStartMs, goalEndMs, weekOffset, totalDays);
+        var milestonesInWeek = allMilestones.filter(function(m) {
+            return m.timestamp >= bounds.weekStart && m.timestamp <= bounds.weekEnd;
+        });
+        if (milestonesInWeek.length === 0) return 0;
+        var completed = milestonesInWeek.filter(function(m) {
+            return m.status === 'completed';
+        }).length;
+        return Math.min(100, Math.round((completed / milestonesInWeek.length) * 100));
+    }
+
+    /**
      * Calculate time progress percentage within current day view
      */
     function getDayTimeProgress(goalStartMs, goalEndMs, dayOffset, totalDays) {
@@ -418,17 +458,19 @@ var GoalVisualizationModule = (function() {
         if (viewMode === 'day') {
             var currentDayOffset = Math.max(0, getCurrentDayForGoal(goalStartMs, goalEndMs) - 1);
             var timeProgress = getDayTimeProgress(goalStartMs, goalEndMs, currentDayOffset, totalDays);
+            var goalProgress = getDayGoalProgress(allMilestones, goalStartMs, goalEndMs, currentDayOffset, totalDays);
 
             html += generateDayNavigator(goal, goalStartMs, goalEndMs);
             html += '<div class="goal-progress-bar goal-progress-with-markers" data-day-offset="' + currentDayOffset + '" data-view-mode="day">' +
                 '<div class="goal-progress-fill time-progress" style="width: ' + timeProgress + '%"></div>' +
-                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + progressCompletedPct + '%"></div>' +
+                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + goalProgress + '%"></div>' +
                 '<div class="goal-time-marker" style="left: ' + timeProgress + '%"><span class="now-label">now</span></div>' +
                 generateMilestoneMarkersForDay(allMilestones, goalStartMs, goalEndMs, currentDayOffset, totalDays) +
                 generateHourMarkers(goalStartMs, goalEndMs, currentDayOffset, totalDays) +
             '</div>';
         } else if (totalDays > 7) {
             var timeProgress = getWeekTimeProgress(goalStartMs, goalEndMs, 0, totalDays);
+            var goalProgress = getWeekGoalProgress(allMilestones, goalStartMs, goalEndMs, 0, totalDays);
 
             html += generateWeekNavigator(goal, goalStartMs, goalEndMs);
             html += '<div class="goal-progress-legend">' +
@@ -436,20 +478,21 @@ var GoalVisualizationModule = (function() {
             '</div>';
             html += '<div class="goal-progress-bar goal-progress-with-markers" data-week-offset="0" data-view-mode="week">' +
                 '<div class="goal-progress-fill time-progress" style="width: ' + timeProgress + '%"></div>' +
-                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + progressCompletedPct + '%"></div>' +
+                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + goalProgress + '%"></div>' +
                 '<div class="goal-time-marker" style="left: ' + timeProgress + '%"><span class="now-label">now</span></div>' +
                 generateMilestoneMarkersForWeek(allMilestones, goalStartMs, goalEndMs, 0, totalDays) +
                 generateDayMarkersForWeek(goalStartMs, goalEndMs, 0, totalDays) +
             '</div>';
         } else {
             var timeProgress = getWeekTimeProgress(goalStartMs, goalEndMs, 0, totalDays);
+            var goalProgress = getWeekGoalProgress(allMilestones, goalStartMs, goalEndMs, 0, totalDays);
 
             html += '<div class="goal-progress-legend">' +
                 '<span class="legend-item"><span class="legend-tick milestone"></span> milestone</span>' +
             '</div>';
             html += '<div class="goal-progress-bar goal-progress-with-markers" data-week-offset="0" data-view-mode="week">' +
                 '<div class="goal-progress-fill time-progress" style="width: ' + timeProgress + '%"></div>' +
-                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + progressCompletedPct + '%"></div>' +
+                '<div class="goal-progress-fill goal-progress ' + (isOnTrack ? 'on-track' : 'behind') + '" style="width: ' + goalProgress + '%"></div>' +
                 '<div class="goal-time-marker" style="left: ' + timeProgress + '%"><span class="now-label">now</span></div>' +
                 generateMilestoneMarkersForWeek(allMilestones, goalStartMs, goalEndMs, 0, totalDays) +
                 generateDayMarkersForWeek(goalStartMs, goalEndMs, 0, totalDays) +
@@ -487,7 +530,9 @@ var GoalVisualizationModule = (function() {
         allMilestones = GoalMilestonesModule.processMilestoneStatuses(allMilestones, actions, goal, isDoLess);
 
         var timeProgress = getWeekTimeProgress(goalStartMs, goalEndMs, newOffset, totalDays);
+        var goalProgress = getWeekGoalProgress(allMilestones, goalStartMs, goalEndMs, newOffset, totalDays);
         $progressBar.find('.time-progress').css('width', timeProgress + '%');
+        $progressBar.find('.goal-progress').css('width', goalProgress + '%');
         $progressBar.find('.goal-time-marker').css('left', timeProgress + '%');
 
         $progressBar.find('.milestone-marker').remove();
@@ -532,7 +577,9 @@ var GoalVisualizationModule = (function() {
         allMilestones = GoalMilestonesModule.processMilestoneStatuses(allMilestones, actions, goal, isDoLess);
 
         var timeProgress = getDayTimeProgress(goalStartMs, goalEndMs, newOffset, totalDays);
+        var goalProgress = getDayGoalProgress(allMilestones, goalStartMs, goalEndMs, newOffset, totalDays);
         $progressBar.find('.time-progress').css('width', timeProgress + '%');
+        $progressBar.find('.goal-progress').css('width', goalProgress + '%');
         $progressBar.find('.goal-time-marker').css('left', timeProgress + '%');
 
         $progressBar.find('.milestone-marker').remove();
@@ -687,6 +734,8 @@ var GoalVisualizationModule = (function() {
         generateWeekNavigator: generateWeekNavigator,
         generateDayNavigator: generateDayNavigator,
         generateHourMarkers: generateHourMarkers,
+        getDayGoalProgress: getDayGoalProgress,
+        getWeekGoalProgress: getWeekGoalProgress,
         getDayTimeProgress: getDayTimeProgress,
         getWeekTimeProgress: getWeekTimeProgress,
         generateMilestoneMarkersForDay: generateMilestoneMarkersForDay,
