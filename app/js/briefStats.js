@@ -905,6 +905,7 @@ var BriefStatsModule = (function () {
         $stat.find('.stat-current').text(currentDisplay);
         $stat.find('.stat-vs').text(comparisonDisplay);
         $stat.find('.stat-label').text(statConfig.statLabel);
+        $stat.find('.stat-current-label').text(statConfig.currLabel);
         $stat.find('.stat-vs-label').text(statConfig.vsLabel);
         
         // Add type class for styling

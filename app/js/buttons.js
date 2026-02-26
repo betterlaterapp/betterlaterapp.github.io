@@ -1,6 +1,7 @@
 var ButtonsModule = (function() {
     // Private variables
     var json;
+    var howMuchTabVisited = false;
 
     /**
      * Setup tab switching for the 'Did it' dialog
@@ -9,11 +10,16 @@ var ButtonsModule = (function() {
         // Tab click handler
         $(document).on('click', '.use-dialog-tab', function() {
             var tabId = $(this).data('tab');
-            
+
+            // Track if user visited the "how much" tab
+            if (tabId === 'how-much') {
+                howMuchTabVisited = true;
+            }
+
             // Update active tab button
             $('.use-dialog-tab').removeClass('active');
             $(this).addClass('active');
-            
+
             // Show corresponding tab content
             $('.use-dialog-tab-content').removeClass('active').hide();
             $('.use-dialog-tab-content[data-tab-content="' + tabId + '"]').addClass('active').show();
@@ -91,6 +97,9 @@ var ButtonsModule = (function() {
      * Reset dialog to initial state
      */
     function resetDialogState() {
+        // Reset how-much tab visited flag
+        howMuchTabVisited = false;
+
         // Reset to "When" tab
         $('.use-dialog-tab').removeClass('active');
         $('.use-dialog-tab[data-tab="when"]').addClass('active');
@@ -310,12 +319,13 @@ var ButtonsModule = (function() {
         return { timestampSeconds, requestedTimestamp, userDidItNow };
     }
 
-    function updateUseStatistics() {
+    function updateUseStatistics(amount) {
+        var increment = amount || 1;
         var newTotals = {
-            total: parseInt($(".statistic.use.totals.total").html()) + 1,
-            week: parseInt($(".statistic.use.totals.week").html()) + 1,
-            month: parseInt($(".statistic.use.totals.month").html()) + 1,
-            year: parseInt($(".statistic.use.totals.year").html()) + 1
+            total: parseInt($(".statistic.use.totals.total").html()) + increment,
+            week: parseInt($(".statistic.use.totals.week").html()) + increment,
+            month: parseInt($(".statistic.use.totals.month").html()) + increment,
+            year: parseInt($(".statistic.use.totals.year").html()) + increment
         };
         
         $(".statistic.use.totals.total").html(newTotals.total);
@@ -366,8 +376,8 @@ var ButtonsModule = (function() {
         var timeData = calculateRequestedTimestamp();
         var { timestampSeconds, requestedTimestamp, userDidItNow } = timeData;
 
-        // Get optional "How much" data
-        var howMuchData = getHowMuchData();
+        // Get optional "How much" data - only if user visited the "how much" tab
+        var howMuchData = howMuchTabVisited ? getHowMuchData() : null;
 
         // Save how-much defaults to baseline for future sessions
         if (howMuchData) {
@@ -413,11 +423,12 @@ var ButtonsModule = (function() {
         // Return to statistics screen
         $(".statistics-tab-toggler").click();
 
-        // Update click counter
+        // Update click counter - increment by chunk amount if available
+        var clickIncrement = (howMuchData && howMuchData.amount) ? howMuchData.amount : 1;
         if (json.statistics.use.clickCounter === 0) {
             json.statistics.use.firstClickStamp += timestampSeconds;
         }
-        json.statistics.use.clickCounter++;
+        json.statistics.use.clickCounter += clickIncrement;
         $("#use-total").html(json.statistics.use.clickCounter);
 
         // Reset cravings streak
@@ -449,7 +460,7 @@ var ButtonsModule = (function() {
                 howMuchData.amount,
                 howMuchData.unit
             );
-            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false);
+            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false, null, howMuchData.amount, howMuchData.unit);
         }
         // Standard "used" action
         else {
@@ -465,7 +476,7 @@ var ButtonsModule = (function() {
         }
 
         // Update statistics display
-        updateUseStatistics();
+        updateUseStatistics(clickIncrement);
 
         // Handle wait completion
         handleUseWaitCompletion(requestedTimestamp);

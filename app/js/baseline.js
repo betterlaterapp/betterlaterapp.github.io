@@ -81,15 +81,29 @@ var BaselineModule = (function() {
         $(document).on('input change', '.baseline-amountDonePerWeek, .baseline-usage-timeline-select', function() {
             updateUsageChunkVisibility();
         });
+
+        // Show/hide spending chunk input based on amount and timeline
+        $(document).on('input change', '.baseline-amountSpentPerWeek, .baseline-spending-timeline-select', function() {
+            updateSpendingChunkVisibility();
+        });
+
+        // Chunk checkbox handlers
+        $(document).on('change', '.baseline-usage-chunk-checkbox', function() {
+            updateUsageChunkVisibility();
+        });
+        $(document).on('change', '.baseline-spending-chunk-checkbox', function() {
+            updateSpendingChunkVisibility();
+        });
     }
 
     /**
      * Check if usage amount qualifies as high-frequency (>40/day equivalent)
-     * and show/hide the chunk size input accordingly
+     * or checkbox is checked, and show/hide the chunk size input accordingly
      */
     function updateUsageChunkVisibility() {
         var amount = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
         var timeline = $('.baseline-usage-timeline-select').val();
+        var checkboxChecked = $('.baseline-usage-chunk-checkbox').is(':checked');
 
         // Convert to per-day equivalent
         var perDay;
@@ -101,11 +115,38 @@ var BaselineModule = (function() {
             perDay = amount / 30;
         }
 
-        // Show chunk input if >40 per day
-        if (perDay > 40) {
+        // Show chunk input if checkbox is checked OR >40 per day
+        if (checkboxChecked || perDay > 40) {
             $('.baseline-usage-chunk-row').slideDown();
         } else {
             $('.baseline-usage-chunk-row').slideUp();
+        }
+    }
+
+    /**
+     * Check if spending amount qualifies as high-frequency (>40/day equivalent)
+     * or checkbox is checked, and show/hide the chunk size input accordingly
+     */
+    function updateSpendingChunkVisibility() {
+        var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
+        var timeline = $('.baseline-spending-timeline-select').val();
+        var checkboxChecked = $('.baseline-spending-chunk-checkbox').is(':checked');
+
+        // Convert to per-day equivalent
+        var perDay;
+        if (timeline === 'day') {
+            perDay = amount;
+        } else if (timeline === 'week') {
+            perDay = amount / 7;
+        } else { // month
+            perDay = amount / 30;
+        }
+
+        // Show chunk input if checkbox is checked OR >40 per day
+        if (checkboxChecked || perDay > 40) {
+            $('.baseline-spending-chunk-row').slideDown();
+        } else {
+            $('.baseline-spending-chunk-row').slideUp();
         }
     }
 
@@ -133,7 +174,10 @@ var BaselineModule = (function() {
                 usageTimeline: 'week',
                 usageUnit: 'times',
                 usageChunkSize: 0,
+                usageChunkEnabled: false,
                 moneySpent: 0,
+                spendingChunkSize: 0,
+                spendingChunkEnabled: false,
                 spendingTimeline: 'week',
                 timeSpentHours: 0,
                 timeSpentMinutes: 0,
@@ -327,6 +371,10 @@ var BaselineModule = (function() {
         if (baseline.usageChunkSize) {
             $('.baseline-usageChunkSize').val(baseline.usageChunkSize);
         }
+        // Restore usage chunk checkbox state
+        if (baseline.usageChunkEnabled || baseline.usageChunkSize > 0) {
+            $('.baseline-usage-chunk-checkbox').prop('checked', true);
+        }
         // Check if usage chunk input should be visible based on restored values
         updateUsageChunkVisibility();
         if (baseline.timeSpentHours) {
@@ -353,6 +401,14 @@ var BaselineModule = (function() {
         if (baseline.spendingTimeline) {
             $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);
         }
+        if (baseline.spendingChunkSize) {
+            $('.baseline-spendingChunkSize').val(baseline.spendingChunkSize);
+        }
+        // Restore spending chunk checkbox state
+        if (baseline.spendingChunkEnabled || baseline.spendingChunkSize > 0) {
+            $('.baseline-spending-chunk-checkbox').prop('checked', true);
+        }
+        updateSpendingChunkVisibility();
         if (baseline.wellnessMood !== undefined || (baseline.wellnessText && baseline.wellnessText !== '')) {
             // For wellness, we usually show Q5 if they've interacted with the mood tracker
             // or if statusType was set to wellness.
@@ -532,7 +588,8 @@ var BaselineModule = (function() {
             baseline.timesDone = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
             baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
             baseline.usageUnit = $('.baseline-usage-unit-select').val() || 'times';
-            // Only save chunk size if the input is visible (high-frequency usage)
+            baseline.usageChunkEnabled = $('.baseline-usage-chunk-checkbox').is(':checked');
+            // Only save chunk size if the input is visible
             if ($('.baseline-usage-chunk-row').is(':visible')) {
                 baseline.usageChunkSize = parseInt($('.baseline-usageChunkSize').val()) || 1;
             } else {
@@ -547,6 +604,13 @@ var BaselineModule = (function() {
         } else if (selectedType === 'spending') {
             baseline.moneySpent = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
             baseline.spendingTimeline = $('.baseline-spending-timeline-select').val();
+            baseline.spendingChunkEnabled = $('.baseline-spending-chunk-checkbox').is(':checked');
+            // Only save chunk size if the input is visible
+            if ($('.baseline-spending-chunk-row').is(':visible')) {
+                baseline.spendingChunkSize = parseInt($('.baseline-spendingChunkSize').val()) || 1;
+            } else {
+                baseline.spendingChunkSize = 0;
+            }
         }
         
         baseline.statusType = selectedType;
@@ -641,7 +705,14 @@ var BaselineModule = (function() {
             var timeline = $('.baseline-spending-timeline-select').val();
             var measurementDays = timelineToDays(timeline);
             var completionDays = getRecommendedCompletionDays(timeline);
-            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('dollars', amount, amount, measurementDays, completionDays);
+            var options = {};
+            if ($('.baseline-spending-chunk-row').is(':visible')) {
+                var chunkSize = parseInt($('.baseline-spendingChunkSize').val()) || 1;
+                if (chunkSize > 0) {
+                    options.chunkSize = chunkSize;
+                }
+            }
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('dollars', amount, amount, measurementDays, completionDays, options);
         }
         
         if (behavioralGoal) {
