@@ -232,9 +232,9 @@ var UIModule = (function() {
             $("#undoActionButton").parent().show();
         }
 
-        if (display.timesDone && stat.use.clickCounter > 5) {
+        if (display.timesDone && stat.use.clickCounter > 0) {
             $(".statistic.use.totals.total").parent().parent().parent().show();
-        } 
+        }
         
         // Bought page 
         if (display.sinceLastSpent && stat.cost.clickCounter !== 0) {
@@ -488,6 +488,7 @@ var UIModule = (function() {
      * Notifies user when requested times are for yesterday
      */
     function setupTimePickerNotification() {
+        // Use dialog time picker
         $(".use.log-more-info").find(".time-picker-minute, .time-picker-hour, .time-picker-am-pm, .form-check-input").on('change', function(event) {
             let minute = event.target.classList.contains("time-picker-minute");
             let hour = event.target.classList.contains("time-picker-hour");
@@ -496,7 +497,7 @@ var UIModule = (function() {
             if ((minute || hour || ampm) && !$('#pastTimeUseRadio').is(":checked")) {
                 $('#pastTimeUseRadio').prop("checked", true);
             }
-            
+
             var date = new Date();
             var currMinutes = date.getHours() * 60 + date.getMinutes();
             var reqHours = parseInt($(".use.log-more-info .time-picker-hour").val());
@@ -514,6 +515,34 @@ var UIModule = (function() {
                 $('.24-hour-day-indicator').show();
             } else {
                 $('.24-hour-day-indicator').hide();
+            }
+        });
+
+        // Cost dialog time picker
+        $(".cost.log-more-info").find(".time-picker-minute, .time-picker-hour, .time-picker-am-pm, .form-check-input").on('change', function(event) {
+            let minute = event.target.classList.contains("time-picker-minute");
+            let hour = event.target.classList.contains("time-picker-hour");
+            let ampm = event.target.classList.contains("time-picker-am-pm");
+
+            if ((minute || hour || ampm) && !$('#pastTimeCostRadio').is(":checked")) {
+                $('#pastTimeCostRadio').prop("checked", true);
+            }
+
+            var date = new Date();
+            var currMinutes = date.getHours() * 60 + date.getMinutes();
+            var reqHours = parseInt($(".cost.log-more-info .time-picker-hour").val());
+            var reqMinutes = parseInt($(".cost.log-more-info .time-picker-minute").val());
+
+            if ($(".cost.log-more-info .time-picker-am-pm").val() == "PM") {
+                reqHours = reqHours + 12;
+            }
+            reqMinutes += reqHours * 60;
+
+            var reqTimeInFuture = reqMinutes > currMinutes;
+            if (reqTimeInFuture && $('#pastTimeCostRadio').is(":checked")) {
+                $('.cost-24-hour-day-indicator').show();
+            } else {
+                $('.cost-24-hour-day-indicator').hide();
             }
         });
     }

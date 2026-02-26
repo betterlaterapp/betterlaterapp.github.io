@@ -306,6 +306,11 @@ var SettingsModule = (function () {
             updateSettingsChunkVisibility();
         });
 
+        // Update spending chunk visibility when spending amount or timeline changes
+        $('.settings-amountSpentPerWeek, .settings-spending-timeline-select').on('change input', function() {
+            updateSettingsSpendingChunkVisibility();
+        });
+
         // Handle settings importance checkboxes
         $('.settings-importance-option input[type="checkbox"]').on('change', function() {
             var $checkbox = $(this);
@@ -453,6 +458,8 @@ var SettingsModule = (function () {
             $('[data-baseline-category="valuesMoney"]').show();
             $('.settings-amountSpentPerWeek').val(baseline.moneySpent || '');
             $('.settings-spending-timeline-select').val(baseline.spendingTimeline || 'week');
+            $('.settings-spendingChunkSize').val(baseline.spendingChunkSize || '');
+            updateSettingsSpendingChunkVisibility();
         } else {
             $('[data-baseline-category="valuesMoney"]').hide();
         }
@@ -502,8 +509,10 @@ var SettingsModule = (function () {
         if (baseline.valuesMoney) {
             var amountSpent = parseInt($('.settings-amountSpentPerWeek').val()) || 0;
             var spendingTimeline = $('.settings-spending-timeline-select').val();
+            var spendingChunkSize = parseInt($('.settings-spendingChunkSize').val()) || 0;
             baseline.moneySpent = amountSpent;
             baseline.spendingTimeline = spendingTimeline;
+            baseline.spendingChunkSize = spendingChunkSize;
         }
         
         // Save to storage
@@ -545,6 +554,33 @@ var SettingsModule = (function () {
     }
 
     /**
+     * Show/hide spending chunk row based on spending amount (>40/day equivalent)
+     * or if a spending chunk size is already set
+     */
+    function updateSettingsSpendingChunkVisibility() {
+        var amount = parseInt($('.settings-amountSpentPerWeek').val()) || 0;
+        var timeline = $('.settings-spending-timeline-select').val();
+        var existingChunk = parseInt($('.settings-spendingChunkSize').val()) || 0;
+
+        // Convert to per-day equivalent
+        var perDay;
+        if (timeline === 'day') {
+            perDay = amount;
+        } else if (timeline === 'week') {
+            perDay = amount / 7;
+        } else { // month
+            perDay = amount / 30;
+        }
+
+        // Show chunk input if >40 per day or chunk already set
+        if (perDay > 40 || existingChunk > 0) {
+            $('.settings-spending-chunk-row').slideDown();
+        } else {
+            $('.settings-spending-chunk-row').slideUp();
+        }
+    }
+
+    /**
      * Sync baseline questionnaire inputs with settings values
      */
     function syncBaselineQuestionnaireFromSettings(baseline) {
@@ -582,6 +618,9 @@ var SettingsModule = (function () {
         }
         if (baseline.spendingTimeline) {
             $('.baseline-spending-timeline-select').val(baseline.spendingTimeline);
+        }
+        if (baseline.spendingChunkSize !== undefined) {
+            $('.baseline-spendingChunkSize').val(baseline.spendingChunkSize);
         }
     }
 

@@ -380,6 +380,50 @@
                         </h3>
                         <label><input id="spentInput" type="number" style="margin-left: 8px;" /> $ </label>
                     </div>
+
+                    <div class="time-picker-container cost-time-picker">
+                        <h3 class="text-center">When did you spend on it?</p>
+                        <div class="form-check time-picker-now">
+                            <input class="form-check-input" type="radio" name="costRadios" id="nowCostRadio" value="now" checked>
+                            <label class="form-check-label" for="nowCostRadio">
+                                Now
+                            </label>
+                        </div>
+
+                        <div class="form-check time-picker-before">
+                            <input class="form-check-input" type="radio" name="costRadios" id="pastTimeCostRadio" value="pastTime">
+                            <label class="form-check-label" for="pastTimeCostRadio">
+                                <select class="time-picker-hour" data-min="0" data-max="23" data-step="1">
+                                    <option value="0">12</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                </select>
+                                <span class="label">:</span>
+                                <select class="time-picker-minute" data-min="0" data-max="59" data-step="1">
+                                    <option value="0">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select class="time-picker-am-pm">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="cost-24-hour-day-indicator" style="color: grey; display: none;">
+                            <p>Yesterday</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6" style="padding-right:7px;">
                     <button href="#" class="cancel btn btn-outline-dark btn-md btn-block">
@@ -953,6 +997,7 @@
                                                         <div class="report-filter-wrapper">
                                                             <select id="reportMetricFilter" class="report-filter-select">
                                                                 <option value="usage">Times Done</option>
+                                                                <option value="amount">Amount Done</option>
                                                                 <option value="time">Time Spent</option>
                                                                 <option value="cost">Money Spent</option>
                                                             </select>
@@ -1011,7 +1056,7 @@
                                                             <i class="fas fa-caret-down"></i>
                                                             <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
                                                         </div>
-                                                        <label>Done Vs. last period:</label>
+                                                        <label class="use-change-label">Done Vs. last week:</label>
                                                     </div>
 
                                                     <div class="statistic">
@@ -1028,7 +1073,7 @@
                                                             <span
                                                                 id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
                                                         </div>
-                                                        <label>Spent Vs. last period:</label>
+                                                        <label class="cost-change-label">Spent Vs. last week:</label>
 
                                                     </div>
                                                     <div class="statistic">
@@ -1048,7 +1093,7 @@
                                                             <tr>
                                                                 <th scope="col"></th>
                                                                 <th scope="col">Goal</th>
-                                                                <th scope="col">This Period</th>
+                                                                <th scope="col" class="goal-report-period-label">This Week</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -1523,14 +1568,25 @@
                                     </label>
                                     <div class="baseline-value-input-group">
                                         <span class="currency-prefix">$</span>
-                                        <input type="number" min="0" 
-                                            class="form-control baseline-input settings-amountSpentPerWeek" 
+                                        <input type="number" min="0"
+                                            class="form-control baseline-input settings-amountSpentPerWeek"
                                             placeholder="0">
                                         <select class="baseline-timeline-select settings-spending-timeline-select">
                                             <option value="day">per day</option>
                                             <option value="week" selected>per week</option>
                                             <option value="month">per month</option>
                                         </select>
+                                    </div>
+                                    <div class="settings-spending-chunk-row mt-2" style="display: none;">
+                                        <label class="baseline-value-label mt-4" style="font-size: 0.85rem; color: #6c757d;">
+                                            Average spent at once (chunk size)
+                                        </label>
+                                        <div class="baseline-value-input-group">
+                                            <span class="currency-prefix">$</span>
+                                            <input type="number" min="1"
+                                                class="form-control baseline-input settings-spendingChunkSize"
+                                                placeholder="1" value="">
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -2052,8 +2108,11 @@
                                                     <option value="month">per month</option>
                                                 </select>
                                             </div>
+                                            <div class="baseline-usage-chunk-checkbox-row">
+                                                <label class="chunk-checkbox-label"><input type="checkbox" class="baseline-usage-chunk-checkbox"> I do this in batches/chunks</label>
+                                            </div>
                                             <div class="baseline-usage-chunk-row" style="display: none;">
-                                                <label>Looks like you do this in chunks. How many do you do at a time on average?</label>
+                                                <label>Average done at once</label>
                                                 <div class="chunk-input-row">
                                                     <input type="number" min="1" max="100" class="goal-input baseline-usageChunkSize" placeholder="1" value="1">
                                                     <span class="chunk-unit-label">per session</span>
@@ -2138,6 +2197,16 @@
                                                     <option value="week" selected>per week</option>
                                                     <option value="month">per month</option>
                                                 </select>
+                                            </div>
+                                            <div class="baseline-spending-chunk-checkbox-row">
+                                                <label class="chunk-checkbox-label"><input type="checkbox" class="baseline-spending-chunk-checkbox"> I spend in batches/chunks</label>
+                                            </div>
+                                            <div class="baseline-spending-chunk-row" style="display: none;">
+                                                <label>Average spent at once</label>
+                                                <div class="chunk-input-row">
+                                                    <input type="number" min="1" class="goal-input baseline-spendingChunkSize" placeholder="$" value="">
+                                                    <span class="chunk-unit-label">$</span>
+                                                </div>
                                             </div>
                                         </div>
                                         

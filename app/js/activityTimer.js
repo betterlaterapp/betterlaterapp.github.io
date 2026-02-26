@@ -562,24 +562,47 @@ var ActivityTimerModule = (function () {
             }
         });
 
-        // Update display
-        if (totalTimeSpent > 0) {
-            $('.statistic.timeSpentDoing.total').html(
-                StatsCalculationsModule.convertSecondsToDateFormat(totalTimeSpent, true)
-            );
-            $('.stat-group.timeSpentDoing').parent().show();
+        // Update display using progressive logic:
+        // Show "past 7 days" if there are actions, then "past 30 days" if different
+        // from 7-day value, then "total" if different from 30-day value
+        if (totalTimeSpent === 0) {
+            return;
         }
+
+        // Show the stat group container
+        $('.stat-group.timeSpentDoing').parent().show();
+
+        // Always populate values
+        $('.statistic.timeSpentDoing.total').html(
+            StatsCalculationsModule.convertSecondsToDateFormat(totalTimeSpent, true)
+        );
+        $('.statistic.timeSpentDoing.week').html(
+            StatsCalculationsModule.convertSecondsToDateFormat(weekTimeSpent, true)
+        );
+        $('.statistic.timeSpentDoing.month').html(
+            StatsCalculationsModule.convertSecondsToDateFormat(monthTimeSpent, true)
+        );
+
+        // Progressive display: hide ranges that duplicate narrower ranges
+        // Start with week (narrowest shown range)
         if (weekTimeSpent > 0) {
-            $('.statistic.timeSpentDoing.week').html(
-                StatsCalculationsModule.convertSecondsToDateFormat(weekTimeSpent, true)
-            );
             $('.statistic.timeSpentDoing.week').parent().show();
+        } else {
+            $('.statistic.timeSpentDoing.week').parent().hide();
         }
+
+        // Show month only if different from week
         if (monthTimeSpent > 0 && monthTimeSpent !== weekTimeSpent) {
-            $('.statistic.timeSpentDoing.month').html(
-                StatsCalculationsModule.convertSecondsToDateFormat(monthTimeSpent, true)
-            );
             $('.statistic.timeSpentDoing.month').parent().show();
+        } else {
+            $('.statistic.timeSpentDoing.month').parent().hide();
+        }
+
+        // Show total only if different from month
+        if (totalTimeSpent > 0 && totalTimeSpent !== monthTimeSpent) {
+            $('.statistic.timeSpentDoing.total').parent().show();
+        } else {
+            $('.statistic.timeSpentDoing.total').parent().hide();
         }
     }
 

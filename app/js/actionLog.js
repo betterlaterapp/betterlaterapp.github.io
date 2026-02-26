@@ -11,8 +11,10 @@ var ActionLogModule = (function () {
      * @param {number} smiley - Smiley index for mood actions
      * @param {boolean} placeBelow - Whether to place below existing items
      * @param {number} duration - Duration in seconds (for timed actions)
+     * @param {number} howMuchAmount - Amount done (for chunked usage actions)
+     * @param {string} howMuchUnit - Unit label (for chunked usage actions)
      */
-    function placeActionIntoLog(clickStamp, clickType, amountSpent, comment, smiley, placeBelow, duration) {
+    function placeActionIntoLog(clickStamp, clickType, amountSpent, comment, smiley, placeBelow, duration, howMuchAmount, howMuchUnit) {
         //data seems to be in order
         var endDateObj = new Date(parseInt(clickStamp + "000"));
         var dayOfTheWeek = endDateObj.toString().split(' ')[0];
@@ -41,7 +43,12 @@ var ActionLogModule = (function () {
             titleHTML = '<i class="fas fa-dollar-sign"></i>&nbsp;&nbsp;' + "You spent <b>$" + parseInt(amountSpent) + "</b> on it.";
             //target = "#cost-log";
         } else if (clickType == "used") {
-            titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did it at <b>" + shortHandTime + "</b>.";
+            if (howMuchAmount && howMuchAmount > 1) {
+                var unitLabel = howMuchUnit || '';
+                titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did <b>" + howMuchAmount + " " + unitLabel + "</b> at <b>" + shortHandTime + "</b>.";
+            } else {
+                titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did it at <b>" + shortHandTime + "</b>.";
+            }
             //target = "#use-log";
         } else if (clickType == "craved") {
             titleHTML = '<i class="fas fa-ban"></i>&nbsp;' + "You resisted it at <b>" + shortHandTime + "</b>.";
@@ -163,7 +170,9 @@ var ActionLogModule = (function () {
                     duration = null;
 
                 if (currClickType == "used" || currClickType == "craved") {
-                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+                    var actionAmount = allActions[i].amount || null;
+                    var actionUnit = allActions[i].unit || null;
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true, null, actionAmount, actionUnit);
 
                 } else if (currClickType == "bought") {
                     currClickCost = allActions[i].spent;
@@ -220,7 +229,9 @@ var ActionLogModule = (function () {
                     duration = null;
 
                 if (currClickType == "used" || currClickType == "craved") {
-                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true);
+                    var actionAmount = allActions[i].amount || null;
+                    var actionUnit = allActions[i].unit || null;
+                    placeActionIntoLog(currClickStamp, currClickType, currClickCost, null, null, true, null, actionAmount, actionUnit);
 
                 } else if (currClickType == "bought") {
                     currClickCost = allActions[i].spent;

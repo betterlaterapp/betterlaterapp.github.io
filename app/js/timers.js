@@ -84,6 +84,12 @@ var TimersModule = (function () {
             TimerStateManager.initiate('bought', undefined, json);
         }
 
+        // Adjust timer box sizing immediately after load to prevent flicker
+        // Use setTimeout(0) to ensure DOM has been updated
+        setTimeout(function() {
+            adjustFibonacciTimerToBoxes("smoke-timer");
+            adjustFibonacciTimerToBoxes("bought-timer");
+        }, 0);
     }
 
     /**

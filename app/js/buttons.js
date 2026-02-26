@@ -1,6 +1,7 @@
 var ButtonsModule = (function() {
     // Private variables
     var json;
+    var howMuchTabVisited = false;
 
     /**
      * Setup tab switching for the 'Did it' dialog
@@ -9,11 +10,16 @@ var ButtonsModule = (function() {
         // Tab click handler
         $(document).on('click', '.use-dialog-tab', function() {
             var tabId = $(this).data('tab');
-            
+
+            // Track if user visited the "how much" tab
+            if (tabId === 'how-much') {
+                howMuchTabVisited = true;
+            }
+
             // Update active tab button
             $('.use-dialog-tab').removeClass('active');
             $(this).addClass('active');
-            
+
             // Show corresponding tab content
             $('.use-dialog-tab-content').removeClass('active').hide();
             $('.use-dialog-tab-content[data-tab-content="' + tabId + '"]').addClass('active').show();
@@ -91,15 +97,22 @@ var ButtonsModule = (function() {
      * Reset dialog to initial state
      */
     function resetDialogState() {
+        // Reset how-much tab visited flag
+        howMuchTabVisited = false;
+
         // Reset to "When" tab
         $('.use-dialog-tab').removeClass('active');
         $('.use-dialog-tab[data-tab="when"]').addClass('active');
         $('.use-dialog-tab-content').removeClass('active').hide();
         $('.use-dialog-tab-content[data-tab-content="when"]').addClass('active').show();
 
-        // Reset "How much" inputs
-        $('.how-much-amount').val('');
-        $('.how-much-unit-select').val('').show();
+        // Reset "How much" inputs - pre-fill from saved baseline defaults
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var baseline = (jsonObject && jsonObject.option && jsonObject.option.baseline) || {};
+        var defaultAmount = baseline.defaultHowMuchAmount || '';
+        var defaultUnit = baseline.defaultHowMuchUnit || '';
+        $('.how-much-amount').val(defaultAmount);
+        $('.how-much-unit-select').val(defaultUnit).show();
         $('.custom-unit-input').hide();
         $('.how-much-custom-unit').val('');
 
@@ -306,12 +319,13 @@ var ButtonsModule = (function() {
         return { timestampSeconds, requestedTimestamp, userDidItNow };
     }
 
-    function updateUseStatistics() {
+    function updateUseStatistics(amount) {
+        var increment = amount || 1;
         var newTotals = {
-            total: parseInt($(".statistic.use.totals.total").html()) + 1,
-            week: parseInt($(".statistic.use.totals.week").html()) + 1,
-            month: parseInt($(".statistic.use.totals.month").html()) + 1,
-            year: parseInt($(".statistic.use.totals.year").html()) + 1
+            total: parseInt($(".statistic.use.totals.total").html()) + increment,
+            week: parseInt($(".statistic.use.totals.week").html()) + increment,
+            month: parseInt($(".statistic.use.totals.month").html()) + increment,
+            year: parseInt($(".statistic.use.totals.year").html()) + increment
         };
         
         $(".statistic.use.totals.total").html(newTotals.total);
@@ -362,8 +376,25 @@ var ButtonsModule = (function() {
         var timeData = calculateRequestedTimestamp();
         var { timestampSeconds, requestedTimestamp, userDidItNow } = timeData;
 
-        // Get optional "How much" data
-        var howMuchData = getHowMuchData();
+        // Get optional "How much" data - only if user visited the "how much" tab
+        var howMuchData = howMuchTabVisited ? getHowMuchData() : null;
+
+        // Save how-much defaults to baseline for future sessions
+        if (howMuchData) {
+            var jsonObject = StorageModule.retrieveStorageObject();
+            var baselineChanged = false;
+            if (howMuchData.unit && jsonObject.option.baseline.defaultHowMuchUnit !== howMuchData.unit) {
+                jsonObject.option.baseline.defaultHowMuchUnit = howMuchData.unit;
+                baselineChanged = true;
+            }
+            if (howMuchData.amount && jsonObject.option.baseline.defaultHowMuchAmount !== howMuchData.amount) {
+                jsonObject.option.baseline.defaultHowMuchAmount = howMuchData.amount;
+                baselineChanged = true;
+            }
+            if (baselineChanged) {
+                StorageModule.setStorageObject(jsonObject);
+            }
+        }
 
         // Get optional "How long" data (only if valuesTime is set)
         var howLongData = null;
@@ -392,11 +423,12 @@ var ButtonsModule = (function() {
         // Return to statistics screen
         $(".statistics-tab-toggler").click();
 
-        // Update click counter
+        // Update click counter - increment by chunk amount if available
+        var clickIncrement = (howMuchData && howMuchData.amount) ? howMuchData.amount : 1;
         if (json.statistics.use.clickCounter === 0) {
             json.statistics.use.firstClickStamp += timestampSeconds;
         }
-        json.statistics.use.clickCounter++;
+        json.statistics.use.clickCounter += clickIncrement;
         $("#use-total").html(json.statistics.use.clickCounter);
 
         // Reset cravings streak
@@ -428,7 +460,7 @@ var ButtonsModule = (function() {
                 howMuchData.amount,
                 howMuchData.unit
             );
-            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false);
+            ActionLogModule.placeActionIntoLog(actionTimestamp, "used", null, null, null, false, null, howMuchData.amount, howMuchData.unit);
         }
         // Standard "used" action
         else {
@@ -444,7 +476,7 @@ var ButtonsModule = (function() {
         }
 
         // Update statistics display
-        updateUseStatistics();
+        updateUseStatistics(clickIncrement);
 
         // Handle wait completion
         handleUseWaitCompletion(requestedTimestamp);
@@ -463,6 +495,30 @@ var ButtonsModule = (function() {
 
     function handleBoughtButtonClick() {
         UIModule.openClickDialog(".cost");
+
+        // Set time picker defaults to current time
+        var date = new Date();
+        var currHours = date.getHours(),
+            currMinutes = date.getMinutes();
+        if (currHours >= 12) {
+            $(".cost.log-more-info .time-picker-am-pm").val("PM");
+            currHours = currHours % 12;
+        }
+
+        if (currMinutes >= 45) {
+            currMinutes = 45;
+        } else if (currMinutes >= 30) {
+            currMinutes = 30;
+        } else if (currMinutes >= 15) {
+            currMinutes = 15;
+        } else {
+            currMinutes = 0;
+        }
+
+        $(".cost.log-more-info .time-picker-hour").val(currHours);
+        $(".cost.log-more-info .time-picker-minute").val(currMinutes);
+        $("#nowCostRadio").prop('checked', true);
+        $(".cost-24-hour-day-indicator").hide();
     }
 
     function updateCostStatistics(amountSpent) {
@@ -513,6 +569,41 @@ var ButtonsModule = (function() {
         $("#numberOfWaitsCompleted").html(json.statistics.wait.completedWaits);
     }
 
+    function calculateCostRequestedTimestamp() {
+        var date = new Date();
+        var timestampSeconds = Math.round(date / 1000);
+
+        var requestedTimeStartHours = parseInt($(".cost.log-more-info select.time-picker-hour").val());
+        var requestedTimeStartMinutes = parseInt($(".cost.log-more-info select.time-picker-minute").val());
+        var userDidItNow = $("#nowCostRadio").is(':checked');
+
+        if (userDidItNow) {
+            return { timestampSeconds: timestampSeconds, requestedTimestamp: timestampSeconds, userDidItNow: true };
+        }
+
+        // Convert 12-hour to 24-hour format
+        if (requestedTimeStartHours == 12) {
+            requestedTimeStartHours = 0;
+        }
+        if ($(".cost.log-more-info select.time-picker-am-pm").val() == "PM") {
+            requestedTimeStartHours += 12;
+        }
+
+        var requestedTimeDiffSeconds = (date.getHours() - requestedTimeStartHours) * 60 * 60 +
+                                      (date.getMinutes() - requestedTimeStartMinutes) * 60;
+        var requestedTimestamp = timestampSeconds - requestedTimeDiffSeconds;
+
+        // Handle future times (interpret as previous day)
+        var secondsToNow = date.getHours() * 60 * 60 + date.getMinutes() * 60;
+        var secondsToRequested = requestedTimeStartHours * 60 * 60 + requestedTimeStartMinutes * 60;
+
+        if (secondsToRequested > secondsToNow) {
+            requestedTimestamp -= (24 * 60 * 60);
+        }
+
+        return { timestampSeconds: timestampSeconds, requestedTimestamp: requestedTimestamp, userDidItNow: false };
+    }
+
     function handleBoughtButtonDialog() {
         var amountSpent = $("#spentInput").val();
 
@@ -524,11 +615,13 @@ var ButtonsModule = (function() {
         // Return to statistics screen
         $(".statistics-tab-toggler").click();
 
-        var timestampSeconds = Math.round(new Date() / 1000);
-        
+        var timeData = calculateCostRequestedTimestamp();
+        var timestampSeconds = timeData.timestampSeconds;
+        var actionTimestamp = timeData.userDidItNow ? timestampSeconds : timeData.requestedTimestamp;
+
         // Record the action
-        StorageModule.updateActionTable(timestampSeconds, "bought", amountSpent);
-        ActionLogModule.placeActionIntoLog(timestampSeconds, "bought", amountSpent, null, null, false);
+        StorageModule.updateActionTable(actionTimestamp, "bought", amountSpent);
+        ActionLogModule.placeActionIntoLog(actionTimestamp, "bought", amountSpent, null, null, false);
 
         // Update click counter and first click stamp
         if (json.statistics.cost.clickCounter === 0) {

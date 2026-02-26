@@ -247,19 +247,39 @@ var StatsDisplayModule = (function () {
             if (metric === 'usage') {
                 // Count uses and resists
                 var usedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'used' && 
+                    return e && e.clickType === 'used' &&
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
                 var cravedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'craved' && 
+                    return e && e.clickType === 'craved' &&
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
-                
+
                 valuesObject.used.values[i] = usedInInterval.length;
                 valuesObject.craved.values[i] = cravedInInterval.length;
                 valuesObject.used.total += usedInInterval.length;
                 valuesObject.craved.total += cravedInInterval.length;
-                
+
+            } else if (metric === 'amount') {
+                // Sum amounts for used actions (fall back to 1 for actions without amount)
+                var usedInInterval = jsonObject.action.filter(function(e) {
+                    return e && e.clickType === 'used' &&
+                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
+                });
+                var cravedInInterval = jsonObject.action.filter(function(e) {
+                    return e && e.clickType === 'craved' &&
+                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
+                });
+
+                var amountSum = usedInInterval.reduce(function(sum, e) {
+                    return sum + (e.amount || 1);
+                }, 0);
+
+                valuesObject.used.values[i] = amountSum;
+                valuesObject.craved.values[i] = cravedInInterval.length;
+                valuesObject.used.total += amountSum;
+                valuesObject.craved.total += cravedInInterval.length;
+
             } else if (metric === 'time') {
                 // Sum duration of timed actions AND wait durations
                 var timedInInterval = jsonObject.action.filter(function(e) {
@@ -305,11 +325,23 @@ var StatsDisplayModule = (function () {
         // Calculate last period totals for comparison
         if (metric === 'usage') {
             valuesObject.used.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'used' && 
+                return e && e.clickType === 'used' &&
                        e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
             }).length;
             valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'craved' && 
+                return e && e.clickType === 'craved' &&
+                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
+            }).length;
+        } else if (metric === 'amount') {
+            var lastPeriodUsed = jsonObject.action.filter(function(e) {
+                return e && e.clickType === 'used' &&
+                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
+            });
+            valuesObject.used.lastPeriod = lastPeriodUsed.reduce(function(sum, e) {
+                return sum + (e.amount || 1);
+            }, 0);
+            valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
+                return e && e.clickType === 'craved' &&
                        e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
             }).length;
         } else if (metric === 'cost') {
@@ -334,11 +366,15 @@ var StatsDisplayModule = (function () {
     function getLegendLabels(metric, isdoLess) {
         if (metric === 'usage') {
             if (!isdoLess) {
-                // Do it more + Times done: red=didn't do it, green=did it
                 return { primary: "Didn't", secondary: 'Did It' };
             } else {
-                // Do it less + Times done: red=did it, green=resisted
                 return { primary: 'Did It', secondary: 'Resisted' };
+            }
+        } else if (metric === 'amount') {
+            if (!isdoLess) {
+                return { primary: "Didn't", secondary: 'Amount Done' };
+            } else {
+                return { primary: 'Amount Done', secondary: 'Resisted' };
             }
         } else if (metric === 'time') {
             if (!isdoLess) {
@@ -439,31 +475,30 @@ var StatsDisplayModule = (function () {
         var data, options;
         var useCumulativeChart = (period === 'day');
 
-        if (metric === 'usage') {
-            // For "do less": series[0]=resisted (green), series[1]=did it (red)
-            // For "do more": series[0]=didn't (red), series[1]=did it (green)
-            // Chartist renders series[0] first (primary/red), series[1] second (secondary/green)
+        if (metric === 'usage' || metric === 'amount') {
             if (isdoLess) {
-                // Red = did it, Green = resisted
                 data = {
                     labels: labels,
                     series: [
-                        reportValues.used.values,   // Did it (red/primary)
-                        reportValues.craved.values  // Resisted (green/secondary)
+                        reportValues.used.values,
+                        reportValues.craved.values
                     ]
                 };
             } else {
-                // Red = didn't, Green = did it
                 data = {
                     labels: labels,
                     series: [
-                        reportValues.craved.values, // Didn't (red/primary)
-                        reportValues.used.values    // Did it (green/secondary)
+                        reportValues.craved.values,
+                        reportValues.used.values
                     ]
                 };
             }
+            var maxVal = Math.max(
+                Math.max.apply(null, reportValues.used.values.length ? reportValues.used.values : [0]),
+                Math.max.apply(null, reportValues.craved.values.length ? reportValues.craved.values : [0])
+            );
             options = {
-                high: json.report.maxHeight > 4 ? json.report.maxHeight : 4,
+                high: maxVal > 4 ? Math.ceil(maxVal * 1.2) : 4,
                 seriesBarDistance: 10
             };
         } else if (metric === 'time') {
@@ -649,7 +684,7 @@ var StatsDisplayModule = (function () {
         // Update comparison statistics based on metric
         var totalThisPeriod, totalLastPeriod;
         
-        if (metric === 'usage') {
+        if (metric === 'usage' || metric === 'amount') {
             totalThisPeriod = reportValues.used.total;
             totalLastPeriod = reportValues.used.lastPeriod;
         } else if (metric === 'cost') {
@@ -660,16 +695,21 @@ var StatsDisplayModule = (function () {
             totalLastPeriod = reportValues.timed.lastPeriod;
         }
 
+        // Determine period label for "vs last ___"
+        var periodLabel = period === 'day' ? 'yesterday' : period === 'week' ? 'last week' : 'last month';
+
         // Set change vs last period
-        if (json.option.reportItemsToDisplay.useChangeVsLastWeek && metric === 'usage') {
+        if (json.option.reportItemsToDisplay.useChangeVsLastWeek && (metric === 'usage' || metric === 'amount')) {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            if (percentChanged === "N/A") {
-                $("#useChangeVsLastWeek").html("N/A");
+            // Hide if no data or N/A
+            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
+                $("#useChangeVsLastWeek").parent().parent().hide();
             } else {
+                $('.use-change-label').text('Done Vs. ' + periodLabel + ':');
                 var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
                 $("#useChangeVsLastWeek").html(finishedStat);
+                $("#useChangeVsLastWeek").parent().parent().show();
             }
-            $("#useChangeVsLastWeek").parent().parent().show();
         } else {
             $("#useChangeVsLastWeek").parent().parent().hide();
         }
@@ -683,18 +723,18 @@ var StatsDisplayModule = (function () {
             : (jsonObject.action && jsonObject.action[0] ? jsonObject.action[0].timestamp : 0);
         var beenAWeek = weekAgo.getTime() / 1000 > parseInt(firstClickStamp);
 
-        if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && metric === 'usage') {
+        if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && (metric === 'usage' || metric === 'amount')) {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.timesDone, 
+                json.option.baseline.timesDone,
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
-                $("#useChangeVsBaseline").html("N/A");
+                $("#useChangeVsBaseline").parent().parent().hide();
             } else {
                 var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
                 $("#useChangeVsBaseline").html(finishedStat);
+                $("#useChangeVsBaseline").parent().parent().show();
             }
-            $("#useChangeVsBaseline").parent().parent().show();
         } else {
             $("#useChangeVsBaseline").parent().parent().hide();
         }
@@ -702,29 +742,31 @@ var StatsDisplayModule = (function () {
         // Cost comparisons
         if (json.option.reportItemsToDisplay.costChangeVsLastWeek && metric === 'cost') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            if (percentChanged === "N/A") {
-                $("#costChangeVsLastWeek").html("N/A");
+            // Hide if no data or N/A
+            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
+                $("#costChangeVsLastWeek").parent().parent().hide();
             } else {
+                $('.cost-change-label').text('Spent Vs. ' + periodLabel + ':');
                 var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
                 $("#costChangeVsLastWeek").html(finishedStat);
+                $("#costChangeVsLastWeek").parent().parent().show();
             }
-            $("#costChangeVsLastWeek").parent().parent().show();
         } else {
             $("#costChangeVsLastWeek").parent().parent().hide();
         }
 
         if (json.option.reportItemsToDisplay.costChangeVsBaseline && metric === 'cost') {
             var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.moneySpent, 
+                json.option.baseline.moneySpent,
                 totalThisPeriod
             );
             if (percentChanged === "N/A") {
-                $("#costChangeVsBaseline").html("N/A");
+                $("#costChangeVsBaseline").parent().parent().hide();
             } else {
                 var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
                 $("#costChangeVsBaseline").html(finishedStat);
+                $("#costChangeVsBaseline").parent().parent().show();
             }
-            $("#costChangeVsBaseline").parent().parent().show();
         } else {
             $("#costChangeVsBaseline").parent().parent().hide();
         }
@@ -739,7 +781,7 @@ var StatsDisplayModule = (function () {
         });
         var usageGoalAmount = usageGoal ? usageGoal.goalAmount : 0;
         
-        if (json.option.reportItemsToDisplay.useGoalVsThisWeek && metric === 'usage' && usageGoalAmount > 0) {
+        if (json.option.reportItemsToDisplay.useGoalVsThisWeek && (metric === 'usage' || metric === 'amount') && usageGoalAmount > 0) {
             $("#goalDonePerWeek").html(usageGoalAmount);
             $("#actualDoneThisWeek").html(totalThisPeriod);
             if (totalThisPeriod < usageGoalAmount) {
@@ -771,8 +813,12 @@ var StatsDisplayModule = (function () {
             $("#goalSpentPerWeek").parent().parent().hide();
         }
 
+        // Update goal report period label
+        var goalPeriodLabel = period === 'day' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
+        $('.goal-report-period-label').text(goalPeriodLabel);
+
         // Remove table headers if nothing to display
-        if (!(json.option.reportItemsToDisplay.useGoalVsThisWeek && metric === 'usage') && 
+        if (!(json.option.reportItemsToDisplay.useGoalVsThisWeek && (metric === 'usage' || metric === 'amount')) &&
             !(json.option.reportItemsToDisplay.costGoalVsThisWeek && metric === 'cost')) {
             $(".goal-report thead").hide();
         } else {
@@ -932,24 +978,35 @@ var StatsDisplayModule = (function () {
         
         // Show/hide metric options based on user's valued metrics
         var $metricFilter = $('#reportMetricFilter');
-        
+
+        // Amount option - if chunking is active OR if valuesTimesDone is set
+        // (the "How much" dialog tab is available whenever valuesTimesDone is true,
+        // so amounts can be stored independently of chunking configuration)
+        var hasChunking = baseline.usageChunkEnabled || baseline.usageChunkSize > 0 || baseline.valuesTimesDone;
+        if (!hasChunking) {
+            $metricFilter.find('option[value="amount"]').hide();
+        } else {
+            $metricFilter.find('option[value="amount"]').show();
+        }
+
         // Time option - only if valuesTime is set
         if (!baseline.valuesTime) {
             $metricFilter.find('option[value="time"]').hide();
         } else {
             $metricFilter.find('option[value="time"]').show();
         }
-        
+
         // Cost option - only if valuesMoney is set
         if (!baseline.valuesMoney) {
             $metricFilter.find('option[value="cost"]').hide();
         } else {
             $metricFilter.find('option[value="cost"]').show();
         }
-        
+
         // If current metric is hidden, default to usage
         var currentMetric = $metricFilter.val();
-        if ((currentMetric === 'time' && !baseline.valuesTime) ||
+        if ((currentMetric === 'amount' && !hasChunking) ||
+            (currentMetric === 'time' && !baseline.valuesTime) ||
             (currentMetric === 'cost' && !baseline.valuesMoney)) {
             $metricFilter.val('usage');
             reportOptions.reportMetric = 'usage';
