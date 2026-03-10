@@ -302,14 +302,11 @@ var NotificationsModule = (function () {
     }
 
     function createWaitEndNotification(waitHandle) {
-        var waitTypeGerund = waitHandle.waitType === "use" ? "doing" :
-                            waitHandle.waitType === "bought" ? "buying" : "buying and doing";
-
-        var message = 'Your most recent wait ended since your last visit. Did you make it without ' + waitTypeGerund + ' it?';
+        var message = 'Your wait timer ended since your last visit. Extend it or mark as done?';
 
         createNotification(message, null, {
             type: 'wait_ended_away',
-            responseType: 'wait_ended_away'
+            responseType: 'wait_completed'
         });
     }
 
@@ -496,11 +493,25 @@ var NotificationsModule = (function () {
                 alert('Please choose a time within your goal range!');
             }
         }
-        // Handle wait completion extension request
+        // Handle "Extend Wait" from a wait_extend_prompt notification (active wait)
+        else if ($this.hasClass("extend-wait")) {
+            if (id) storeUserResponse(id, 'extend-wait', {});
+            renderNotificationsLog();
+
+            // Open the wait dialog — submitting it will extend the active wait
+            $('#wait-button').click();
+        }
+        // Handle "End Wait" from a wait_extend_prompt notification
+        else if ($this.hasClass("end-wait")) {
+            if (id) storeUserResponse(id, 'end-wait', {});
+            renderNotificationsLog();
+            WaitModule.endActiveWait(json);
+        }
+        // Handle wait completion extension request (wait already completed, start a new one)
         else if ($this.hasClass("wait-complete-extend")) {
             if (id) storeUserResponse(id, 'wait-complete-extend', {});
             renderNotificationsLog();
-            
+
             // Open the wait dialog to create a new wait
             $('#wait-button').click();
         }

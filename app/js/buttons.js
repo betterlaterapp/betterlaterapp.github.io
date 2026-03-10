@@ -415,9 +415,10 @@ var ButtonsModule = (function() {
             return;
         }
 
-        // End any active wait timer since user "did it"
+        // End any active wait timer since user "did it", at the user's assigned timestamp
         if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.endActiveWaitTimerOnAction) {
-            WaitTimerModule.endActiveWaitTimerOnAction('did_it');
+            var didItTimestamp = userDidItNow ? timestampSeconds : requestedTimestamp;
+            WaitTimerModule.endActiveWaitTimerOnAction('did_it', didItTimestamp);
         }
 
         // Return to statistics screen
@@ -536,9 +537,9 @@ var ButtonsModule = (function() {
     }
 
     function handleBoughtWaitCompletion(timestampSeconds) {
-        // End any 'bought' type wait timer via WaitTimerModule
+        // End any 'bought' type wait timer via WaitTimerModule, at the user's assigned timestamp
         if (typeof WaitTimerModule !== 'undefined' && WaitTimerModule.endActiveWaitTimerOnAction) {
-            WaitTimerModule.endActiveWaitTimerOnAction('spent');
+            WaitTimerModule.endActiveWaitTimerOnAction('spent', timestampSeconds);
         }
         
         // Also handle in-memory state for backwards compatibility

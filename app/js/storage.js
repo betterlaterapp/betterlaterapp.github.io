@@ -316,9 +316,21 @@ var StorageModule = (function () {
             jsonObject.version = 7;
         }
 
+        // Migration v7 -> v8: Rename baseline.usageChunkEnabled -> usageBatched
+        // to unify the property name used by baseline questionnaire and settings
+        if (version < 8) {
+            var baseline = jsonObject.option && jsonObject.option.baseline;
+            if (baseline && baseline.usageChunkEnabled !== undefined) {
+                baseline.usageBatched = baseline.usageChunkEnabled;
+                delete baseline.usageChunkEnabled;
+            }
+
+            jsonObject.version = 8;
+        }
+
         setStorageObject(jsonObject);
-        if (version < 7) {
-            console.log("Storage migration to v7 complete.");
+        if (version < 8) {
+            console.log("Storage migration to v8 complete.");
         }
     }
 
@@ -330,8 +342,8 @@ var StorageModule = (function () {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            // Check if at latest version (v7)
-            return jsonObject && jsonObject.version >= 7;
+            // Check if at latest version (v8)
+            return jsonObject && jsonObject.version >= 8;
         } catch (e) {
             return false;
         }

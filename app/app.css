@@ -163,6 +163,11 @@ input[type="checkbox"] {
 	border-radius: 4px;
 }
 
+input[type="checkbox"].baseline-usage-chunk-checkbox,
+input[type="checkbox"].settings-usageBatched {
+    margin: 0;
+}
+
 input[type="radio"] {
 	border-radius: 50%;
 }

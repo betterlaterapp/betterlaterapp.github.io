@@ -982,7 +982,7 @@ var StatsDisplayModule = (function () {
         // Amount option - if chunking is active OR if valuesTimesDone is set
         // (the "How much" dialog tab is available whenever valuesTimesDone is true,
         // so amounts can be stored independently of chunking configuration)
-        var hasChunking = baseline.usageChunkEnabled || baseline.usageChunkSize > 0 || baseline.valuesTimesDone;
+        var hasChunking = baseline.usageBatched || baseline.usageChunkSize > 0 || baseline.valuesTimesDone;
         if (!hasChunking) {
             $metricFilter.find('option[value="amount"]').hide();
         } else {

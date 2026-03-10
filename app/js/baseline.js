@@ -174,7 +174,7 @@ var BaselineModule = (function() {
                 usageTimeline: 'week',
                 usageUnit: 'times',
                 usageChunkSize: 0,
-                usageChunkEnabled: false,
+                usageBatched: false,
                 moneySpent: 0,
                 spendingChunkSize: 0,
                 spendingChunkEnabled: false,
@@ -372,7 +372,7 @@ var BaselineModule = (function() {
             $('.baseline-usageChunkSize').val(baseline.usageChunkSize);
         }
         // Restore usage chunk checkbox state
-        if (baseline.usageChunkEnabled || baseline.usageChunkSize > 0) {
+        if (baseline.usageBatched || baseline.usageChunkSize > 0) {
             $('.baseline-usage-chunk-checkbox').prop('checked', true);
         }
         // Check if usage chunk input should be visible based on restored values
@@ -588,7 +588,7 @@ var BaselineModule = (function() {
             baseline.timesDone = parseInt($('.baseline-amountDonePerWeek').val()) || 0;
             baseline.usageTimeline = $('.baseline-usage-timeline-select').val();
             baseline.usageUnit = $('.baseline-usage-unit-select').val() || 'times';
-            baseline.usageChunkEnabled = $('.baseline-usage-chunk-checkbox').is(':checked');
+            baseline.usageBatched = $('.baseline-usage-chunk-checkbox').is(':checked');
             // Only save chunk size if the input is visible
             if ($('.baseline-usage-chunk-row').is(':visible')) {
                 baseline.usageChunkSize = parseInt($('.baseline-usageChunkSize').val()) || 1;
