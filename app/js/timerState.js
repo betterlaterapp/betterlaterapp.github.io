@@ -451,9 +451,22 @@ var TimerStateManager = (function () {
         return true;
     }
 
+    /**
+     * Stop a running timer interval without removing the display
+     * @param {string} timerType - 'smoke', 'bought', or 'wait'
+     */
+    function stop(timerType) {
+        var timer = timers[timerType];
+        if (timer && timer.intervalRef) {
+            clearInterval(timer.intervalRef);
+            timer.intervalRef = null;
+        }
+    }
+
     // Public API
     return {
         initiate: initiate,
+        stop: stop,
         calculateTimeUnits: calculateTimeUnits,
         updateTimerDisplay: updateTimerDisplay,
         resetTimerBoxVisibility: resetTimerBoxVisibility,
