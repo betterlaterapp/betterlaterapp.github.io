@@ -288,8 +288,12 @@ var QuantitativeGoalsModule = (function() {
             perDay = amount / 30;
         }
 
-        // Show chunk input if >40 per day
-        if (perDay > 40) {
+        // Also check if user has marked this as batched in baseline settings
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var isBatched = jsonObject.option && jsonObject.option.baseline && jsonObject.option.baseline.usageBatched === true;
+
+        // Show chunk input if explicitly batched or >40 per day
+        if (isBatched || perDay > 40) {
             $('.create-usage-chunk-row').slideDown();
         } else {
             $('.create-usage-chunk-row').slideUp();

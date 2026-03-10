@@ -324,16 +324,26 @@ var WaitModule = (function () {
                 (waitStats.activeWaitBoth || waitStats.activeGoalBoth || 0) !== 0;
 
             if (hasActiveWait) {
-                // Ask if user wants to extend wait
-                var isdoLess = json.option.baseline.doLess;
-                var message = isdoLess
-                    ? "You already have an active wait. Would you like to extend it?"
-                    : "You already have a reminder set. Would you like to change it?";
+                // Determine which wait type is currently active
+                var activeWaitType = "";
+                if ((waitStats.activeWaitUse || waitStats.activeGoalUse || 0) !== 0) {
+                    activeWaitType = "use";
+                } else if ((waitStats.activeWaitBought || waitStats.activeGoalBought || 0) !== 0) {
+                    activeWaitType = "bought";
+                } else if ((waitStats.activeWaitBoth || waitStats.activeGoalBoth || 0) !== 0) {
+                    activeWaitType = "both";
+                }
 
-                NotificationsModule.createNotification(message, null, {
-                    type: 'wait_extend_prompt',
-                    responseType: 'wait_extend_prompt'
-                });
+                // Extend the active wait to the new end time
+                StorageModule.changeWaitStatus(1, activeWaitType, false, waitStampSeconds);
+
+                // Refresh the timer panel with the updated end time
+                if (typeof WaitTimerModule !== 'undefined') {
+                    WaitTimerModule.replaceWaitTimer(waitStampSeconds, activeWaitType);
+                }
+
+                var affirmation = json.affirmations[Math.floor(Math.random() * json.affirmations.length)];
+                NotificationsModule.createNotification('Wait extended! ' + affirmation, null, { type: 'info' });
             } else {
                 // Keep lastClickStamp up to date while using app
                 waitStats.lastClickStamp = timestampSeconds;

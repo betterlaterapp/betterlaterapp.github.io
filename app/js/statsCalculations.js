@@ -1302,7 +1302,12 @@ var StatsCalculationsModule = (function () {
                 }
             }
         });
-        
+
+        // For high-frequency times goals, convert raw action count to batch count
+        if (unit === 'times' && goal.chunkSize > 0) {
+            count = Math.floor(count / goal.chunkSize);
+        }
+
         console.log('[ActionCount] Final count:', count);
         return count;
     }

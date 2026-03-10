@@ -871,13 +871,14 @@ var WaitTimerModule = (function () {
      * End the active wait timer due to user action (did it, started timer, etc.)
      * Called when user performs an action that should end their wait
      * @param {string} reason - Reason for ending ('did_it', 'started_timer', 'spent')
+     * @param {number} [actionTimestamp] - The user-assigned action timestamp (defaults to now)
      */
-    function endActiveWaitTimerOnAction(reason) {
+    function endActiveWaitTimerOnAction(reason, actionTimestamp) {
         if (!hasActiveWaitTimer()) return;
 
         var waitType = getActiveWaitType();
         var jsonObject = StorageModule.retrieveStorageObject();
-        
+
         // Check if this action type should end the wait based on wait type
         // 'use' waits: end on 'did_it' or 'started_timer'
         // 'bought' waits: only end on 'spent'
@@ -890,18 +891,18 @@ var WaitTimerModule = (function () {
             // 'To Do It' waits don't end on spending
             return;
         }
-        
+
         // Find the active wait panel and get its timer ID
         var panel = $('.wait-timer-panel');
         if (panel.length > 0) {
             var timerId = panel.data('timer-id');
-            
+
             // Stop the countdown interval
             if (activeIntervals[timerId]) {
                 clearInterval(activeIntervals[timerId]);
                 delete activeIntervals[timerId];
             }
-            
+
             // Remove the panel
             panel.fadeOut(300, function() {
                 $(this).remove();
@@ -909,13 +910,32 @@ var WaitTimerModule = (function () {
         }
 
         // Update the wait status in storage (status 2 = ended early)
+        // Use the action's assigned timestamp so the wait end aligns with when the user did it
         if (waitType) {
-            var now = Math.round(new Date() / 1000);
-            StorageModule.changeWaitStatus(2, waitType, now);
+            var endTimestamp = actionTimestamp || Math.round(new Date() / 1000);
+            StorageModule.changeWaitStatus(2, waitType, endTimestamp);
         }
 
         // Close distraction panel if open
         closeDistractionPanel();
+    }
+
+    /**
+     * Replace the active wait timer panel with a new one at a different end time
+     * Used when the user extends their wait via the wait dialog
+     * @param {number} newEndTimestamp - The new wait end timestamp
+     * @param {string} waitType - 'use', 'bought', or 'both'
+     */
+    function replaceWaitTimer(newEndTimestamp, waitType) {
+        // Stop and remove all existing panels cleanly
+        Object.keys(activeIntervals).forEach(function(timerId) {
+            clearInterval(activeIntervals[timerId]);
+            delete activeIntervals[timerId];
+        });
+        $('#wait-timers-container').empty();
+
+        // Create the new panel
+        createWaitTimerPanel(newEndTimestamp, waitType);
     }
 
     // Public API
@@ -928,7 +948,8 @@ var WaitTimerModule = (function () {
         restoreActiveWaitTimers: restoreActiveWaitTimers,
         openDistractionPanel: openDistractionPanel,
         closeDistractionPanel: closeDistractionPanel,
-        endActiveWaitTimerOnAction: endActiveWaitTimerOnAction
+        endActiveWaitTimerOnAction: endActiveWaitTimerOnAction,
+        replaceWaitTimer: replaceWaitTimer
     };
 })();
 

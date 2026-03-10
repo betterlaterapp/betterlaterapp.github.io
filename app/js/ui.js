@@ -376,6 +376,11 @@ var UIModule = (function() {
         // Final strength calculation
         // strength = 3 * randomFactor + 2 * (streakBonus / 10) + baseMultiplier
         var strength = (3 * randomFactor) + (2 * (streakBonus / 10)) + baseMultiplier;
+
+        // Normal intensity is 1/3 of super intensity
+        if (intensity !== 'super') {
+            strength = strength / 3;
+        }
         
         // Apply strength to confetti parameters
         var duration = Math.round(2000 * strength);

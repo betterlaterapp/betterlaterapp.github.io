@@ -27,6 +27,10 @@ var GoalMilestonesModule = (function() {
         // Get relevant actions since goal started
         var relevantActions = getRelevantActions(goal, actions, goalStartSec);
         var actionCount = relevantActions.length;
+        // Convert to batch count if goal uses chunk size (high-frequency times goals)
+        if (goal.unit === 'times' && goal.chunkSize > 0) {
+            actionCount = Math.floor(actionCount / goal.chunkSize);
+        }
 
         // Get the ORIGINAL schedule for historical reference
         var curveType = isDoLess ? 'power' : 'sigmoid';
@@ -76,6 +80,9 @@ var GoalMilestonesModule = (function() {
                 var actionsBeforeThis = relevantActions.filter(function(a) {
                     return parseInt(a.timestamp) * 1000 <= m.timestamp;
                 }).length;
+                if (goal.unit === 'times' && goal.chunkSize > 0) {
+                    actionsBeforeThis = Math.floor(actionsBeforeThis / goal.chunkSize);
+                }
 
                 var status;
                 if (isDoLess) {
@@ -173,10 +180,14 @@ var GoalMilestonesModule = (function() {
             var status = 'upcoming';
 
             if (isPast) {
+                var chunkSize = (goal.unit === 'times' && goal.chunkSize > 0) ? goal.chunkSize : 0;
                 if (isDoLess) {
-                    var actionsBeforeMilestone = relevantActions.filter(function(a) {
+                    var rawActionsBeforeMilestone = relevantActions.filter(function(a) {
                         return parseInt(a.timestamp) * 1000 < m.timestamp;
                     }).length;
+                    var actionsBeforeMilestone = chunkSize > 0
+                        ? Math.floor(rawActionsBeforeMilestone / chunkSize)
+                        : rawActionsBeforeMilestone;
                     status = actionsBeforeMilestone > actionIndex ? 'missed' : 'completed';
                     if (actionsBeforeMilestone > actionIndex) actionIndex = actionsBeforeMilestone;
                 } else {
@@ -184,7 +195,8 @@ var GoalMilestonesModule = (function() {
                            parseInt(relevantActions[actionIndex].timestamp) * 1000 <= m.timestamp) {
                         actionIndex++;
                     }
-                    status = actionIndex >= m.index ? 'completed' : 'missed';
+                    var effectiveActionIndex = chunkSize > 0 ? Math.floor(actionIndex / chunkSize) : actionIndex;
+                    status = effectiveActionIndex >= m.index ? 'completed' : 'missed';
                 }
             }
 

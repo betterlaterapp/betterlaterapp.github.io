@@ -301,9 +301,13 @@ var SettingsModule = (function () {
             saveBaselineValuesFromSettings();
         });
 
-        // Update chunk visibility when times done amount or timeline changes
+        // Update chunk visibility when times done amount, timeline, or batch checkbox changes
         $('.settings-amountDonePerWeek, .settings-usage-timeline-select').on('change input', function() {
             updateSettingsChunkVisibility();
+        });
+        $('.settings-usageBatched').on('change', function() {
+            updateSettingsChunkVisibility();
+            saveBaselineValuesFromSettings();
         });
 
         // Update spending chunk visibility when spending amount or timeline changes
@@ -432,8 +436,9 @@ var SettingsModule = (function () {
             $('[data-baseline-category="valuesTimesDone"]').show();
             $('.settings-amountDonePerWeek').val(baseline.timesDone || '');
             $('.settings-usage-timeline-select').val(baseline.usageTimeline || 'week');
+            $('.settings-usageBatched').prop('checked', baseline.usageBatched === true);
             $('.settings-usageChunkSize').val(baseline.usageChunkSize || 1);
-            // Show chunk row if amount is high (>40/day equivalent)
+            // Show chunk row if explicitly batched or amount is high (>40/day equivalent)
             updateSettingsChunkVisibility();
         } else {
             $('[data-baseline-category="valuesTimesDone"]').hide();
@@ -485,10 +490,11 @@ var SettingsModule = (function () {
         if (baseline.valuesTimesDone) {
             var amountDone = parseInt($('.settings-amountDonePerWeek').val()) || 0;
             var usageTimeline = $('.settings-usage-timeline-select').val();
-            var chunkSize = parseInt($('.settings-usageChunkSize').val()) || 1;
+            var isBatched = $('.settings-usageBatched').is(':checked');
             baseline.timesDone = amountDone;
             baseline.usageTimeline = usageTimeline;
-            baseline.usageChunkSize = chunkSize;
+            baseline.usageBatched = isBatched;
+            baseline.usageChunkSize = isBatched ? (parseInt($('.settings-usageChunkSize').val()) || 1) : 0;
         }
 
         // Time Spent
@@ -534,6 +540,7 @@ var SettingsModule = (function () {
     function updateSettingsChunkVisibility() {
         var amount = parseInt($('.settings-amountDonePerWeek').val()) || 0;
         var timeline = $('.settings-usage-timeline-select').val();
+        var isBatched = $('.settings-usageBatched').is(':checked');
 
         // Convert to per-day equivalent
         var perDay;
@@ -545,8 +552,8 @@ var SettingsModule = (function () {
             perDay = amount / 30;
         }
 
-        // Show chunk input if >40 per day
-        if (perDay > 40) {
+        // Show chunk input if explicitly batched or >40 per day
+        if (isBatched || perDay > 40) {
             $('.settings-chunk-row').slideDown();
         } else {
             $('.settings-chunk-row').slideUp();
