@@ -585,6 +585,7 @@ var TimerStateManager = (function () {
     // Public API
     return {
         initiate: initiate,
+        stop: stop,
         calculateTimeUnits: calculateTimeUnits,
         updateTimerDisplay: updateTimerDisplay,
         resetTimerBoxVisibility: resetTimerBoxVisibility,

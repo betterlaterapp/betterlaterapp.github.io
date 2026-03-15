@@ -12,6 +12,7 @@
  */
 var BriefStatsModule = (function () {
     var json;
+    var _doBeforeInterval = null; // Countdown interval for doMore "Do Before" timer
     
     /**
      * Initialize the module with app state
@@ -82,10 +83,22 @@ var BriefStatsModule = (function () {
             return;
         }
         
-        // Log conditions for debugging
+        // REQUIREMENT: doMore + usage/time focus needs ≥2 actions to compute average
+        // The "Do Before" countdown is meaningless without at least one interval to average
         var focus = determineFocus(baseline);
         var doLess = isDoLess(baseline);
         var doMore = isDoMore(baseline);
+        if (doMore && (focus === 'timesDone' || focus === 'timeSpent')) {
+            var avgSecs = getAverageSecsBetweenActions(actions);
+            if (avgSecs === null) {
+                console.log('doMore: not enough data to compute average interval - hiding brief stats');
+                console.groupEnd();
+                hide();
+                return;
+            }
+        }
+
+        // Log conditions for debugging
         console.log('CONDITIONS:', {
             focus: focus,
             doLess: doLess,
@@ -273,6 +286,154 @@ var BriefStatsModule = (function () {
     // Stat 1: Fibonacci Timer Functions
     // ============================================
     
+    // ============================================
+    // doMore: Do Before Countdown Helpers
+    // ============================================
+
+    function clearDoBeforeInterval() {
+        if (_doBeforeInterval) {
+            clearInterval(_doBeforeInterval);
+            _doBeforeInterval = null;
+        }
+    }
+
+    /**
+     * Average seconds between 'used'/'timed' actions.
+     * Returns null if fewer than 2 actions exist.
+     */
+    function getAverageSecsBetweenActions(actions) {
+        var usedActions = actions.filter(function(a) {
+            return a && (a.clickType === 'used' || a.clickType === 'timed');
+        }).sort(function(a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        });
+        if (usedActions.length < 2) return null;
+        var totalGap = 0;
+        for (var i = 1; i < usedActions.length; i++) {
+            totalGap += parseInt(usedActions[i].timestamp) - parseInt(usedActions[i - 1].timestamp);
+        }
+        return Math.round(totalGap / (usedActions.length - 1));
+    }
+
+    /**
+     * Unix timestamp (seconds) of the "do before" deadline.
+     * = lastActionTimestamp + avgTimeBetweenActions
+     * Returns null if not enough data.
+     */
+    function getDoBeforeTimestampSec(actions) {
+        var avgSecs = getAverageSecsBetweenActions(actions);
+        if (avgSecs === null) return null;
+        var usedActions = actions.filter(function(a) {
+            return a && (a.clickType === 'used' || a.clickType === 'timed');
+        }).sort(function(a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        });
+        return parseInt(usedActions[usedActions.length - 1].timestamp) + avgSecs;
+    }
+
+    /** Write countdown values into the smoke-timer DOM */
+    function updateDoBeforeDisplay(totalSeconds) {
+        var days = Math.floor(totalSeconds / 86400);
+        var hours = Math.floor((totalSeconds % 86400) / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+
+        var $boxes = $('#smoke-timer .boxes div');
+        $boxes.eq(0).find('.daysSinceLastClick').text(days);
+        $boxes.eq(1).find('.hoursSinceLastClick').text(hours);
+        $boxes.eq(2).find('.minutesSinceLastClick').text(minutes);
+        $boxes.eq(3).find('.secondsSinceLastClick').text(seconds < 10 ? '0' + seconds : seconds);
+
+        // Hide leading-zero boxes
+        if (days > 0) {
+            $boxes.show();
+        } else if (hours > 0) {
+            $boxes.eq(0).hide(); $boxes.eq(1).show(); $boxes.eq(2).show(); $boxes.eq(3).show();
+        } else if (minutes > 0) {
+            $boxes.eq(0).hide(); $boxes.eq(1).hide(); $boxes.eq(2).show(); $boxes.eq(3).show();
+        } else {
+            $boxes.eq(0).hide(); $boxes.eq(1).hide(); $boxes.eq(2).hide(); $boxes.eq(3).show();
+        }
+        if (typeof TimersModule !== 'undefined') {
+            TimersModule.adjustFibonacciTimerToBoxes('smoke-timer');
+        }
+    }
+
+    /**
+     * Set up the smoke timer as a "Do Before" countdown for doMore.
+     * Returns false (hides stat) if there is not enough data to compute average.
+     */
+    function updateDoBeforeStat(actions) {
+        var doBeforeTimestampSec = getDoBeforeTimestampSec(actions);
+        if (doBeforeTimestampSec === null) return false; // need ≥2 actions
+
+        // Stop the existing count-up interval
+        if (typeof TimerStateManager !== 'undefined' && TimerStateManager.stop) {
+            TimerStateManager.stop('smoke');
+        }
+        clearDoBeforeInterval();
+
+        var $stat = $('.stat-brief.stat-last-done');
+        $stat.removeClass('d-none');
+        $('.stat-brief.stat-last-spent').addClass('d-none');
+        $stat.find('.stat-brief-label').text('Do before');
+
+        // Show the fibonacci timer element (it may be hidden)
+        $('#smoke-timer').show();
+
+        var nowSec = function() { return Math.round(Date.now() / 1000); };
+        var remaining = Math.max(0, doBeforeTimestampSec - nowSec());
+        updateDoBeforeDisplay(remaining);
+
+        _doBeforeInterval = setInterval(function() {
+            remaining = Math.max(0, doBeforeTimestampSec - nowSec());
+            updateDoBeforeDisplay(remaining);
+            if (remaining <= 0) clearDoBeforeInterval();
+        }, 1000);
+
+        return true;
+    }
+
+    // ============================================
+    // doLess: Wait vs Best Helpers
+    // ============================================
+
+    /** Current active wait duration in seconds (or most recent completed if no active wait) */
+    function getCurrentWaitDuration(actions) {
+        var nowSec = Math.round(Date.now() / 1000);
+        var activeWaits = actions.filter(function(a) {
+            return a && a.clickType === 'wait' && a.status === 1;
+        });
+        if (activeWaits.length > 0) {
+            var most = activeWaits[activeWaits.length - 1];
+            return nowSec - parseInt(most.timestamp);
+        }
+        var completedWaits = actions.filter(function(a) {
+            return a && a.clickType === 'wait' && (a.status === 2 || a.status === 3) && a.waitStopped;
+        });
+        if (completedWaits.length === 0) return 0;
+        var most = completedWaits[completedWaits.length - 1];
+        return (most.waitStopped || most.waitStamp) - parseInt(most.timestamp);
+    }
+
+    /** Longest completed wait duration in seconds */
+    function getLongestWaitDuration(actions) {
+        var completedWaits = actions.filter(function(a) {
+            return a && a.clickType === 'wait' && (a.status === 2 || a.status === 3) && a.waitStopped;
+        });
+        if (completedWaits.length === 0) return 0;
+        var longest = 0;
+        completedWaits.forEach(function(w) {
+            var dur = w.waitStopped - parseInt(w.timestamp);
+            if (dur > longest) longest = dur;
+        });
+        return longest;
+    }
+
+    // ============================================
+    // Stat 1: Fibonacci Timer Functions
+    // ============================================
+
     /**
      * Update fibonacci timer stat based on focus
      * @param {Object} baseline - Baseline settings
@@ -291,7 +452,7 @@ var BriefStatsModule = (function () {
         } else if (focus === 'moneySpent') {
             return updateLastSpentStat();
         }
-        
+
         // No focus - hide both timers
         $('.stat-brief.stat-last-done').addClass('d-none');
         $('.stat-brief.stat-last-spent').addClass('d-none');
@@ -360,6 +521,7 @@ var BriefStatsModule = (function () {
      */
     function updateLastDoneStat() {
         var $stat = $('.stat-brief.stat-last-done');
+        $stat.find('.stat-brief-label').text('Last done');
         $stat.removeClass('d-none');
         $stat.find('.stat-brief-label').text('Last done');
         $stat.find('.timer-recepticle').show();
@@ -367,7 +529,7 @@ var BriefStatsModule = (function () {
         $('.stat-brief.stat-last-spent').addClass('d-none');
         return true;
     }
-    
+
     /**
      * Show the "Last spent" fibonacci timer
      * @returns {boolean} - Always true
@@ -764,21 +926,23 @@ var BriefStatsModule = (function () {
                     doLess: doLess
                 };
             } else {
-                // NOTE: this could be time waited vs best
-                // streak: resists VS. longest streak
-                var currentStreak = Calc.getCurrentResistStreak(actions);
-                var longestStreak = Calc.calculateResistStreak(actions);
-                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
-                return {
-                    type: 'statVsBest',
-                    statLabel: 'Resist streak',
-                    currLabel: 'Current',
-                    vsLabel: 'Best',
-                    current: currentStreak,
-                    comparison: longestStreak,
-                    format: 'number',
-                    doLess: doLess
-                };
+                // time waited (current) vs best wait ever
+                var currentWait = getCurrentWaitDuration(actions);
+                var longestWait = getLongestWaitDuration(actions);
+                console.log('[BriefStats] → doLess + noBaseline + timeSpent: Wait vs best', { currentWait, longestWait });
+                if (currentWait > 0 || longestWait > 0) {
+                    return {
+                        type: 'statVsBest',
+                        statLabel: 'Time waited',
+                        currLabel: 'Current',
+                        vsLabel: 'Best',
+                        current: currentWait,
+                        comparison: longestWait,
+                        format: 'time',
+                        doLess: doLess
+                    };
+                }
+                return null;
             }
         } else if (doMore) {
             if (hasBaseline) {
@@ -865,20 +1029,23 @@ var BriefStatsModule = (function () {
                     doLess: doLess
                 };
             } else {
-                // streak: resists VS. longest streak
-                var currentStreak = Calc.getCurrentResistStreak(actions);
-                var longestStreak = Calc.calculateResistStreak(actions);
-                console.log('[BriefStats] → doLess + noBaseline: Streak', { currentStreak, longestStreak });
-                return {
-                    type: 'statVsBest',
-                    statLabel: 'Resist streak',
-                    currLabel: 'current',
-                    vsLabel: 'Best',
-                    current: currentStreak,
-                    comparison: longestStreak,
-                    format: 'number',
-                    doLess: doLess
-                };
+                // time waited (current) vs best wait ever
+                var currentWait = getCurrentWaitDuration(actions);
+                var longestWait = getLongestWaitDuration(actions);
+                console.log('[BriefStats] → doLess + noBaseline + moneySpent: Wait vs best', { currentWait, longestWait });
+                if (currentWait > 0 || longestWait > 0) {
+                    return {
+                        type: 'statVsBest',
+                        statLabel: 'Time waited',
+                        currLabel: 'Current',
+                        vsLabel: 'Best',
+                        current: currentWait,
+                        comparison: longestWait,
+                        format: 'time',
+                        doLess: doLess
+                    };
+                }
+                return null;
             }
         } else if (doMore) {
             if (hasBaseline) {
