@@ -1011,6 +1011,15 @@ var StatsDisplayModule = (function () {
             $metricFilter.val('usage');
             reportOptions.reportMetric = 'usage';
         }
+
+        // When time spent is the user's primary focus (valuesTime without valuesTimesDone),
+        // default the report metric to 'time' rather than the global default of 'usage'.
+        // Only apply when stored metric is still the generic 'usage' default so the user's
+        // explicit selections are never overridden.
+        if (baseline.valuesTime && !baseline.valuesTimesDone && reportOptions.reportMetric === 'usage') {
+            $metricFilter.val('time');
+            reportOptions.reportMetric = 'time';
+        }
         
         // Handle filter changes
         $('#reportMetricFilter, #reportPeriodFilter').off('change').on('change', function() {

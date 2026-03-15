@@ -662,7 +662,7 @@ var ButtonsModule = (function() {
         UIModule.openClickDialog(".wait");
 
         // Setup goal dialog with current time
-        GoalsModule.setupGoalDialog();
+        // GoalsModule.setupGoalDialog();
     }
 
     function setupButtonHandlers() {

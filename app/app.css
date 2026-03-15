@@ -1424,9 +1424,21 @@ body.do-equal .weekly-report .goal-report .amount-changed.down {
 .stat-brief.stat-last-done,
 .stat-brief.stat-last-spent {
     flex: 0 0 40%; /* Timer stats: 40% width */
-    align-items: flex-start;  
+    align-items: flex-start;
     justify-content: flex-start;
 }
+
+/* Do Before - ASAP block display (doMore mode, when interval has elapsed) */
+.stat-brief.stat-last-done .do-before-asap {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: #3bba2d;
+    text-align: center;
+    line-height: 1.1;
+    padding: 0.5rem 0;
+}
+
 .stat-brief .timer-recepticle {
     margin: 0;
     max-height: 95px;

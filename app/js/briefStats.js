@@ -106,7 +106,7 @@ var BriefStatsModule = (function () {
         $('.stat-brief').addClass('d-none');
         
         // Stat 1: Fibonacci timer (last done OR last spent based on focus)
-        var fibonacciTimerVisible = updateFibonacciTimerStat(baseline);
+        var fibonacciTimerVisible = updateFibonacciTimerStat(baseline, actions);
         if (fibonacciTimerVisible) visibleStats.push('fibonacci-timer');
         console.log('Stat 1 (Fibonacci):', fibonacciTimerVisible ? 'VISIBLE' : 'hidden');
         
@@ -276,12 +276,17 @@ var BriefStatsModule = (function () {
     /**
      * Update fibonacci timer stat based on focus
      * @param {Object} baseline - Baseline settings
+     * @param {Array} actions - Array of actions
      * @returns {boolean} - Whether a fibonacci timer is visible
      */
-    function updateFibonacciTimerStat(baseline) {
+    function updateFibonacciTimerStat(baseline, actions) {
         var focus = determineFocus(baseline);
+        var doMore = isDoMore(baseline);
         
         if (focus === 'timesDone' || focus === 'timeSpent') {
+            if (doMore) {
+                return updateDoBeforeStat(actions);
+            }
             return updateLastDoneStat();
         } else if (focus === 'moneySpent') {
             return updateLastSpentStat();
@@ -292,6 +297,62 @@ var BriefStatsModule = (function () {
         $('.stat-brief.stat-last-spent').addClass('d-none');
         return false;
     }
+
+    /**
+     * Calculate seconds until the next expected "did it" action (doMore mode).
+     * Uses the interval between the last two "did it" actions projected forward.
+     * Returns null if fewer than 2 "did it" actions exist.
+     * Returns a negative value if the projected time has already passed.
+     * @param {Array} actions - Array of actions
+     * @returns {number|null}
+     */
+    function getDoBeforeSeconds(actions) {
+        var didItActions = actions.filter(function (a) {
+            return a && (a.clickType === 'used' || a.clickType === 'timed');
+        }).sort(function (a, b) {
+            return parseInt(b.timestamp) - parseInt(a.timestamp); // descending
+        });
+
+        if (didItActions.length < 2) return null;
+
+        var lastStamp = parseInt(didItActions[0].timestamp);
+        var secondToLastStamp = parseInt(didItActions[1].timestamp);
+        var interval = lastStamp - secondToLastStamp;
+        var nowSeconds = Math.floor(Date.now() / 1000);
+
+        return (lastStamp + interval) - nowSeconds;
+    }
+
+    /**
+     * Show the "Do Before" countdown/ASAP display (doMore mode).
+     * Starts the countdown via TimerStateManager, or shows ASAP if the interval elapsed.
+     * Falls back to "Last done" label when fewer than 2 actions exist.
+     * @param {Array} actions - Array of actions
+     * @returns {boolean} - Always true
+     */
+    function updateDoBeforeStat(actions) {
+        var $stat = $('.stat-brief.stat-last-done');
+        $stat.removeClass('d-none');
+        $('.stat-brief.stat-last-spent').addClass('d-none');
+
+        var doBeforeSeconds = getDoBeforeSeconds(actions);
+
+        if (doBeforeSeconds === null) {
+            // Not enough actions yet — show normal "Last done" countup
+            $stat.find('.stat-brief-label').text('Last done');
+            $stat.find('.timer-recepticle').show();
+            $stat.find('.do-before-asap').addClass('d-none');
+            return true;
+        }
+
+        $stat.find('.stat-brief-label').text('Do Before');
+
+        if (typeof TimerStateManager !== 'undefined' && TimerStateManager.startDoBeforeCountdown) {
+            TimerStateManager.startDoBeforeCountdown(doBeforeSeconds);
+        }
+
+        return true;
+    }
     
     /**
      * Show the "Last done" fibonacci timer
@@ -300,6 +361,9 @@ var BriefStatsModule = (function () {
     function updateLastDoneStat() {
         var $stat = $('.stat-brief.stat-last-done');
         $stat.removeClass('d-none');
+        $stat.find('.stat-brief-label').text('Last done');
+        $stat.find('.timer-recepticle').show();
+        $stat.find('.do-before-asap').addClass('d-none');
         $('.stat-brief.stat-last-spent').addClass('d-none');
         return true;
     }
@@ -1007,6 +1071,32 @@ var BriefStatsModule = (function () {
     }
     
     /**
+     * Override the smoke countup timer with the "Do Before" countdown for doMore users.
+     * Called in app.js immediately after TimersModule.hideTimersOnLoad so the countdown
+     * replaces the countup that hideTimersOnLoad just started.
+     * No-op for non-doMore users or when fewer than 2 "did it" actions exist.
+     */
+    function applyDoBeforeTimer() {
+        var jsonObject = StorageModule.retrieveStorageObject();
+        if (!jsonObject) return;
+
+        var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
+        var actions = jsonObject.action || [];
+        var focus = determineFocus(baseline);
+
+        if (!isDoMore(baseline)) return;
+        if (focus !== 'timesDone' && focus !== 'timeSpent') return;
+
+        var doBeforeSeconds = getDoBeforeSeconds(actions);
+        if (doBeforeSeconds === null) return; // < 2 actions — leave the smoke countup running
+
+        $('.stat-brief.stat-last-done .stat-brief-label').text('Do Before');
+        if (typeof TimerStateManager !== 'undefined') {
+            TimerStateManager.startDoBeforeCountdown(doBeforeSeconds);
+        }
+    }
+
+    /**
      * Refresh stats (call this after any action)
      */
     function refresh() {
@@ -1021,7 +1111,9 @@ var BriefStatsModule = (function () {
         refresh: refresh,
         updateAllStats: updateAllStats,
         determineFocus: determineFocus,
-        determineComparisonStat: determineComparisonStat
+        determineComparisonStat: determineComparisonStat,
+        getDoBeforeSeconds: getDoBeforeSeconds,
+        applyDoBeforeTimer: applyDoBeforeTimer
     };
 })();
 
