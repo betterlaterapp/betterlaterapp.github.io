@@ -3716,6 +3716,10 @@ input[type="number"] {
     border-bottom: 6px solid rgba(0, 0, 0, 0.6);
 }
 
+.goal-accordion-item[data-goal-type="qualitative"] .goal-summary {
+    padding-bottom: 0;
+}
+
 .goal-summary-header {
     display: flex;
     justify-content: space-between;
@@ -3768,8 +3772,13 @@ input[type="number"] {
     line-height: 1.4;
     flex-grow: 1;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
+    min-height: 50px;
+}
+
+.goal-summary-title .goal-title-text {
+    flex: 1;
 }
 
 /* Goal Stats Row (closed state) */
@@ -3927,18 +3936,62 @@ input[type="number"] {
 /* Expand/Collapse Icon */
 .goal-expand-icon {
     display: inline-block;
-    margin-left: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+    padding-left: 8px;
+    padding-right: 10px;
     font-size: 1rem;
     color: #adb5bd;
     transition: transform 0.2s ease;
-    vertical-align: middle;
-    display: flex;
-    justify-content: flex-end;
-    padding-right: 10px;
 }
 
 .goal-accordion-item.expanded .goal-expand-icon {
     transform: rotate(180deg);
+}
+
+/* Check-in count badge in qualitative goal title bar */
+.goal-checkin-count {
+    background: #e8f4fd;
+    color: #4d83b5;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+/* Two-column flex for qualitative goal stats (comment input + avg mood smiley) */
+.goal-checkin-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.goal-checkin-input-row .goal-checkin-comment {
+    flex: 1;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    background: #fff;
+    height: 90px;
+    resize: none;
+}
+
+.goal-checkin-input-row .mood-smiley-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.goal-no-mood {
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+    color: #adb5bd;
 }
 
 /* Expanded State - Detail View */
@@ -4864,6 +4917,14 @@ input[type="number"] {
     margin-top: 16px;
 }
 
+/* When progress container is inside .goal-summary (qualitative goals), pin it flush to the bottom */
+.goal-summary .goal-progress-container {
+    margin-top: auto;
+    margin-left: -6px;
+    margin-right: -6px;
+    margin-bottom: -12px;
+}
+
 .goal-progress-bar {
     height: 8px;
     background: #ffffff;
@@ -4888,8 +4949,9 @@ input[type="number"] {
 .goal-progress-text {
     font-size: 0.75rem;
     color: #6c757d;
-    margin-top: 4px;
+    margin-bottom: 4px;
     text-align: right;
+    padding-right: 6px;
 }
 
 

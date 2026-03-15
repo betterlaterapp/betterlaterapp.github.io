@@ -245,9 +245,9 @@ var StatsDisplayModule = (function () {
             var intervalEnd = reportStartStamp + (intervalDuration * (i + 1));
 
             if (metric === 'usage') {
-                // Count uses and resists
+                // Count uses and resists (timed actions also count as +1)
                 var usedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'used' &&
+                    return e && (e.clickType === 'used' || e.clickType === 'timed') &&
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
                 var cravedInInterval = jsonObject.action.filter(function(e) {
@@ -261,9 +261,9 @@ var StatsDisplayModule = (function () {
                 valuesObject.craved.total += cravedInInterval.length;
 
             } else if (metric === 'amount') {
-                // Sum amounts for used actions (fall back to 1 for actions without amount)
+                // Sum amounts for used/timed actions (timed counts as 1, used falls back to 1)
                 var usedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'used' &&
+                    return e && (e.clickType === 'used' || e.clickType === 'timed') &&
                            e.timestamp >= intervalStart && e.timestamp < intervalEnd;
                 });
                 var cravedInInterval = jsonObject.action.filter(function(e) {
@@ -272,7 +272,7 @@ var StatsDisplayModule = (function () {
                 });
 
                 var amountSum = usedInInterval.reduce(function(sum, e) {
-                    return sum + (e.amount || 1);
+                    return sum + (e.clickType === 'timed' ? 1 : (e.amount || 1));
                 }, 0);
 
                 valuesObject.used.values[i] = amountSum;
@@ -325,7 +325,7 @@ var StatsDisplayModule = (function () {
         // Calculate last period totals for comparison
         if (metric === 'usage') {
             valuesObject.used.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'used' &&
+                return e && (e.clickType === 'used' || e.clickType === 'timed') &&
                        e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
             }).length;
             valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
@@ -334,11 +334,11 @@ var StatsDisplayModule = (function () {
             }).length;
         } else if (metric === 'amount') {
             var lastPeriodUsed = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'used' &&
+                return e && (e.clickType === 'used' || e.clickType === 'timed') &&
                        e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
             });
             valuesObject.used.lastPeriod = lastPeriodUsed.reduce(function(sum, e) {
-                return sum + (e.amount || 1);
+                return sum + (e.clickType === 'timed' ? 1 : (e.amount || 1));
             }, 0);
             valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
                 return e && e.clickType === 'craved' &&

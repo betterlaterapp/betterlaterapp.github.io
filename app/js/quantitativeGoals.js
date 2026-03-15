@@ -172,7 +172,7 @@ var QuantitativeGoalsModule = (function() {
         var goalTitle = '<span class="goal-values-highlight">' +
                             '<span class="curve-background ' + ( isEqual ? 'equal' : curveClass) + '">' + 
                                 '<span class="goal-value-current">' + goal.currentAmount + '</span>' +
-                                // '<span class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">' + curveArrow + '</span>' +
+                                '<span style="" class="goal-curve-arrow ' + (isDoLess ? 'curve-power' : 'curve-sigmoid') + '">&nbsp;' + "⤵️" + '&nbsp;</span>' +
                                 '<span class="goal-value-target">' + goal.goalAmount + '</span>' +
                             '</span>' +
                         '</span> ' + unitLabel + '/' + periodLabel;
@@ -221,7 +221,7 @@ var QuantitativeGoalsModule = (function() {
                 '<div class="goal-summary-header">' +
                     '<span class="goal-days-left">' + daysRemaining.toFixed(1) + ' days left</span>' +
                 '</div>' +
-                '<div class="goal-summary-title">' + goalTitle + ' <i class="fas fa-chevron-down goal-expand-icon"></i></div>' +
+                '<div class="goal-summary-title"><span class="goal-title-text">' + goalTitle + '</span><i class="fas fa-chevron-down goal-expand-icon"></i></div>' +
                 '<div class="goal-summary-stats">' +
                     '<div class="goal-stat-item goal-stat-left">' +
                         '<span class="goal-type-badge ' + trackBadgeClass + '">' + trackBadgeText + '</span>' +
