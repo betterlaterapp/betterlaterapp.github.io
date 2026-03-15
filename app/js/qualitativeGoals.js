@@ -117,6 +117,7 @@ var QualitativeGoalsModule = (function() {
                     '<div class="mood-record-comment">' + GoalsModule.escapeHtml(record.comment || 'No comment') + '</div>' +
                     '<div class="mood-record-date">' + dateStr + '</div>' +
                 '</div>' +
+                '<button class="mood-record-delete-btn" data-timestamp="' + record.timestamp + '" data-goal-id="' + record.behavioralGoalId + '" title="Delete check-in"><i class="fas fa-times"></i></button>' +
             '</div>';
         });
 
@@ -140,22 +141,21 @@ var QualitativeGoalsModule = (function() {
         var moodSmileyPath = getMoodSmileyPath(avgMood);
 
         var html = '<div class="goal-accordion-item ' + colorClass + '" data-goal-id="' + goal.id + '" data-goal-type="qualitative">' +
+            '<button class="goal-delete-btn" data-goal-id="' + goal.id + '" title="Delete goal"><i class="fas fa-times"></i></button>' +
             '<div class="goal-summary">' +
                 '<div class="goal-summary-header">' +
                     '<span class="goal-type-badge badge-qualitative">Wellbeing</span>' +
                     '<span class="goal-days-left">' + daysRemaining.toFixed(1) + ' days left</span>' +
                 '</div>' +
-                '<div class="goal-summary-title">' + GoalsModule.escapeHtml(GoalsModule.truncateText(goal.tenetText, 100)) + '</div>' +
+                '<div class="goal-summary-title">' +
+                    '<span class="goal-checkin-count">' + moodRecords.length + '</span>' +
+                    '<span class="goal-title-text">' + GoalsModule.escapeHtml(GoalsModule.truncateText(goal.tenetText, 100)) + '</span>' +
+                    '<i class="fas fa-chevron-down goal-expand-icon"></i>' +
+                '</div>' +
                 '<div class="goal-summary-stats">' +
-                    '<div class="goal-stat-item">' +
-                        '<span class="goal-stat-value">' +
-                            (moodSmileyPath ? '<img class="mood-smiley-img" src="' + moodSmileyPath + '" alt="mood">' : '—') +
-                        '</span>' +
-                        '<span class="goal-stat-label">Avg Mood</span>' +
-                    '</div>' +
-                    '<div class="goal-stat-item">' +
-                        '<span class="goal-stat-value">' + moodRecords.length + '</span>' +
-                        '<span class="goal-stat-label">Check-ins</span>' +
+                    '<div class="goal-checkin-input-row">' +
+                        '<textarea class="goal-checkin-comment" placeholder="Add a note..." data-goal-id="' + goal.id + '"></textarea>' +
+                        (moodSmileyPath ? '<div style="display:flex;flex-direction:column"><h5>Avg<br/>Mood</h5><img class="mood-smiley-img" src="' + moodSmileyPath + '" alt="avg mood"></div>' : '<span class="goal-no-mood">—</span>') +
                     '</div>' +
                 '</div>' +
                 '<div class="goal-inline-checkin" data-goal-id="' + goal.id + '">' +
@@ -170,16 +170,15 @@ var QualitativeGoalsModule = (function() {
                         '<i class="fas fa-plus"></i> Check-in' +
                     '</button>' +
                 '</div>' +
-                '<i class="fas fa-chevron-down goal-expand-icon"></i>' +
+                '<div class="goal-progress-container">' +
+                    '<div class="goal-progress-text">' + progressPct + '% of time elapsed</div>' +
+                    '<div class="goal-progress-bar">' +
+                        '<div class="goal-progress-fill ' + (parseFloat(avgMood) >= 2.5 ? 'on-track' : 'behind') + '" style="width: ' + progressPct + '%"></div>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
             '<div class="goal-details">' +
                 '<div class="goal-details-content">' +
-                    '<div class="goal-progress-container">' +
-                        '<div class="goal-progress-bar">' +
-                            '<div class="goal-progress-fill ' + (parseFloat(avgMood) >= 2.5 ? 'on-track' : 'behind') + '" style="width: ' + progressPct + '%"></div>' +
-                        '</div>' +
-                        '<div class="goal-progress-text">' + progressPct + '% of time elapsed</div>' +
-                    '</div>' +
                     '<div class="goal-mood-records">' +
                         '<h5><i class="fas fa-history"></i> Recent Check-ins</h5>' +
                         renderMoodRecordsList(moodRecords.slice(0, 5)) +

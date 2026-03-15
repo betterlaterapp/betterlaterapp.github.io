@@ -632,17 +632,19 @@ $(document).ready(function () {
             WaitTimerModule.init(json);
         }
         
-        // Initialize Brief Stats bar
+        // Initialize Brief Stats bar before the storage block so that containers are
+        // visible when hideTimersOnLoad runs (it uses jQuery :visible for box sizing).
         if (typeof BriefStatsModule !== 'undefined') {
             BriefStatsModule.init(json);
         }
+
         /* CALL INITIAL STATE OF APP */
         //If json action table doesn't exist, create it
         if (StorageModule.hasStorageData()) {
             setOptionsFromStorage();
             setStatsFromRecords();
 
-            //set stats	
+            //set stats
             //set total clicks for each button
             $("#use-total").html(json.statistics.use.clickCounter);
             $("#crave-total").html(json.statistics.use.craveCounter);
@@ -677,7 +679,13 @@ $(document).ready(function () {
             TabsModule.returnToActiveTab();
             TimersModule.hideTimersOnLoad(json);
 
-            //after all is said and done 
+            // For doMore mode: override the smoke countup that hideTimersOnLoad just
+            // started with the "Do Before" countdown (or ASAP if interval elapsed).
+            if (typeof BriefStatsModule !== 'undefined') {
+                BriefStatsModule.applyDoBeforeTimer();
+            }
+
+            //after all is said and done
             UIModule.toggleActiveStatGroups(json);
             UIModule.hideInactiveStatistics(json);
 

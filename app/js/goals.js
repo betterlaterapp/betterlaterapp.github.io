@@ -166,6 +166,29 @@ var GoalsModule = (function() {
     }
 
     /**
+     * Capture which goal accordion items are currently expanded
+     */
+    function getExpandedGoalIds() {
+        var ids = [];
+        $('.goal-accordion-item.expanded').each(function() {
+            ids.push($(this).data('goal-id'));
+        });
+        return ids;
+    }
+
+    /**
+     * Restore expanded state after re-render, and re-init calendars
+     */
+    function restoreExpandedGoals(expandedIds) {
+        expandedIds.forEach(function(id) {
+            $('.goal-accordion-item[data-goal-id="' + id + '"]').addClass('expanded');
+        });
+        if (expandedIds.length > 0) {
+            GoalVisualizationModule.initMilestoneCalendars();
+        }
+    }
+
+    /**
      * Render unified goals accordion (all goal types together)
      */
     function renderBehavioralGoalsList() {
@@ -201,7 +224,7 @@ var GoalsModule = (function() {
     function setupUnifiedAccordionListeners() {
         // Toggle accordion on summary click (except on interactive elements)
         $(document).off('click', '.goal-summary').on('click', '.goal-summary', function(e) {
-            if ($(e.target).closest('.goal-inline-checkin').length) {
+            if ($(e.target).closest('.goal-inline-checkin').length || $(e.target).is('input')) {
                 return;
             }
             var $item = $(this).closest('.goal-accordion-item');
@@ -227,11 +250,16 @@ var GoalsModule = (function() {
             var goalId = $(this).data('goal-id');
             var container = $(this).closest('.goal-inline-checkin');
             var selectedMood = container.find('.inline-smiley.selected').data('mood');
+            var comment = $(this).closest('.goal-summary').find('.goal-checkin-comment').val() || '';
 
             if (selectedMood === undefined) selectedMood = 2;
 
-            QualitativeGoalsModule.createMoodRecordForBehavioralGoal(goalId, selectedMood, '');
+            var expandedIds = getExpandedGoalIds();
+            if (expandedIds.indexOf(goalId) === -1) expandedIds.push(goalId);
+
+            QualitativeGoalsModule.createMoodRecordForBehavioralGoal(goalId, selectedMood, comment);
             renderBehavioralGoalsList();
+            restoreExpandedGoals(expandedIds);
             NotificationsModule.createNotification('Check-in added!', null, { type: 'mood_added' });
         });
 
@@ -245,6 +273,30 @@ var GoalsModule = (function() {
                 renderBehavioralGoalsList();
                 NotificationsModule.createNotification('Goal deleted', null, { type: 'goal_deleted' });
             }
+        });
+
+        // Delete check-in (mood record) button
+        $(document).off('click', '.mood-record-delete-btn').on('click', '.mood-record-delete-btn', function(e) {
+            e.stopPropagation();
+            var timestamp = $(this).data('timestamp').toString();
+            var goalId = $(this).data('goal-id');
+            var jsonObject = StorageModule.retrieveStorageObject();
+
+            jsonObject.action = jsonObject.action.filter(function(a) {
+                return !(a && a.clickType === 'mood' && a.timestamp === timestamp);
+            });
+
+            if (jsonObject.behavioralGoals) {
+                var goal = jsonObject.behavioralGoals.find(function(g) { return g.id === goalId; });
+                if (goal && goal.moodRecords) {
+                    goal.moodRecords = goal.moodRecords.filter(function(t) { return t !== timestamp; });
+                }
+            }
+
+            var expandedIds = getExpandedGoalIds();
+            StorageModule.setStorageObject(jsonObject);
+            renderBehavioralGoalsList();
+            restoreExpandedGoals(expandedIds);
         });
 
         // Day summary click - filter to show that day's milestones

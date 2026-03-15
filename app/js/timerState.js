@@ -452,15 +452,134 @@ var TimerStateManager = (function () {
     }
 
     /**
-     * Stop a running timer interval without removing the display
+     * Stop a running timer interval
      * @param {string} timerType - 'smoke', 'bought', or 'wait'
      */
-    function stop(timerType) {
+    function stopTimer(timerType) {
         var timer = timers[timerType];
-        if (timer && timer.intervalRef) {
+        if (!timer) return;
+        if (timer.intervalRef) {
             clearInterval(timer.intervalRef);
             timer.intervalRef = null;
         }
+    }
+
+    /**
+     * Start the "Do Before" countdown timer on the smoke-timer element (doMore mode).
+     * If totalSeconds <= 0, shows ASAP text instead of the timer.
+     * Stops any existing smoke timer interval before starting.
+     * @param {number} totalSeconds - Seconds until the next expected action (may be negative)
+     */
+    function startDoBeforeCountdown(totalSeconds) {
+        var timer = timers.smoke;
+        var timerId = timer.id;           // 'smoke-timer'
+        var timerSection = timer.selector; // '.stat-last-done'
+
+        // Stop any existing smoke timer interval
+        stopTimer('smoke');
+
+        if (totalSeconds <= 0) {
+            // Interval already elapsed — show ASAP
+            $(timerSection + ' .timer-recepticle').hide();
+            $(timerSection + ' .do-before-asap').removeClass('d-none');
+            return;
+        }
+
+        // Show countdown timer, hide ASAP
+        $(timerSection + ' .timer-recepticle').show();
+        $(timerSection + ' .do-before-asap').addClass('d-none');
+
+        var timeUnits = calculateTimeUnits(totalSeconds);
+        var days = timeUnits.days;
+        var hours = timeUnits.hours;
+        var minutes = timeUnits.minutes;
+        var seconds = timeUnits.seconds;
+
+        // Initialize display
+        updateTimerDisplay(timerSection, seconds, minutes, hours, days);
+
+        // Show all boxes then hide leading zeros
+        $(timerSection + ' .boxes div').show();
+        hideZeroValueTimerBoxes(timerId);
+        TimersModule.adjustFibonacciTimerToBoxes(timerId);
+
+        $('#' + timerId).addClass('counting').show();
+
+        // Countdown interval
+        timer.intervalRef = setInterval(function () {
+            totalSeconds--;
+            seconds--;
+
+            var secDisplay = seconds >= 10 ? String(seconds) : '0' + seconds;
+            $(timerSection + ' .secondsSinceLastClick:first-child').html(secDisplay);
+
+            // Seconds rollover
+            if (seconds < 0) {
+                if (minutes > 0 || hours > 0 || days > 0) {
+                    seconds = 59;
+                    minutes--;
+
+                    // Collapse boxes when down to the last minute
+                    if (minutes === 0 && hours === 0 && days === 0) {
+                        if ($(timerSection + ' .boxes div:visible').length > 1) {
+                            $($(timerSection + ' .boxes div:visible')[0]).toggle();
+                            TimersModule.adjustFibonacciTimerToBoxes(timerId);
+                        }
+                    }
+
+                    $(timerSection + ' .minutesSinceLastClick:first-child').html(minutes);
+                    $(timerSection + ' .secondsSinceLastClick:first-child').html(59);
+                } else {
+                    // Timer expired — show ASAP
+                    clearInterval(timer.intervalRef);
+                    timer.intervalRef = null;
+                    $(timerSection + ' .timer-recepticle').hide();
+                    $(timerSection + ' .do-before-asap').removeClass('d-none');
+                    return;
+                }
+            }
+
+            // Minutes rollover
+            if (minutes < 0) {
+                if (hours > 0 || days > 0) {
+                    minutes = 59;
+                    hours--;
+
+                    if (hours === 0 && days === 0) {
+                        if ($(timerSection + ' .boxes div:visible').length > 1) {
+                            $($(timerSection + ' .boxes div:visible')[0]).toggle();
+                            TimersModule.adjustFibonacciTimerToBoxes(timerId);
+                        }
+                    }
+
+                    $(timerSection + ' .minutesSinceLastClick:first-child').html(minutes);
+                    $(timerSection + ' .hoursSinceLastClick:first-child').html(hours);
+                }
+            }
+
+            // Hours rollover
+            if (hours < 0) {
+                if (days > 0) {
+                    hours = 23;
+                    days--;
+
+                    if (days === 0) {
+                        setTimeout(function () {
+                            $(timerSection + ' .boxes div:first').hide();
+                            TimersModule.adjustFibonacciTimerToBoxes(timerId);
+                        }, 0);
+                    }
+
+                    if ($(timerSection + ' .boxes div:visible').length === 3) {
+                        var numHidden = $(timerSection + ' .boxes div:hidden').length;
+                        $($(timerSection + ' .boxes div:hidden')[numHidden - 1]).toggle();
+                    }
+
+                    $(timerSection + ' .hoursSinceLastClick:first-child').html(hours);
+                    $(timerSection + ' .daysSinceLastClick:first-child').html(days);
+                }
+            }
+        }, 1000);
     }
 
     // Public API
@@ -473,7 +592,9 @@ var TimerStateManager = (function () {
         adjustTimerBoxVisibility: adjustTimerBoxVisibility,
         hideZeroValueTimerBoxes: hideZeroValueTimerBoxes,
         createCountdownInterval: createCountdownInterval,
-        createCountupInterval: createCountupInterval
+        createCountupInterval: createCountupInterval,
+        stopTimer: stopTimer,
+        startDoBeforeCountdown: startDoBeforeCountdown
     };
 })();
 

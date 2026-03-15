@@ -1404,6 +1404,39 @@ var StatsCalculationsModule = (function () {
         };
     }
 
+    /**
+     * Calculate the average time gap between consecutive actions (all-time).
+     * @param {Array} actions - Array of actions with a timestamp field
+     * @returns {number} - Average gap in seconds, or 0 if fewer than 2 actions
+     */
+    function getAverageTimeBetweenActions(actions) {
+        if (!actions || actions.length < 2) return 0;
+        var sorted = actions.slice().sort(function (a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        });
+        var first = parseInt(sorted[0].timestamp);
+        var last = parseInt(sorted[sorted.length - 1].timestamp);
+        return Math.round((last - first) / (sorted.length - 1));
+    }
+
+    /**
+     * Calculate the longest single gap between consecutive actions.
+     * @param {Array} actions - Array of actions with a timestamp field
+     * @returns {number} - Longest gap in seconds, or 0 if fewer than 2 actions
+     */
+    function getBestTimeBetweenActions(actions) {
+        if (!actions || actions.length < 2) return 0;
+        var sorted = actions.slice().sort(function (a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        });
+        var best = 0;
+        for (var i = 1; i < sorted.length; i++) {
+            var gap = parseInt(sorted[i].timestamp) - parseInt(sorted[i - 1].timestamp);
+            if (gap > best) best = gap;
+        }
+        return best;
+    }
+
     // Public API
     return {
         // Legacy stats functions
@@ -1443,7 +1476,11 @@ var StatsCalculationsModule = (function () {
         formatMilestoneClockTime: formatMilestoneClockTime,
         getAllottedPerPeriod: getAllottedPerPeriod,
         getTimeAllotmentStatus: getTimeAllotmentStatus,
-        getActualCountSinceGoalStart: getActualCountSinceGoalStart
+        getActualCountSinceGoalStart: getActualCountSinceGoalStart,
+
+        // Time-between helpers
+        getAverageTimeBetweenActions: getAverageTimeBetweenActions,
+        getBestTimeBetweenActions: getBestTimeBetweenActions
     };
 })();
 
