@@ -155,7 +155,7 @@ var QualitativeGoalsModule = (function() {
                 '<div class="goal-summary-stats">' +
                     '<div class="goal-checkin-input-row">' +
                         '<textarea class="goal-checkin-comment" placeholder="Add a note..." data-goal-id="' + goal.id + '"></textarea>' +
-                        (moodSmileyPath ? '<img class="mood-smiley-img" src="' + moodSmileyPath + '" alt="avg mood">' : '<span class="goal-no-mood">—</span>') +
+                        (moodSmileyPath ? '<div style="display:flex;flex-direction:column"><h5>Avg<br/>Mood</h5><img class="mood-smiley-img" src="' + moodSmileyPath + '" alt="avg mood"></div>' : '<span class="goal-no-mood">—</span>') +
                     '</div>' +
                 '</div>' +
                 '<div class="goal-inline-checkin" data-goal-id="' + goal.id + '">' +
