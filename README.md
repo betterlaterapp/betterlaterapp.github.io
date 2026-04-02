@@ -1,17 +1,16 @@
 # Better Later
-____________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________________
+____________________[`[#  Use the App  #]`](/app/)____________________ 
 
-[`[#  Use the App  #]`](/app/) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [`[#  Better Later Community  #]`](https://ko-fi.com/betterlater)
-
-____________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________________
+_________[`[#  Better Later Community  #]`](https://ko-fi.com/betterlater)_________
 
 
-The easy-going habit tracking app. Study your own subconscious behaviors to incrementally achieve your goals — self-guided, non-judgmental, and verifiably private. Better Later helps you recognize your incremental successes, make realistic goals based on real data about your habits, and see your progress visually with charts, graphs, and statistics
 
-- **Incremental approach** — Set your own pace to cut back using hard data, not willpower alone
-- **Non-judgmental** — You could be tracking anything; the app makes no assumptions about your choices
-- **Discreet** — No account, no download required. Visit the site and add to homescreen (then it works offline too)
-- **Data-driven** — Generate visualizations to make informed decisions and break out of autopilot
+The easy-going habit tracking app. Study your own subconscious behaviors to incrementally achieve your goals - self-guided, non-judgmental, and verifiably private. Better Later helps you recognize your incremental successes, make realistic goals based on real data about your habits, and see your progress visually with charts, graphs, and statistics
+
+- **Incremental approach** - Set your own pace to cut back using hard data, not willpower alone
+- **Non-judgmental** - You could be tracking anything; the app makes no assumptions about your choices
+- **Discreet** - No account, no download required. Visit the site and add to homescreen (then it works offline too)
+- **Data-driven** - Generate visualizations to make informed decisions and break out of autopilot
 
 This project is open source and licensed under [GNU GPL v3.0](https://github.com/betterlaterapp/betterlaterapp.github.io?tab=GPL-3.0-1-ov-file).
 
@@ -76,7 +75,7 @@ Service workers (the technology that enables offline use) can technically update
 
 **Understanding local storage vs centralized storage**
 
-- **Better Later uses localStorage to store the data you produce with this app**, localStorage is sandboxed—only, which means only `betterlaterapp.github.io` can read data stored by `betterlaterapp.github.io`. No other website can access it. This is enforced by your browser's [Same-Origin Policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy). 
+- **Better Later uses localStorage to store the data you produce with this app**, localStorage is sandboxed-only, which means only `betterlaterapp.github.io` can read data stored by `betterlaterapp.github.io`. No other website can access it. This is enforced by your browser's [Same-Origin Policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy). 
 
 **What about browser-level tracking?**
 
@@ -87,5 +86,3 @@ Presumably, some players (mainly google chrome, but also possibly malicious brow
 - **Third-party tracking cookies** (used by Facebook, Google, ad networks) work by embedding their code on many websites. When you visit Site A and Site B, both sites load Facebook's tracking pixel, allowing Facebook to connect your activity across both sites. 
 
 - **We load zero third-party scripts.** No Facebook SDK, no Google Analytics, no advertising pixels. You can verify this in Developer Tools → Network tab: all requests go only to `betterlaterapp.github.io` or `github.io`.
-
-
