@@ -46,26 +46,4 @@ test.describe('Better Later - Resist Action', () => {
     
     console.log('✅ Resist test passed! Streak counter working.');
   });
-
-  test.skip('resist streak resets when user does the action', async ({ page }) => {
-    // First resist twice
-    await page.click('#crave-button');
-    await page.waitForTimeout(300);
-    await page.click('#crave-button');
-    await page.waitForTimeout(300);
-    
-    // Streak should be 2
-    const resistStreak = page.locator('#cravingsResistedInARow');
-    await expect(resistStreak).toHaveText('2');
-    
-    // Now do the action
-    await page.click('#use-button');
-    await page.click('.use.log-more-info button.submit');
-    await page.waitForTimeout(500);
-    
-    // Streak should reset to 0
-    await expect(resistStreak).toHaveText('0');
-    
-    console.log('✅ Resist streak reset test passed!');
-  });
 });

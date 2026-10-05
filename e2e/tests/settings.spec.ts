@@ -36,15 +36,36 @@ test.describe('Better Later - Settings & Preferences', () => {
     console.log('✅ Baseline questionnaire visibility test passed!');
   });
 
-  test.skip('complete baseline questionnaire enables app', async ({ page }) => {
+  test('complete baseline questionnaire enables app', async ({ page }) => {
     await setupNewUser(page);
     await page.goto('/app/');
     await page.waitForLoadState('networkidle');
-    
-    // Answer questions (simplified flow)
-    // This will depend on actual questionnaire implementation
-    
-    console.log('⚠️  Baseline completion test requires actual questionnaire flow');
+
+    // 1. Specific habit: yes. 2. Do it more. 3. Times done matters
+    await page.locator('.baseline-questionnaire label:has(.serious-user)').click();
+    await page.locator('.baseline-questionnaire label:has(.doMore)').click();
+    await page.locator('.importance-option:has(.valuesTimesDone)').click();
+
+    // The app adapts: "Did it" is available and wording is for doing more
+    await expect(page.locator('#use-button')).toBeVisible();
+    await expect(page.locator('body')).toHaveClass(/do-more/);
+    const baseline = await page.evaluate(() => JSON.parse(localStorage.getItem('esCrave') || '{}').option.baseline);
+    expect(baseline).toMatchObject({ specificSubject: true, doMore: true, doLess: false, valuesTimesDone: true, userSubmitted: true });
+
+    // 4. Starting from zero times per week
+    await expect(page.locator('.current-status-question')).toBeVisible();
+    await expect(page.locator('#current-status-type-select')).toHaveValue('usage');
+    await page.fill('.baseline-amountDonePerWeek', '0');
+    await page.click('.baseline-status-save');
+
+    // 5. A realistic goal for doing more is one step up (at least 2 a week) over two weeks
+    await expect(page.locator('.make-goal-question')).toBeVisible();
+    await page.click('.baseline-make-goal-btn.quantifiable-btn');
+    await expect(page.locator('#goals-content')).toBeVisible();
+    const goals = await page.evaluate(() => JSON.parse(localStorage.getItem('esCrave') || '{}').behavioralGoals);
+    expect(goals).toHaveLength(1);
+    expect(goals[0]).toMatchObject({ unit: 'times', currentAmount: 0, goalAmount: 2, measurementTimeline: 7, completionTimeline: 14 });
+    await expect(page.locator('.goal-accordion-item')).toHaveCount(1);
   });
 
   test('navigate to settings tab', async ({ page }) => {
