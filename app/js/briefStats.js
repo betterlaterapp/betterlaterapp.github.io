@@ -12,7 +12,6 @@
  */
 var BriefStatsModule = (function () {
     var json;
-    var _doBeforeInterval = null; // Countdown interval for doMore "Do Before" timer
     
     /**
      * Initialize the module with app state
@@ -83,20 +82,9 @@ var BriefStatsModule = (function () {
             return;
         }
         
-        // REQUIREMENT: doMore + usage/time focus needs ≥2 actions to compute average
-        // The "Do Before" countdown is meaningless without at least one interval to average
         var focus = determineFocus(baseline);
         var doLess = isDoLess(baseline);
         var doMore = isDoMore(baseline);
-        if (doMore && (focus === 'timesDone' || focus === 'timeSpent')) {
-            var avgSecs = getAverageSecsBetweenActions(actions);
-            if (avgSecs === null) {
-                console.log('doMore: not enough data to compute average interval - hiding brief stats');
-                console.groupEnd();
-                hide();
-                return;
-            }
-        }
 
         // Log conditions for debugging
         console.log('CONDITIONS:', {
@@ -119,7 +107,7 @@ var BriefStatsModule = (function () {
         $('.stat-brief').addClass('d-none');
         
         // Stat 1: Fibonacci timer (last done OR last spent based on focus)
-        var fibonacciTimerVisible = updateFibonacciTimerStat(baseline, actions);
+        var fibonacciTimerVisible = updateFibonacciTimerStat(jsonObject, baseline, actions);
         if (fibonacciTimerVisible) visibleStats.push('fibonacci-timer');
         console.log('Stat 1 (Fibonacci):', fibonacciTimerVisible ? 'VISIBLE' : 'hidden');
         
@@ -287,114 +275,6 @@ var BriefStatsModule = (function () {
     // ============================================
     
     // ============================================
-    // doMore: Do Before Countdown Helpers
-    // ============================================
-
-    function clearDoBeforeInterval() {
-        if (_doBeforeInterval) {
-            clearInterval(_doBeforeInterval);
-            _doBeforeInterval = null;
-        }
-    }
-
-    /**
-     * Average seconds between 'used'/'timed' actions.
-     * Returns null if fewer than 2 actions exist.
-     */
-    function getAverageSecsBetweenActions(actions) {
-        var usedActions = actions.filter(function(a) {
-            return a && (a.clickType === 'used' || a.clickType === 'timed');
-        }).sort(function(a, b) {
-            return parseInt(a.timestamp) - parseInt(b.timestamp);
-        });
-        if (usedActions.length < 2) return null;
-        var totalGap = 0;
-        for (var i = 1; i < usedActions.length; i++) {
-            totalGap += parseInt(usedActions[i].timestamp) - parseInt(usedActions[i - 1].timestamp);
-        }
-        return Math.round(totalGap / (usedActions.length - 1));
-    }
-
-    /**
-     * Unix timestamp (seconds) of the "do before" deadline.
-     * = lastActionTimestamp + avgTimeBetweenActions
-     * Returns null if not enough data.
-     */
-    function getDoBeforeTimestampSec(actions) {
-        var avgSecs = getAverageSecsBetweenActions(actions);
-        if (avgSecs === null) return null;
-        var usedActions = actions.filter(function(a) {
-            return a && (a.clickType === 'used' || a.clickType === 'timed');
-        }).sort(function(a, b) {
-            return parseInt(a.timestamp) - parseInt(b.timestamp);
-        });
-        return parseInt(usedActions[usedActions.length - 1].timestamp) + avgSecs;
-    }
-
-    /** Write countdown values into the smoke-timer DOM */
-    function updateDoBeforeDisplay(totalSeconds) {
-        var days = Math.floor(totalSeconds / 86400);
-        var hours = Math.floor((totalSeconds % 86400) / 3600);
-        var minutes = Math.floor((totalSeconds % 3600) / 60);
-        var seconds = totalSeconds % 60;
-
-        var $boxes = $('#smoke-timer .boxes div');
-        $boxes.eq(0).find('.daysSinceLastClick').text(days);
-        $boxes.eq(1).find('.hoursSinceLastClick').text(hours);
-        $boxes.eq(2).find('.minutesSinceLastClick').text(minutes);
-        $boxes.eq(3).find('.secondsSinceLastClick').text(seconds < 10 ? '0' + seconds : seconds);
-
-        // Hide leading-zero boxes
-        if (days > 0) {
-            $boxes.show();
-        } else if (hours > 0) {
-            $boxes.eq(0).hide(); $boxes.eq(1).show(); $boxes.eq(2).show(); $boxes.eq(3).show();
-        } else if (minutes > 0) {
-            $boxes.eq(0).hide(); $boxes.eq(1).hide(); $boxes.eq(2).show(); $boxes.eq(3).show();
-        } else {
-            $boxes.eq(0).hide(); $boxes.eq(1).hide(); $boxes.eq(2).hide(); $boxes.eq(3).show();
-        }
-        if (typeof TimersModule !== 'undefined') {
-            TimersModule.adjustFibonacciTimerToBoxes('smoke-timer');
-        }
-    }
-
-    /**
-     * Set up the smoke timer as a "Do Before" countdown for doMore.
-     * Returns false (hides stat) if there is not enough data to compute average.
-     */
-    function updateDoBeforeStat(actions) {
-        var doBeforeTimestampSec = getDoBeforeTimestampSec(actions);
-        if (doBeforeTimestampSec === null) return false; // need ≥2 actions
-
-        // Stop the existing count-up interval
-        if (typeof TimerStateManager !== 'undefined' && TimerStateManager.stop) {
-            TimerStateManager.stop('smoke');
-        }
-        clearDoBeforeInterval();
-
-        var $stat = $('.stat-brief.stat-last-done');
-        $stat.removeClass('d-none');
-        $('.stat-brief.stat-last-spent').addClass('d-none');
-        $stat.find('.stat-brief-label').text('Do before');
-
-        // Show the fibonacci timer element (it may be hidden)
-        $('#smoke-timer').show();
-
-        var nowSec = function() { return Math.round(Date.now() / 1000); };
-        var remaining = Math.max(0, doBeforeTimestampSec - nowSec());
-        updateDoBeforeDisplay(remaining);
-
-        _doBeforeInterval = setInterval(function() {
-            remaining = Math.max(0, doBeforeTimestampSec - nowSec());
-            updateDoBeforeDisplay(remaining);
-            if (remaining <= 0) clearDoBeforeInterval();
-        }, 1000);
-
-        return true;
-    }
-
-    // ============================================
     // doLess: Wait vs Best Helpers
     // ============================================
 
@@ -440,13 +320,13 @@ var BriefStatsModule = (function () {
      * @param {Array} actions - Array of actions
      * @returns {boolean} - Whether a fibonacci timer is visible
      */
-    function updateFibonacciTimerStat(baseline, actions) {
+    function updateFibonacciTimerStat(jsonObject, baseline, actions) {
         var focus = determineFocus(baseline);
         var doMore = isDoMore(baseline);
         
         if (focus === 'timesDone' || focus === 'timeSpent') {
             if (doMore) {
-                return updateDoBeforeStat(actions);
+                return updateDoBeforeStat(jsonObject);
             }
             return updateLastDoneStat();
         } else if (focus === 'moneySpent') {
@@ -460,28 +340,23 @@ var BriefStatsModule = (function () {
     }
 
     /**
-     * Calculate seconds until the next expected "did it" action (doMore mode).
-     * Uses the interval between the last two "did it" actions projected forward.
-     * Returns null if fewer than 2 "did it" actions exist.
-     * Returns a negative value if the projected time has already passed.
-     * @param {Array} actions - Array of actions
+     * Seconds until the next session is due to keep a steady habit (doMore mode).
+     * Entries close together count as one session, so logging pushups then
+     * situps doesn't shrink the deadline to seconds. The pace comes from the
+     * active goal's current step, else the user's recent rhythm, else baseline.
+     * Returns null if there's nothing to go on; negative if already overdue.
+     * @param {Object} jsonObject - Storage object
      * @returns {number|null}
      */
-    function getDoBeforeSeconds(actions) {
-        var didItActions = actions.filter(function (a) {
-            return a && (a.clickType === 'used' || a.clickType === 'timed');
-        }).sort(function (a, b) {
-            return parseInt(b.timestamp) - parseInt(a.timestamp); // descending
-        });
-
-        if (didItActions.length < 2) return null;
-
-        var lastStamp = parseInt(didItActions[0].timestamp);
-        var secondToLastStamp = parseInt(didItActions[1].timestamp);
-        var interval = lastStamp - secondToLastStamp;
+    function getDoBeforeSeconds(jsonObject) {
+        var Calc = StatsCalculationsModule;
+        var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
+        var goals = jsonObject.behavioralGoals || [];
+        var goal = Calc.getActiveGoalForUnit(goals, 'times') || Calc.getActiveGoalForUnit(goals, 'minutes');
         var nowSeconds = Math.floor(Date.now() / 1000);
 
-        return (lastStamp + interval) - nowSeconds;
+        var doBefore = Calc.getDoBeforeTimestamp(jsonObject.action || [], baseline, goal, nowSeconds);
+        return doBefore === null ? null : doBefore - nowSeconds;
     }
 
     /**
@@ -491,12 +366,12 @@ var BriefStatsModule = (function () {
      * @param {Array} actions - Array of actions
      * @returns {boolean} - Always true
      */
-    function updateDoBeforeStat(actions) {
+    function updateDoBeforeStat(jsonObject) {
         var $stat = $('.stat-brief.stat-last-done');
         $stat.removeClass('d-none');
         $('.stat-brief.stat-last-spent').addClass('d-none');
 
-        var doBeforeSeconds = getDoBeforeSeconds(actions);
+        var doBeforeSeconds = getDoBeforeSeconds(jsonObject);
 
         if (doBeforeSeconds === null) {
             // Not enough actions yet — show normal "Last done" countup
@@ -627,92 +502,31 @@ var BriefStatsModule = (function () {
      */
     function getNextScheduledMilestone(goal, actions, doLess) {
         if (!goal) return null;
-        
-        var Calc = StatsCalculationsModule;
-        // Use correct curve type: power for "do less", sigmoid for "do more"
-        var curveType = doLess ? 'power' : 'sigmoid';
-        var schedule = Calc.calculateMilestoneSchedule(goal, { curveType: curveType });
-        if (!schedule || schedule.length === 0) return null;
-        
-        var now = Date.now();
-        var goalStartMs = goal.createdAt;
-        var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
-        var goalStartSec = Math.floor(goalStartMs / 1000);
-        
-        // Get relevant actions
-        var relevantActions = actions.filter(function(a) {
-            if (!a || parseInt(a.timestamp) < goalStartSec) return false;
-            if (goal.unit === 'times') {
-                return a.clickType === 'used' || a.clickType === 'timed';
-            }
-            return false;
-        });
-        relevantActions.sort(function(a, b) {
-            return parseInt(a.timestamp) - parseInt(b.timestamp);
-        });
-        
-        // Process milestones with action awareness (same logic as behavioralGoals.js)
-        var totalMilestones = Calc.calculateTotalMilestones(goal);
-        var actionCount = Calc.getActualCountSinceGoalStart(goal, actions, goalStartSec);
-        
-        // Count milestones that have passed (timestamp < now)
-        var milestonesPassedCount = 0;
-        for (var i = 0; i < schedule.length; i++) {
-            if (schedule[i].timestamp <= now) {
-                milestonesPassedCount++;
-            }
+
+        var result = GoalMilestonesModule.generateScheduleMilestones(goal, actions, doLess);
+        if (result.originalTotal === 0) return null;
+
+        if (!result.next) {
+            return { complete: true, totalMilestones: result.originalTotal, actualCount: result.actionUnits };
         }
-        
-        // Calculate track status based on condition
-        // DO LESS: behind = MORE actions than milestones passed
-        // DO MORE: behind = FEWER actions than milestones passed
-        var trackDiff;
-        var trackStatus;
-        if (doLess) {
-            trackDiff = actionCount - milestonesPassedCount;
-            if (trackDiff > 0) {
-                trackStatus = { status: 'behind', count: trackDiff };
-            } else if (trackDiff < 0) {
-                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
-            } else {
-                trackStatus = { status: 'on-track', count: 0 };
-            }
-        } else {
-            trackDiff = milestonesPassedCount - actionCount;
-            if (trackDiff > 0) {
-                trackStatus = { status: 'behind', count: trackDiff };
-            } else if (trackDiff < 0) {
-                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
-            } else {
-                trackStatus = { status: 'on-track', count: 0 };
-            }
-        }
-        
-        // Find first upcoming milestone
-        for (var i = 0; i < schedule.length; i++) {
-            var m = schedule[i];
-            if (m.timestamp > now) {
-                return {
-                    type: doLess ? 'waitUntil' : 'doItBy',
-                    timestamp: m.timestamp,
-                    actualCount: actionCount,
-                    milestonesPassedCount: milestonesPassedCount,
-                    totalMilestones: totalMilestones,
-                    trackStatus: trackStatus.status,
-                    onTrack: trackStatus.status === 'on-track' || trackStatus.status === 'ahead',
-                    isAhead: trackStatus.status === 'ahead',
-                    milestoneIndex: m.index
-                };
-            }
-        }
-        
-        // All milestones passed
-        return { complete: true, totalMilestones: totalMilestones, actualCount: actionCount };
+
+        return {
+            type: doLess ? 'waitUntil' : 'doItBy',
+            timestamp: result.next.timestamp,
+            availableNow: result.next.availableNow,
+            actualCount: result.actionUnits,
+            milestonesPassedCount: result.passedCount,
+            totalMilestones: result.originalTotal,
+            trackStatus: result.track.status,
+            onTrack: result.track.status !== 'behind',
+            isAhead: result.track.status === 'ahead',
+            milestoneIndex: result.next.index
+        };
     }
-    
+
     /**
      * Get stat config for milestone (Wait until / Do it by)
-     * @param {Object} milestone - Milestone data from calculateNextMilestone
+     * @param {Object} milestone - Milestone data from getNextScheduledMilestone
      * @param {boolean} doLess - Whether this is a "do less" habit
      * @returns {Object} - Stat configuration
      */
@@ -725,22 +539,13 @@ var BriefStatsModule = (function () {
             milestoneInfo = ' (' + milestone.milestoneIndex + '/' + milestone.totalMilestones + ')';
         }
         
-        console.log('[BriefStats] Milestone config:', {
-            type: milestone.type,
-            timestamp: new Date(milestone.timestamp).toLocaleString(),
-            onTrack: milestone.onTrack,
-            actualCount: milestone.actualCount,
-            targetAmount: milestone.targetAmount,
-            catchUp: milestone.catchUp || false
-        });
-        
         if (milestone.type === 'waitUntil') {
             return {
                 type: 'milestone',
                 subtype: 'waitUntil',
-                label: 'Wait until',
-                value: Calc.formatMilestoneClockTime(milestone.timestamp),
-                countdown: Calc.formatMilestoneTime(milestone.timestamp),
+                label: milestone.availableNow ? 'Allowed' : 'Wait until',
+                value: milestone.availableNow ? 'Now' : Calc.formatMilestoneClockTime(milestone.timestamp),
+                countdown: milestone.availableNow ? '' : Calc.formatMilestoneTime(milestone.timestamp),
                 format: 'datetime',
                 onTrack: milestone.onTrack,
                 isAhead: milestone.isAhead,
@@ -819,6 +624,18 @@ var BriefStatsModule = (function () {
     }
     
     /**
+     * One synthetic "used" action per session, so period counts and averages
+     * count sessions rather than every entry logged during a workout.
+     * @param {Array} actions - Array of actions
+     * @returns {Array}
+     */
+    function toSessionActions(actions) {
+        return StatsCalculationsModule.groupIntoSessions(actions).map(function(session) {
+            return { clickType: 'used', timestamp: String(session.start) };
+        });
+    }
+
+    /**
      * Get comparison stat for timesDone focus
      */
     function getTimesDoneComparisonStat(baseline, actions, doLess, doMore, timeline) {
@@ -845,24 +662,24 @@ var BriefStatsModule = (function () {
             
         } else if (doMore) {
             if (hasBaseline) {
-                // done today vs baseline done / day
-                var current = Calc.getCountForPeriod(actions, 'day');
-                var baselinePerDay = Calc.baselineToPerDay(baseline.timesDone, timeline);
-                console.log('[BriefStats] → doMore + hasBaseline: Today vs baseline', { current, baselinePerDay });
+                // sessions this day/week/month vs baseline for the same period
+                // (comparing per day would round a 3/week baseline down to 0)
+                var current = Calc.getCountForPeriod(toSessionActions(actions), timeline);
                 return {
                     type: 'statVsBest',
                     statLabel: 'Done vs start',
-                    currLabel: 'Today',
+                    currLabel: { day: 'Today', week: 'This week', month: 'This month' }[timeline] || 'This week',
                     vsLabel: 'Base',
                     current: current,
-                    comparison: Math.round(baselinePerDay),
+                    comparison: parseFloat(baseline.timesDone) || 0,
                     format: 'number',
                     doLess: !doMore
                 };
             } else {
                 // times done today vs average done / day
-                var current = Calc.getCountForPeriod(actions, 'day');
-                var avgPerDay = Calc.getAverageCountPerDay(actions);
+                var sessionActions = toSessionActions(actions);
+                var current = Calc.getCountForPeriod(sessionActions, 'day');
+                var avgPerDay = Calc.getAverageCountPerDay(sessionActions);
                 console.log('[BriefStats] → doMore + noBaseline: Today vs avg', { current, avgPerDay });
                 return {
                     type: 'statVsAvg',
@@ -1241,7 +1058,7 @@ var BriefStatsModule = (function () {
      * Override the smoke countup timer with the "Do Before" countdown for doMore users.
      * Called in app.js immediately after TimersModule.hideTimersOnLoad so the countdown
      * replaces the countup that hideTimersOnLoad just started.
-     * No-op for non-doMore users or when fewer than 2 "did it" actions exist.
+     * No-op for non-doMore users or when there's no pace to go on yet.
      */
     function applyDoBeforeTimer() {
         var jsonObject = StorageModule.retrieveStorageObject();
@@ -1254,8 +1071,8 @@ var BriefStatsModule = (function () {
         if (!isDoMore(baseline)) return;
         if (focus !== 'timesDone' && focus !== 'timeSpent') return;
 
-        var doBeforeSeconds = getDoBeforeSeconds(actions);
-        if (doBeforeSeconds === null) return; // < 2 actions — leave the smoke countup running
+        var doBeforeSeconds = getDoBeforeSeconds(jsonObject);
+        if (doBeforeSeconds === null) return; // nothing to go on yet — leave the smoke countup running
 
         $('.stat-brief.stat-last-done .stat-brief-label').text('Do Before');
         if (typeof TimerStateManager !== 'undefined') {

@@ -520,6 +520,10 @@ var WaitTimerModule = (function () {
         
         // Update storage status (2 = ended early)
         StorageModule.changeWaitStatus(2, waitType, actualEnd);
+
+        // Re-read: changeWaitStatus saved the new status, and saving the copy
+        // read above would undo it
+        jsonObject = StorageModule.retrieveStorageObject();
         
         // Log to action log (pass null to use module-level json)
         ActionLogModule.placeWaitIntoLog(startStamp, actualEnd, waitType, false, null);
@@ -619,6 +623,10 @@ var WaitTimerModule = (function () {
         
         // Update storage status (2 = ended early)
         StorageModule.changeWaitStatus(2, waitType, endTime);
+
+        // Re-read: changeWaitStatus saved the new status, and saving the copy
+        // read above would undo it
+        jsonObject = StorageModule.retrieveStorageObject();
         
         // Log to action log (pass null to use module-level json)
         ActionLogModule.placeWaitIntoLog(startStamp, endTime, waitType, false, null);
@@ -674,6 +682,10 @@ var WaitTimerModule = (function () {
         
         // Update storage status (4 = removed/cancelled without logging)
         StorageModule.changeWaitStatus(4, waitType);
+
+        // Re-read: changeWaitStatus saved the new status, and saving the copy
+        // read above would undo it
+        jsonObject = StorageModule.retrieveStorageObject();
         
         // Reset active wait flags
         if (jsonObject.statistics && jsonObject.statistics.wait) {

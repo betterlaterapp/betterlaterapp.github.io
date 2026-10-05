@@ -8,6 +8,8 @@
     "version:minor": "node build-scripts/bump-version.js minor",
     "version:major": "node build-scripts/bump-version.js major",
     "test": "playwright test --config=e2e/playwright.config.ts",
+    "test:unit": "node --test unit/*.test.js",
+    "test:readme": "playwright test --config=e2e/playwright.config.ts e2e/tests/readme-claims.spec.ts",
     "test:headed": "playwright test --config=e2e/playwright.config.ts --headed",
     "test:ui": "playwright test --config=e2e/playwright.config.ts --ui",
     "test:debug": "playwright test --config=e2e/playwright.config.ts --debug",

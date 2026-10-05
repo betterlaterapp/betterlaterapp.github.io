@@ -522,7 +522,7 @@
                                        class="how-much-amount" 
                                        placeholder="1" 
                                        value="1"
-                                       step="0.1" 
+                                       step="any" 
                                        min="0">
                                 <div class="how-much-unit-container">
                                     <select class="how-much-unit-select">
@@ -531,6 +531,7 @@
                                         <option value="reps">reps</option>
                                         <option value="laps">laps</option>
                                         <option value="sets">sets</option>
+                                        <option value="mg">mg</option>
                                         <option value="grams">grams</option>
                                         <option value="oz">oz</option>
                                         <option value="ml">ml</option>
@@ -1027,6 +1028,8 @@
                                                             <label class="legend-secondary-label">Done</label>
                                                         </div>
                                                     </div>
+                                                    <!-- Do-more sessions legend - one swatch per kind of entry, filled by JS -->
+                                                    <div class="legend legend-sessions d-none"></div>
                                                     <!-- the bar chart to be called in js-->
                                                     <div class="ct-chart"></div>
                                                 </div>
@@ -1050,88 +1053,8 @@
                                                         <i class="fas fa-caret-right"></i>
                                                     </button>
                                                 </div>
-
-                                                <div class="report-statistics">
-                                                    <div class="statistic">
-                                                        <div class="percent-changed down">
-                                                            <i class="fas fa-caret-down"></i>
-                                                            <span id="useChangeVsLastWeek">&nbsp;&nbsp;15%</span>
-                                                        </div>
-                                                        <label class="use-change-label">Done Vs. last week:</label>
-                                                    </div>
-
-                                                    <div class="statistic">
-                                                        <div class="percent-changed down">
-                                                            <i class="fas fa-caret-down"></i>
-                                                            <span id="useChangeVsBaseline">&nbsp;&nbsp;50%</span>
-                                                        </div>
-                                                        <label>Done Vs. baseline:</label>
-                                                    </div>
-
-                                                    <div class="statistic">
-                                                        <div class="percent-changed up">
-                                                            <i class="fas fa-caret-up"></i>
-                                                            <span
-                                                                id="costChangeVsLastWeek">&nbsp;&nbsp;&nbsp;&nbsp;5%</span>
-                                                        </div>
-                                                        <label class="cost-change-label">Spent Vs. last week:</label>
-
-                                                    </div>
-                                                    <div class="statistic">
-                                                        <div class="percent-changed down">
-                                                            <i class="fas fa-caret-down"></i>
-                                                            <span
-                                                                id="costChangeVsBaseline">&nbsp;&nbsp;&nbsp;&nbsp;7%</span>
-                                                        </div>
-
-                                                        <label>Spent Vs. baseline:</label>
-
-                                                    </div>
-                                                </div>
-                                                <div class="goal-report">
-                                                    <table class="table">
-                                                        <thead>
-                                                            <tr>
-                                                                <th scope="col"></th>
-                                                                <th scope="col">Goal</th>
-                                                                <th scope="col" class="goal-report-period-label">This Week</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <th scope="row">Done</th>
-                                                                <td>
-
-                                                                    <span id="goalDonePerWeek" class="amount-changed goal">
-                                                                        5
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-                                                                    <span id="actualDoneThisWeek" class="amount-changed up">
-                                                                        14
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <th scope="row">Spent</th>
-                                                                <td>
-                                                                    <span id="goalSpentPerWeek" class="amount-changed goal">
-                                                                        0$
-                                                                    </span>
-                                                                </td>
-                                                                <td>
-
-                                                                    <span id="actualSpentThisWeek"
-                                                                        class="amount-changed up">
-                                                                        10$
-                                                                    </span>
-                                                                </td>
-                                                            </tr>
-
-                                                        </tbody>
-                                                    </table>
-
-                                                </div>
+                                                <!-- What's in the current view vs the period before, filled by JS -->
+                                                <div class="report-summary"></div>
                                             </div>
                                         </div>
                                         <hr />
@@ -1731,21 +1654,21 @@
                                                 <label class="form-check-label" for="useChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsBaselineDisplayed" checked>
-                                                    Progress report: change vs. baseline
+                                                    Report summary: compare with your start
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="useChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useChangeVsLastWeekDisplayed" checked>
-                                                    Progress report: change vs. last period
+                                                    Report summary: change from last period
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="useGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="useGoalVsThisWeekDisplayed" checked>
-                                                    Progress report: this period vs. goal
+                                                    Report summary: compare with your goal
                                                 </label>
                                             </div>
                                         </div>
@@ -1838,21 +1761,21 @@
                                                 <label class="form-check-label" for="costChangeVsBaselineDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsBaselineDisplayed" checked>
-                                                    Progress report: spending vs. baseline
+                                                    Report summary: spending vs. your start
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="costChangeVsLastWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costChangeVsLastWeekDisplayed" checked>
-                                                    Progress report: spending vs. last period
+                                                    Report summary: spending change from last period
                                                 </label>
                                             </div>
                                             <div class="form-check report-option">
                                                 <label class="form-check-label" for="costGoalVsThisWeekDisplayed">
                                                     <input class="form-check-input" type="checkbox" value=""
                                                         id="costGoalVsThisWeekDisplayed" checked>
-                                                    Progress report: spending vs. goal
+                                                    Report summary: spending vs. your goal
                                                 </label>
                                             </div>
                                         </div>
@@ -2267,7 +2190,8 @@
                                     <div class="question">
                                         <h4 class="mt-0"><span>5. Make a realistic goal</span></h4>
                                         <p class="make-goal-subtitle quantifiable-subtitle text-muted" style="font-size: 0.9rem;">
-                                            It's more likely that you'll be successful in your goal if you can first <i>maintain where you're currently at</i>. Or in other words, prove it!
+                                            <span class="do-less">It's more likely that you'll be successful in your goal if you can first <i>maintain where you're currently at</i>. Or in other words, prove it!</span>
+                                            <span class="do-more">Start with <i>one small step up</i> from where you are now, for two weeks. Small, repeatable wins are what turn into habits.</span>
                                         </p>
                                         <p class="make-goal-subtitle qualitative-subtitle text-muted" style="font-size: 0.9rem; display: none;">
                                             Studies have shown that people are more likely to succeed in their goals if they are very specific about what they are trying to achieve - what do you want to accomplish?

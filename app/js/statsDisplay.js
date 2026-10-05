@@ -3,6 +3,8 @@
  * Handles rendering statistics to the UI, reports, and formatting for display
  */
 var StatsDisplayModule = (function () {
+    var HALF_DAY = 12 * 60 * 60;
+
     /**
      * Format percent changed statistic for display
      * @param {Object} statTarget - jQuery object for the stat target
@@ -165,196 +167,373 @@ var StatsDisplayModule = (function () {
         }
     }
 
+    // Colors for each kind of entry in the do-more sessions chart (green first)
+    var ENTRY_TYPE_COLORS = ['#1e9039', '#2b7bb9', '#d18b00', '#7b4fa8', '#00897b', '#c2185b', '#5d6d7e', '#8d6e63'];
+
     /**
-     * Get number of data points for the period
-     * @param {string} period - 'day', 'week', or 'month'
-     * @returns {number} - Number of data points
+     * Whether the report shows sessions split by kind of entry: doing more,
+     * counting times or amounts, over a week or month.
      */
-    function getDataPointCount(period) {
-        switch (period) {
-            case 'day': return 24; // Hourly for day view
-            case 'week': return 7;  // Daily for week view
-            case 'month': return 30; // Daily for month view
-            default: return 7;
-        }
+    function isSessionsView(isDoMore, metric, period) {
+        return isDoMore && (metric === 'usage' || metric === 'amount') && period !== 'day';
     }
 
     /**
-     * Create object of values from the end date timestamp with flexible period and metric
-     * @param {number} reportEndStamp - Report end timestamp
+     * Doing more, entries that count toward times or amounts done. Timer
+     * entries with no unit are time spent, shown only as the time header.
+     */
+    function isCountedEntry(action) {
+        var Calc = StatsCalculationsModule;
+        return Calc.isDidItAction(action) && Calc.getEntryType(action) !== 'timed';
+    }
+
+    /**
+     * Entry types ("pushups", "times", ...) in order of first use,
+     * each with a stable color and display label.
+     */
+    function getEntryTypes(actions) {
+        var Calc = StatsCalculationsModule;
+        var keys = [];
+        actions.filter(isCountedEntry).sort(function(a, b) {
+            return parseInt(a.timestamp) - parseInt(b.timestamp);
+        }).forEach(function(a) {
+            var key = Calc.getEntryType(a);
+            if (keys.indexOf(key) === -1) keys.push(key);
+        });
+        return keys.map(function(key, i) {
+            return {
+                key: key,
+                label: key === 'timed' ? 'timed' : key,
+                color: ENTRY_TYPE_COLORS[i % ENTRY_TYPE_COLORS.length]
+            };
+        });
+    }
+
+    /**
+     * Sum every series the report can show into calendar buckets.
+     *
+     * Doing more, "did it" is counted per session: a session is 1 and is split
+     * between the kinds of entries in it. For amounts, each entry counts as a
+     * share of that kind's usual session (e.g. 40 pushups when 20 is usual = 2),
+     * so exercises on very different scales can share one axis.
+     *
+     * @param {Array} actions - All actions
+     * @param {Array} edges - Bucket boundaries in seconds
+     * @param {string} metric - 'usage', 'amount', 'time', or 'cost'
+     * @param {boolean} isDoMore - Whether the user is doing more of the habit
+     * @param {Array} entryTypes - From getEntryTypes
+     * @param {Object} typicalPerSession - From getTypicalAmountPerSession
+     * @param {string|null} amountUnit - Not doing more: the one unit amounts are summed in
+     * @returns {Object}
+     */
+    function bucketReportValues(actions, edges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit) {
+        var Calc = StatsCalculationsModule;
+        var n = edges.length - 1;
+        var series = function() { return { values: new Array(n).fill(0), total: 0, lastPeriod: 0 }; };
+        var result = { used: series(), craved: series(), bought: series(), timed: series(), waited: series(), stacks: {} };
+        entryTypes.forEach(function(t) { result.stacks[t.key] = new Array(n).fill(0); });
+
+        var bucketOf = function(ts) {
+            ts = parseInt(ts);
+            if (ts < edges[0] || ts >= edges[n]) return -1;
+            for (var i = 0; i < n; i++) {
+                if (ts < edges[i + 1]) return i;
+            }
+            return -1;
+        };
+        var add = function(target, bucket, amount) {
+            target.values[bucket] += amount;
+            target.total += amount;
+        };
+
+        actions.forEach(function(a) {
+            if (!a) return;
+            var bucket = bucketOf(a.timestamp);
+            if (bucket < 0) return;
+
+            if (a.clickType === 'craved') {
+                add(result.craved, bucket, 1);
+            } else if (a.clickType === 'bought') {
+                add(result.bought, bucket, parseFloat(a.spent) || 0);
+            } else if (a.clickType === 'wait' && a.status >= 2) {
+                add(result.waited, bucket, Math.max(0, parseInt(a.waitStopped) - parseInt(a.timestamp)));
+            }
+            if (a.clickType === 'timed') {
+                add(result.timed, bucket, parseInt(a.duration) || 0);
+            }
+            if (!isDoMore && Calc.isDidItAction(a)) {
+                if (metric !== 'amount') {
+                    add(result.used, bucket, 1);
+                } else if (!amountUnit || a.unit === amountUnit) {
+                    // Amounts are measurements (5 sips, 10mg, 0.5g): only add up one unit
+                    add(result.used, bucket, Calc.getEntryAmount(a));
+                }
+            }
+        });
+
+        if (isDoMore) {
+            Calc.groupIntoSessions(actions).forEach(function(session) {
+                var bucket = bucketOf(session.start);
+                var counted = session.entries.filter(isCountedEntry);
+                if (bucket < 0 || counted.length === 0) return;
+                counted.forEach(function(entry) {
+                    var type = Calc.getEntryType(entry);
+                    var share = metric === 'amount'
+                        ? Calc.getEntryAmount(entry) / (typicalPerSession[type] || 1)
+                        : 1 / counted.length;
+                    if (result.stacks[type]) result.stacks[type][bucket] += share;
+                    add(result.used, bucket, share);
+                });
+            });
+        }
+
+        return result;
+    }
+
+    /**
+     * Create object of values for the report ending on the day of reportEndStamp
+     * @param {number} reportEndStamp - Any time on the report's last day
      * @param {Object} json - App state object
      * @returns {Object} - Values object for report
      */
     function calculateReportValues(reportEndStamp, json) {
+        var Calc = StatsCalculationsModule;
         var metric = json.option.reportItemsToDisplay.reportMetric || 'usage';
         var period = json.option.reportItemsToDisplay.reportPeriod || 'week';
-        var dataPoints = getDataPointCount(period);
-        var periodDuration = getPeriodDuration(period);
-        
-        var valuesObject = {
-            "reportStart": -1,
-            "reportEnd": -1,
-            "metric": metric,
-            "period": period,
-            "used": {
-                "values": new Array(dataPoints).fill(0),
-                "total": 0,
-                "lastPeriod": 0
-            },
-            "craved": {
-                "values": new Array(dataPoints).fill(0),
-                "total": 0,
-                "lastPeriod": 0
-            },
-            "bought": {
-                "values": new Array(dataPoints).fill(0),
-                "total": 0,
-                "lastPeriod": 0
-            },
-            "timed": {
-                "values": new Array(dataPoints).fill(0),
-                "total": 0,
-                "lastPeriod": 0
-            },
-            "waited": {
-                "values": new Array(dataPoints).fill(0),
-                "total": 0,
-                "lastPeriod": 0
+        var baseline = (json.option && json.option.baseline) || {};
+        var isDoMore = baseline.doMore === true;
+        var actions = (StorageModule.retrieveStorageObject().action || []).filter(Boolean);
+
+        var edges = Calc.getReportBucketEdges(period, reportEndStamp);
+        var previousEdges = Calc.getReportBucketEdges(period, edges[0] - 12 * 60 * 60);
+        var entryTypes = getEntryTypes(actions);
+        var typicalPerSession = Calc.getTypicalAmountPerSession(Calc.groupIntoSessions(actions));
+
+        // While a view is still in progress, compare it with the same stretch of
+        // the previous period (e.g. today so far vs yesterday up to this time)
+        var nowSec = Math.floor(Date.now() / 1000);
+        var previousCutoff = nowSec < edges[edges.length - 1]
+            ? previousEdges[0] + Math.max(0, nowSec - edges[0])
+            : Infinity;
+        var previousActions = actions.filter(function(a) { return parseInt(a.timestamp) < previousCutoff; });
+
+        var amountUnit = isDoMore ? null : getMainUnit(actions, edges);
+        var values = bucketReportValues(actions, edges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit);
+        var previous = bucketReportValues(previousActions, previousEdges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit);
+        ['used', 'craved', 'bought', 'timed', 'waited'].forEach(function(key) {
+            values[key].lastPeriod = previous[key].total;
+        });
+
+        values.metric = metric;
+        values.period = period;
+        values.edges = edges;
+        values.reportStart = edges[0];
+        values.reportEnd = edges[edges.length - 1] - 1;
+        values.isDoMore = isDoMore;
+        values.amountUnit = amountUnit;
+        values.entryTypes = entryTypes;
+        values.summary = buildReportSummary(actions, previousActions, edges, previousEdges, isDoMore, metric, period, json);
+
+        json.report.activeEndStamp = Calc.noonOfTimestamp(reportEndStamp);
+        return values;
+    }
+
+    /**
+     * The unit logged most often in this view (or ever, if none in view).
+     * Measurements in different units can't be added together, so the
+     * amount chart shows this one and the summary lists the rest.
+     * @returns {string|null} - null when no entries have a unit
+     */
+    function getMainUnit(actions, edges) {
+        var Calc = StatsCalculationsModule;
+        var countUnits = function(list) {
+            var counts = {};
+            list.forEach(function(a) {
+                if (Calc.isDidItAction(a) && a.unit) counts[a.unit] = (counts[a.unit] || 0) + 1;
+            });
+            var units = Object.keys(counts).sort(function(x, y) { return counts[y] - counts[x]; });
+            return units[0] || null;
+        };
+        var inView = actions.filter(function(a) {
+            var ts = parseInt(a.timestamp);
+            return ts >= edges[0] && ts < edges[edges.length - 1];
+        });
+        return countUnits(inView) || countUnits(actions);
+    }
+
+    /**
+     * Totals for the report summary: sessions or times, amount per unit,
+     * time, resisted/skipped and spending, for this view and the one before.
+     */
+    function getSummaryTotals(actions, startSec, endSec, isDoMore) {
+        var Calc = StatsCalculationsModule;
+        var inRange = function(ts) { ts = parseInt(ts); return ts >= startSec && ts < endSec; };
+        var totals = { didIt: 0, units: {}, timeSeconds: 0, craved: 0, spent: 0, waitedSeconds: 0 };
+
+        actions.forEach(function(a) {
+            if (!a || !inRange(a.timestamp)) return;
+            if (Calc.isDidItAction(a)) {
+                if (!isDoMore) totals.didIt++;
+                if (a.unit) totals.units[a.unit] = (totals.units[a.unit] || 0) + Calc.getEntryAmount(a);
+                if (a.clickType === 'timed') totals.timeSeconds += parseInt(a.duration) || 0;
+            } else if (a.clickType === 'craved') {
+                totals.craved++;
+            } else if (a.clickType === 'bought') {
+                totals.spent += parseFloat(a.spent) || 0;
+            } else if (a.clickType === 'wait' && a.status >= 2) {
+                totals.waitedSeconds += Math.max(0, parseInt(a.waitStopped) - parseInt(a.timestamp));
             }
+        });
+
+        if (isDoMore) {
+            totals.didIt = Calc.groupIntoSessions(actions).filter(function(s) { return inRange(s.start); }).length;
+        }
+        return totals;
+    }
+
+    /**
+     * Lines describing the current view, e.g. "150 pushups (up 15% from last
+     * week)". The report settings choose what each line adds: the change from
+     * the previous period, and for times done or spending, the starting
+     * baseline and goal scaled to this period.
+     * goodWhenUp is true/false for coloring, or null for neutral.
+     */
+    function buildReportSummary(actions, previousActions, edges, previousEdges, isDoMore, metric, period, json) {
+        var current = getSummaryTotals(actions, edges[0], edges[edges.length - 1], isDoMore);
+        var previous = getSummaryTotals(previousActions, previousEdges[0], previousEdges[previousEdges.length - 1], isDoMore);
+        var show = json.option.reportItemsToDisplay || {};
+        var baseline = json.option.baseline || {};
+        var goals = StorageModule.retrieveStorageObject().behavioralGoals || [];
+        var lines = [];
+        var push = function(value, prev, label, format, goodWhenUp, options) {
+            options = options || {};
+            if (!options.always && value === 0 && prev === 0) return;
+            lines.push({
+                value: value, previous: prev, label: label, format: format, goodWhenUp: goodWhenUp,
+                showChange: options.showChange, extras: options.extras || []
+            });
         };
 
-        var jsonObject = StorageModule.retrieveStorageObject();
-
-        // Build new date as midnight of requested date
-        var midnightLastDay = StatsCalculationsModule.midnightOfTimestamp(reportEndStamp);
-
-        // Start based on period
-        var reportStartStamp = midnightLastDay - periodDuration;
-        var lastPeriodStartStamp = reportStartStamp - periodDuration;
-
-        // Update report valuesObject
-        valuesObject.reportStart = reportStartStamp;
-        valuesObject.reportEnd = midnightLastDay;
-        json.report.activeEndStamp = midnightLastDay;
-
-        // Calculate interval for each data point
-        var intervalDuration = periodDuration / dataPoints;
-
-        for (var i = 0; i < dataPoints; i++) {
-            var intervalStart = reportStartStamp + (intervalDuration * i);
-            var intervalEnd = reportStartStamp + (intervalDuration * (i + 1));
-
-            if (metric === 'usage') {
-                // Count uses and resists (timed actions also count as +1)
-                var usedInInterval = jsonObject.action.filter(function(e) {
-                    return e && (e.clickType === 'used' || e.clickType === 'timed') &&
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-                var cravedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'craved' &&
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-
-                valuesObject.used.values[i] = usedInInterval.length;
-                valuesObject.craved.values[i] = cravedInInterval.length;
-                valuesObject.used.total += usedInInterval.length;
-                valuesObject.craved.total += cravedInInterval.length;
-
-            } else if (metric === 'amount') {
-                // Sum amounts for used/timed actions (timed counts as 1, used falls back to 1)
-                var usedInInterval = jsonObject.action.filter(function(e) {
-                    return e && (e.clickType === 'used' || e.clickType === 'timed') &&
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-                var cravedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'craved' &&
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-
-                var amountSum = usedInInterval.reduce(function(sum, e) {
-                    return sum + (e.clickType === 'timed' ? 1 : (e.amount || 1));
-                }, 0);
-
-                valuesObject.used.values[i] = amountSum;
-                valuesObject.craved.values[i] = cravedInInterval.length;
-                valuesObject.used.total += amountSum;
-                valuesObject.craved.total += cravedInInterval.length;
-
-            } else if (metric === 'time') {
-                // Sum duration of timed actions AND wait durations
-                var timedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'timed' && 
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-                var waitedInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'wait' &&
-                           e.status >= 2 && // completed waits
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-                
-                var timedSeconds = timedInInterval.reduce(function(sum, e) {
-                    return sum + (e.duration || 0);
-                }, 0);
-                var waitedSeconds = waitedInInterval.reduce(function(sum, e) {
-                    var start = e.clickStamp || e.timestamp;
-                    var end = e.waitStopped || e.timestamp;
-                    return sum + Math.max(0, end - start);
-                }, 0);
-                
-                valuesObject.timed.values[i] = timedSeconds;
-                valuesObject.waited.values[i] = waitedSeconds;
-                valuesObject.timed.total += timedSeconds;
-                valuesObject.waited.total += waitedSeconds;
-                
-            } else if (metric === 'cost') {
-                // Sum spent amounts
-                var boughtInInterval = jsonObject.action.filter(function(e) {
-                    return e && e.clickType === 'bought' && 
-                           e.timestamp >= intervalStart && e.timestamp < intervalEnd;
-                });
-                
-                var spent = boughtInInterval.reduce(function(sum, e) {
-                    return sum + parseFloat(e.spent || 0);
-                }, 0);
-                
-                valuesObject.bought.values[i] = spent;
-                valuesObject.bought.total += spent;
+        // "start 3" and "goal 7" for this period, toned against the goal direction
+        var comparisons = function(value, baselineAmount, baselineTimeline, showBaseline, goal, showGoal, format, goodWhenUp) {
+            var extras = [];
+            var baselineDays = { day: 1, week: 7, month: 30 }[baselineTimeline] || 7;
+            var start = scaleToReportPeriod(baselineAmount, baselineDays, period);
+            if (showBaseline && start > 0) {
+                extras.push({ text: 'start ' + formatSummaryValue(start, format), tone: 'neutral' });
             }
-        }
+            if (showGoal && goal) {
+                var target = scaleToReportPeriod(goal.goalAmount, goal.measurementTimeline, period);
+                var met = goodWhenUp === false ? value <= target : value >= target;
+                extras.push({ text: 'goal ' + formatSummaryValue(target, format), tone: goodWhenUp === null ? 'neutral' : (met ? 'good' : 'bad') });
+            }
+            return extras;
+        };
 
-        // Calculate last period totals for comparison
-        if (metric === 'usage') {
-            valuesObject.used.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && (e.clickType === 'used' || e.clickType === 'timed') &&
-                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
-            }).length;
-            valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'craved' &&
-                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
-            }).length;
-        } else if (metric === 'amount') {
-            var lastPeriodUsed = jsonObject.action.filter(function(e) {
-                return e && (e.clickType === 'used' || e.clickType === 'timed') &&
-                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
+        var didItChange = show.useChangeVsLastWeek !== false;
+        if (metric === 'usage' || metric === 'amount') {
+            push(current.didIt, previous.didIt, isDoMore ? 'sessions' : 'times', 'number', isDoMore, {
+                always: true,
+                showChange: didItChange,
+                extras: comparisons(current.didIt, baseline.timesDone, baseline.usageTimeline, show.useChangeVsBaseline,
+                    getCurrentGoalForUnit(goals, 'times'), show.useGoalVsThisWeek, 'number', isDoMore)
             });
-            valuesObject.used.lastPeriod = lastPeriodUsed.reduce(function(sum, e) {
-                return sum + (e.clickType === 'timed' ? 1 : (e.amount || 1));
-            }, 0);
-            valuesObject.craved.lastPeriod = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'craved' &&
-                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
-            }).length;
+            Object.keys(current.units).concat(Object.keys(previous.units)).filter(function(unit, i, all) {
+                return all.indexOf(unit) === i;
+            }).forEach(function(unit) {
+                push(current.units[unit] || 0, previous.units[unit] || 0, unit, 'number', isDoMore, { showChange: didItChange });
+            });
+            push(current.timeSeconds, previous.timeSeconds, isDoMore ? 'spent at it' : 'spent on it', 'duration', isDoMore, { showChange: didItChange });
+            push(current.craved, previous.craved, isDoMore ? 'skipped' : 'resisted', 'number', !isDoMore, { showChange: didItChange });
+        } else if (metric === 'time') {
+            push(current.timeSeconds, previous.timeSeconds, isDoMore ? 'spent at it' : 'spent on it', 'duration', isDoMore, { always: true, showChange: didItChange });
+            push(current.waitedSeconds, previous.waitedSeconds, 'waited', 'duration', isDoMore ? null : true, { showChange: didItChange });
         } else if (metric === 'cost') {
-            var lastPeriodBought = jsonObject.action.filter(function(e) {
-                return e && e.clickType === 'bought' && 
-                       e.timestamp >= lastPeriodStartStamp && e.timestamp < reportStartStamp;
+            var spentGoodWhenUp = isDoMore ? null : false;
+            push(current.spent, previous.spent, isDoMore ? 'invested' : 'spent', 'money', spentGoodWhenUp, {
+                always: true,
+                showChange: show.costChangeVsLastWeek !== false,
+                extras: comparisons(current.spent, baseline.moneySpent, baseline.spendingTimeline, show.costChangeVsBaseline,
+                    getCurrentGoalForUnit(goals, 'dollars'), show.costGoalVsThisWeek, 'money', spentGoodWhenUp)
             });
-            valuesObject.bought.lastPeriod = lastPeriodBought.reduce(function(sum, e) {
-                return sum + parseFloat(e.spent || 0);
-            }, 0);
         }
+        return lines;
+    }
 
-        return valuesObject;
+    /**
+     * Format a duration compactly for chart labels: "45m", "1h 20m", or, when
+     * space is tight, "1.5h".
+     */
+    function formatChartDuration(seconds, compact) {
+        var minutes = Math.round(seconds / 60);
+        if (minutes < 60) return minutes + 'm';
+        if (compact) {
+            var hours = minutes / 60;
+            return (hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours)) + 'h';
+        }
+        return Math.floor(minutes / 60) + 'h' + (minutes % 60 ? ' ' + (minutes % 60) + 'm' : '');
+    }
+
+    function formatSummaryValue(value, format) {
+        if (format === 'duration') return formatChartDuration(value, false);
+        if (format === 'money') return '$' + (Math.round(value * 100) / 100);
+        return String(Math.round(value * 100) / 100);
+    }
+
+    /**
+     * Render the summary list below the chart.
+     */
+    function renderReportSummary(reportValues) {
+        var period = reportValues.period;
+        var nowSec = Math.floor(Date.now() / 1000);
+        var isCurrent = reportValues.reportEnd >= nowSec;
+        var heading = isCurrent
+            ? { day: 'Today', week: 'This week', month: 'This month' }[period]
+            : { day: 'That day', week: 'That week', month: 'That month' }[period];
+        var comparedTo = isCurrent
+            ? { day: 'this time yesterday', week: 'last week', month: 'last month' }[period]
+            : { day: 'the day before', week: 'the week before', month: 'the month before' }[period];
+
+        var html = '<div class="report-summary-heading">' + heading + '</div><ul class="report-summary-list">';
+        var shownFullPhrase = false;
+        reportValues.summary.forEach(function(line) {
+            var notes = [];
+            if (line.showChange && (line.previous > 0 || line.value > 0)) {
+                var pct = line.previous > 0 ? Math.round(((line.value - line.previous) / line.previous) * 100) : null;
+                var direction = pct === null ? 'up' : (pct > 0 ? 'up' : (pct < 0 ? 'down' : 'same'));
+                var text;
+                if (pct === null) {
+                    text = 'new';
+                } else if (direction === 'same') {
+                    text = 'same' + (shownFullPhrase ? '' : ' as ' + comparedTo);
+                    shownFullPhrase = true;
+                } else {
+                    text = direction + ' ' + Math.abs(pct) + '%' + (shownFullPhrase ? '' : ' from ' + comparedTo);
+                    shownFullPhrase = true;
+                }
+                var tone = 'neutral';
+                if (line.goodWhenUp !== null && direction !== 'same') {
+                    tone = (direction === 'up') === line.goodWhenUp ? 'good' : 'bad';
+                }
+                notes.push({ text: text, tone: tone });
+            }
+            notes = notes.concat(line.extras);
+
+            var label = line.value === 1 ? ({ sessions: 'session', times: 'time' }[line.label] || line.label) : line.label;
+            var detail = notes.length
+                ? ' <span class="report-summary-change">(' + notes.map(function(note) {
+                    return '<span class="' + note.tone + '">' + escapeHtml(note.text) + '</span>';
+                }).join(' · ') + ')</span>'
+                : '';
+            html += '<li><strong>' + formatSummaryValue(line.value, line.format) + '</strong> ' +
+                escapeHtml(label) + detail + '</li>';
+        });
+        html += '</ul>';
+        $('.report-summary').html(html);
+    }
+
+    function escapeHtml(text) {
+        return $('<div>').text(text).html();
     }
 
     /**
@@ -397,6 +576,197 @@ var StatsDisplayModule = (function () {
     }
 
     /**
+     * X-axis labels from bucket starts: every 3rd hour for a day, every day
+     * for a week, every 3rd day (counting back from the last) for a month.
+     */
+    function buildChartLabels(edges, period) {
+        var Calc = StatsCalculationsModule;
+        var count = edges.length - 1;
+        var labels = [];
+        for (var i = 0; i < count; i++) {
+            var start = edges[i];
+            if (period === 'day') {
+                if (i % 3 === 0) {
+                    var hour = new Date(start * 1000).getHours();
+                    labels.push((hour % 12 || 12) + (hour >= 12 ? 'pm' : 'am'));
+                } else {
+                    labels.push('');
+                }
+            } else if (period === 'month') {
+                labels.push((count - 1 - i) % 3 === 0 ? Calc.timestampToShortHandDate(start, false) : '');
+            } else {
+                labels.push(Calc.timestampToShortHandDate(start, false));
+            }
+        }
+        return labels;
+    }
+
+    /**
+     * Legend for the sessions chart: one swatch per kind of entry in view,
+     * plus a note on what the bars and labels mean.
+     */
+    function renderSessionsLegend(reportValues) {
+        var inView = reportValues.entryTypes.filter(function(t) {
+            return reportValues.stacks[t.key].some(function(v) { return v > 0; });
+        });
+        var html = '<div class="legend-sessions-items">';
+        inView.forEach(function(t) {
+            html += '<div class="color-descriptor"><div class="color" style="background-color:' + t.color + '"></div>' +
+                '<label>' + escapeHtml(t.label) + '</label></div>';
+        });
+        if (reportValues.craved.total > 0) {
+            html += '<div class="color-descriptor"><div class="color primary"></div><label>Didn\'t</label></div>';
+        }
+        html += '</div>';
+
+        $('.legend-sessions').html(html).removeClass('d-none');
+        $('.bar-chart .legend:not(.legend-sessions)').addClass('d-none');
+    }
+
+    /**
+     * Doing more: for each day, a "Didn't" bar beside a sessions bar
+     * that's split by what was done. Time spent is written as a header row
+     * across the top of the chart, one entry per column that had any.
+     */
+    function renderSessionsChart(reportValues, labels, responsiveOptions) {
+        var types = reportValues.entryTypes;
+        var timedValues = reportValues.timed.values;
+        var hasTime = timedValues.some(function(v) { return v > 0; });
+        var count = labels.length;
+        var compact = count > 7;
+
+        var totals = labels.map(function(_, i) {
+            return types.reduce(function(sum, t) { return sum + reportValues.stacks[t.key][i]; }, 0);
+        });
+        var maxValue = Math.max.apply(null, totals.concat(reportValues.craved.values, [0]));
+
+        // Two bars per column: size them to the column so they never overlap
+        var plotWidth = Math.max(100, $('.ct-chart').width() - 50);
+        var barWidth = Math.max(2, Math.min(14, (plotWidth / count) * 0.32));
+
+        var chart = new Chartist.Bar('.ct-chart', {
+            labels: labels,
+            series: [reportValues.craved.values, totals]
+        }, {
+            low: 0,
+            high: maxValue > 3 ? Math.ceil(maxValue * 1.15) : 4,
+            seriesBarDistance: barWidth + 1,
+            chartPadding: { top: hasTime ? (compact ? 36 : 22) : 10, right: 10 },
+            axisY: {
+                onlyInteger: true,
+                labelInterpolationFnc: function(value) { return Math.round(value); }
+            }
+        }, responsiveOptions);
+
+        var columnCenters = [];
+        chart.on('draw', function(data) {
+            if (data.type !== 'bar') return;
+            data.element.attr({ style: 'stroke-width: ' + barWidth + 'px' });
+            if (data.seriesIndex === 0) return;
+
+            // Replace the sessions total with segments, one per kind of entry
+            columnCenters[data.index] = data.x1 - (barWidth + 1) / 2;
+            var total = totals[data.index];
+            if (!total) return;
+            var pixelsPerUnit = (data.y1 - data.y2) / total;
+            var base = data.y1;
+            types.forEach(function(t) {
+                var value = reportValues.stacks[t.key][data.index];
+                if (!value) return;
+                var top = base - value * pixelsPerUnit;
+                data.group.elem('line', { x1: data.x1, x2: data.x2, y1: base, y2: top }, 'ct-bar')
+                    .attr({ style: 'stroke: ' + t.color + ' !important; stroke-width: ' + barWidth + 'px' });
+                base = top;
+            });
+            data.element.remove();
+        });
+
+        chart.on('created', function(context) {
+            if (!hasTime) return;
+            var y = context.chartRect.y2 - 6;
+            timedValues.forEach(function(seconds, i) {
+                if (!seconds) return;
+                var x = columnCenters[i] !== undefined
+                    ? columnCenters[i]
+                    : context.chartRect.x1 + context.axisX.stepLength * (i + 0.5);
+                var attributes = compact
+                    ? { x: x + 3, y: y, 'text-anchor': 'start', transform: 'rotate(-90 ' + (x + 3) + ' ' + y + ')' }
+                    : { x: x, y: y, 'text-anchor': 'middle' };
+                context.svg.elem('text', attributes, 'ct-time-label' + (compact ? ' compact' : ''))
+                    .text(formatChartDuration(seconds, compact));
+            });
+        });
+    }
+
+    /**
+     * Day view: cumulative line across all 24 hours, so the day's total
+     * builds up. Hours still to come today are left empty, so the line stops
+     * at now while the axis shows the whole day.
+     */
+    function renderDayChart(data, edges, options, responsiveOptions) {
+        var nowSec = Math.floor(Date.now() / 1000);
+        var cumulativeData = {
+            labels: data.labels,
+            series: data.series.map(function(series) {
+                var sum = 0;
+                return series.map(function(value, i) {
+                    if (edges[i] > nowSec) return null;
+                    sum += value;
+                    return sum;
+                });
+            })
+        };
+
+        var cumulativeMax = 0;
+        cumulativeData.series.forEach(function(series) {
+            series.forEach(function(v) { if (v !== null && v > cumulativeMax) cumulativeMax = v; });
+        });
+
+        var chart = new Chartist.Line('.ct-chart', cumulativeData, {
+            high: cumulativeMax > 1 ? Math.ceil(cumulativeMax * 1.2) : options.high,
+            low: 0,
+            showArea: true,
+            showPoint: true,
+            fullWidth: true,
+            lineSmooth: Chartist.Interpolation.step({ fillHoles: false }),
+            axisX: { showGrid: false },
+            axisY: options.axisY || {}
+        }, responsiveOptions);
+
+        // Only mark the hours where the running total went up
+        chart.on('draw', function(drawData) {
+            if (drawData.type !== 'point') return;
+            var series = cumulativeData.series[drawData.seriesIndex];
+            var prevValue = drawData.index > 0 ? (series[drawData.index - 1] || 0) : 0;
+            if (series[drawData.index] > prevValue) {
+                drawData.element.attr({ r: 4, style: 'stroke-width: 2px' });
+                drawData.element.addClass('ct-point-increase');
+            } else {
+                drawData.element.attr({ r: 0, style: 'display: none' });
+            }
+        });
+    }
+
+    /**
+     * Active (not yet ended) quantitative goal for a unit, newest first.
+     */
+    function getCurrentGoalForUnit(behavioralGoals, unit) {
+        var now = Date.now();
+        return behavioralGoals.filter(function(g) {
+            return g && g.type === 'quantitative' && g.unit === unit && g.status === 'active' &&
+                g.createdAt + g.completionTimeline * 24 * 60 * 60 * 1000 > now;
+        }).sort(function(a, b) { return b.createdAt - a.createdAt; })[0] || null;
+    }
+
+    /**
+     * Scale an amount per measurement period to the report's period length.
+     */
+    function scaleToReportPeriod(amount, periodDays, reportPeriod) {
+        var reportDays = { day: 1, week: 7, month: 30 }[reportPeriod] || 7;
+        return Math.round(((parseFloat(amount) || 0) / periodDays) * reportDays * 10) / 10;
+    }
+
+    /**
      * Create report with flexible metric and period
      * @param {Object} reportValues - Report values
      * @param {Object} json - App state object
@@ -412,9 +782,27 @@ var StatsDisplayModule = (function () {
         var reportStart = reportValues.reportStart;
         var reportEnd = reportValues.reportEnd;
         var isdoLess = json.option && json.option.baseline && json.option.baseline.doLess;
+        var sessionsView = isSessionsView(reportValues.isDoMore, metric, period);
 
         // Update legend labels based on metric and habit direction
         var legendLabels = getLegendLabels(metric, isdoLess);
+        if (sessionsView) {
+            renderSessionsLegend(reportValues);
+        } else {
+            $('.legend-sessions').addClass('d-none');
+            $('.bar-chart .legend:not(.legend-sessions)').removeClass('d-none');
+        }
+        if (reportValues.isDoMore && (metric === 'usage' || metric === 'amount')) {
+            // Doing more, "did it" is counted in sessions
+            legendLabels.secondary = metric === 'amount' ? "Sessions' worth" : 'Sessions';
+        } else if (metric === 'amount') {
+            var amountLabel = 'Amount' + (reportValues.amountUnit ? ' (' + reportValues.amountUnit + ')' : '');
+            if (isdoLess) {
+                legendLabels = { primary: amountLabel, secondary: null };
+            } else {
+                legendLabels = { primary: null, secondary: amountLabel };
+            }
+        }
         
         // Update legend display
         if (legendLabels.primary) {
@@ -434,7 +822,7 @@ var StatsDisplayModule = (function () {
         // Set date range display based on period
         if (period === 'day') {
             // For daily, show just the single date
-            var dayDate = StatsCalculationsModule.timestampToShortHandDate(reportEnd, true);
+            var dayDate = StatsCalculationsModule.timestampToShortHandDate(reportStart, true);
             $("#reportStartDate").html(dayDate);
             $(".week-range .seperator").hide();
             $(".week-range .end").hide();
@@ -446,36 +834,28 @@ var StatsDisplayModule = (function () {
             $(".week-range .end").show();
         }
 
-        // Generate labels based on period
-        var labels = [];
-        var dataPoints = reportValues.used.values.length;
-        var intervalDuration = (reportEnd - reportStart) / dataPoints;
-
-        for (var i = 0; i < dataPoints; i++) {
-            var labelTimestamp = reportStart + (intervalDuration * (i + 1));
-            if (period === 'day') {
-                // Hour labels for day view - show every other
-                var hour = new Date(labelTimestamp * 1000).getHours();
-                var ampm = hour >= 12 ? 'pm' : 'am';
-                hour = hour % 12 || 12;
-                labels.push(i % 2 === 0 ? '' : hour + ampm); // Skip every other
-            } else if (period === 'month') {
-                // Month labels - show every other to reduce crowding
-                if (i % 2 === 0) {
-                    labels.push('');
-                } else {
-                    labels.push(StatsCalculationsModule.timestampToShortHandDate(labelTimestamp, false));
-                }
-            } else {
-                labels.push(StatsCalculationsModule.timestampToShortHandDate(labelTimestamp, false));
-            }
-        }
+        var labels = buildChartLabels(reportValues.edges, period);
+        var dataPoints = labels.length;
 
         // Prepare chart data based on metric
         var data, options;
-        var useCumulativeChart = (period === 'day');
 
-        if (metric === 'usage' || metric === 'amount') {
+        if (metric === 'amount' && !reportValues.isDoMore) {
+            // Measurements share no scale with resist counts, so chart amounts alone
+            var noSeries = new Array(dataPoints).fill(0);
+            data = {
+                labels: labels,
+                series: isdoLess ? [reportValues.used.values] : [noSeries, reportValues.used.values]
+            };
+            var maxAmount = Math.max.apply(null, reportValues.used.values.concat([0]));
+            options = {
+                high: maxAmount > 4 ? Math.ceil(maxAmount * 1.2) : (maxAmount > 0 ? maxAmount * 1.25 : 4),
+                seriesBarDistance: 10,
+                axisY: {
+                    labelInterpolationFnc: function(value) { return Math.round(value * 100) / 100; }
+                }
+            };
+        } else if (metric === 'usage' || metric === 'amount') {
             if (isdoLess) {
                 data = {
                     labels: labels,
@@ -591,239 +971,17 @@ var StatsDisplayModule = (function () {
             }]
         ];
 
-        // Create chart - use Line for cumulative day view, Bar otherwise
-        if (useCumulativeChart) {
-            // For daily view, only show data up to current hour (not future)
-            var currentHour = new Date().getHours();
-            // Add 2 to include the interval that contains the current hour 
-            // (interval i covers hour i to i+1, so at 8:50pm we need interval 20 which shows 9pm as end)
-            var hoursToShow = Math.min(currentHour + 2, dataPoints);
-            
-            // Truncate data to only include past/current hours
-            var truncatedLabels = data.labels.slice(0, hoursToShow);
-            var truncatedSeries = data.series.map(function(series) {
-                return series.slice(0, hoursToShow);
-            });
-            
-            // Ensure the last label is always visible (not skipped)
-            if (truncatedLabels.length > 0 && truncatedLabels[truncatedLabels.length - 1] === '') {
-                var lastTimestamp = reportStart + (intervalDuration * hoursToShow);
-                var lastHour = new Date(lastTimestamp * 1000).getHours();
-                var ampm = lastHour >= 12 ? 'pm' : 'am';
-                lastHour = lastHour % 12 || 12;
-                truncatedLabels[truncatedLabels.length - 1] = lastHour + ampm;
-            }
-            
-            // Convert to cumulative values for day view
-            var cumulativeData = {
-                labels: truncatedLabels,
-                series: truncatedSeries.map(function(series) {
-                    var cumulative = [];
-                    var sum = 0;
-                    for (var i = 0; i < series.length; i++) {
-                        sum += series[i];
-                        cumulative.push(sum);
-                    }
-                    return cumulative;
-                })
-            };
-            
-            // Calculate max for cumulative data
-            var cumulativeMax = 0;
-            cumulativeData.series.forEach(function(series) {
-                var seriesMax = series.length > 0 ? series[series.length - 1] : 0;
-                if (seriesMax > cumulativeMax) cumulativeMax = seriesMax;
-            });
-            
-            var lineOptions = {
-                high: cumulativeMax > 1 ? Math.ceil(cumulativeMax * 1.2) : options.high,
-                low: 0,
-                showArea: true,
-                showPoint: true,
-                fullWidth: true,
-                lineSmooth: Chartist.Interpolation.step(), // Step interpolation for cumulative
-                axisX: {
-                    showGrid: false
-                },
-                axisY: options.axisY || {}
-            };
-            
-            var chart = new Chartist.Line('.ct-chart', cumulativeData, lineOptions, responsiveOptions);
-            
-            // Customize points - only show where cumulative value increases
-            chart.on('draw', function(drawData) {
-                if (drawData.type === 'point') {
-                    var seriesIndex = drawData.seriesIndex;
-                    var pointIndex = drawData.index;
-                    var series = cumulativeData.series[seriesIndex];
-                    
-                    // Show point only if value increased from previous
-                    var prevValue = pointIndex > 0 ? series[pointIndex - 1] : 0;
-                    var currValue = series[pointIndex];
-                    
-                    if (currValue > prevValue) {
-                        // Make increase points visible but small
-                        drawData.element.attr({
-                            r: 4,
-                            style: 'stroke-width: 2px'
-                        });
-                        drawData.element.addClass('ct-point-increase');
-                    } else {
-                        // Hide points where no increase
-                        drawData.element.attr({
-                            r: 0,
-                            style: 'display: none'
-                        });
-                    }
-                }
-            });
+        // Day: cumulative line. Week/month: bars side by side; doing more, the
+        // sessions bar is split by kind of entry
+        if (sessionsView) {
+            renderSessionsChart(reportValues, labels, responsiveOptions);
+        } else if (period === 'day') {
+            renderDayChart(data, reportValues.edges, options, responsiveOptions);
         } else {
             new Chartist.Bar('.ct-chart', data, options, responsiveOptions);
         }
 
-        // Update comparison statistics based on metric
-        var totalThisPeriod, totalLastPeriod;
-        
-        if (metric === 'usage' || metric === 'amount') {
-            totalThisPeriod = reportValues.used.total;
-            totalLastPeriod = reportValues.used.lastPeriod;
-        } else if (metric === 'cost') {
-            totalThisPeriod = reportValues.bought.total;
-            totalLastPeriod = reportValues.bought.lastPeriod;
-        } else {
-            totalThisPeriod = reportValues.timed.total;
-            totalLastPeriod = reportValues.timed.lastPeriod;
-        }
-
-        // Determine period label for "vs last ___"
-        var periodLabel = period === 'day' ? 'yesterday' : period === 'week' ? 'last week' : 'last month';
-
-        // Set change vs last period
-        if (json.option.reportItemsToDisplay.useChangeVsLastWeek && (metric === 'usage' || metric === 'amount')) {
-            var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            // Hide if no data or N/A
-            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
-                $("#useChangeVsLastWeek").parent().parent().hide();
-            } else {
-                $('.use-change-label').text('Done Vs. ' + periodLabel + ':');
-                var finishedStat = formatPercentChangedStat($("#useChangeVsLastWeek"), percentChanged);
-                $("#useChangeVsLastWeek").html(finishedStat);
-                $("#useChangeVsLastWeek").parent().parent().show();
-            }
-        } else {
-            $("#useChangeVsLastWeek").parent().parent().hide();
-        }
-
-        // Uses vs baseline
-        var weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        // Defensive check - json.statistics may not exist when called with storage object
-        var firstClickStamp = (json.statistics && json.statistics.use) 
-            ? json.statistics.use.firstClickStamp 
-            : (jsonObject.action && jsonObject.action[0] ? jsonObject.action[0].timestamp : 0);
-        var beenAWeek = weekAgo.getTime() / 1000 > parseInt(firstClickStamp);
-
-        if (json.option.reportItemsToDisplay.useChangeVsBaseline && beenAWeek && (metric === 'usage' || metric === 'amount')) {
-            var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.timesDone,
-                totalThisPeriod
-            );
-            if (percentChanged === "N/A") {
-                $("#useChangeVsBaseline").parent().parent().hide();
-            } else {
-                var finishedStat = formatPercentChangedStat($("#useChangeVsBaseline"), percentChanged);
-                $("#useChangeVsBaseline").html(finishedStat);
-                $("#useChangeVsBaseline").parent().parent().show();
-            }
-        } else {
-            $("#useChangeVsBaseline").parent().parent().hide();
-        }
-
-        // Cost comparisons
-        if (json.option.reportItemsToDisplay.costChangeVsLastWeek && metric === 'cost') {
-            var percentChanged = StatsCalculationsModule.percentChangedBetween(totalLastPeriod, totalThisPeriod);
-            // Hide if no data or N/A
-            if ((totalLastPeriod === 0 && totalThisPeriod === 0) || percentChanged === "N/A") {
-                $("#costChangeVsLastWeek").parent().parent().hide();
-            } else {
-                $('.cost-change-label').text('Spent Vs. ' + periodLabel + ':');
-                var finishedStat = formatPercentChangedStat($("#costChangeVsLastWeek"), percentChanged);
-                $("#costChangeVsLastWeek").html(finishedStat);
-                $("#costChangeVsLastWeek").parent().parent().show();
-            }
-        } else {
-            $("#costChangeVsLastWeek").parent().parent().hide();
-        }
-
-        if (json.option.reportItemsToDisplay.costChangeVsBaseline && metric === 'cost') {
-            var percentChanged = StatsCalculationsModule.percentChangedBetween(
-                json.option.baseline.moneySpent,
-                totalThisPeriod
-            );
-            if (percentChanged === "N/A") {
-                $("#costChangeVsBaseline").parent().parent().hide();
-            } else {
-                var finishedStat = formatPercentChangedStat($("#costChangeVsBaseline"), percentChanged);
-                $("#costChangeVsBaseline").html(finishedStat);
-                $("#costChangeVsBaseline").parent().parent().show();
-            }
-        } else {
-            $("#costChangeVsBaseline").parent().parent().hide();
-        }
-
-        // Goal comparisons - get goal amounts from behavioralGoals
-        var jsonObject = StorageModule.retrieveStorageObject();
-        var behavioralGoals = jsonObject && jsonObject.behavioralGoals ? jsonObject.behavioralGoals : [];
-        
-        // Find active usage goal
-        var usageGoal = behavioralGoals.find(function(g) {
-            return g && g.unit === 'times' && !g.completed;
-        });
-        var usageGoalAmount = usageGoal ? usageGoal.goalAmount : 0;
-        
-        if (json.option.reportItemsToDisplay.useGoalVsThisWeek && (metric === 'usage' || metric === 'amount') && usageGoalAmount > 0) {
-            $("#goalDonePerWeek").html(usageGoalAmount);
-            $("#actualDoneThisWeek").html(totalThisPeriod);
-            if (totalThisPeriod < usageGoalAmount) {
-                $("#actualDoneThisWeek").addClass("down").removeClass("up");
-            } else {
-                $("#actualDoneThisWeek").addClass("up").removeClass("down");
-            }
-            $("#goalDonePerWeek").parent().parent().show();
-        } else {
-            $("#goalDonePerWeek").parent().parent().hide();
-        }
-
-        // Find active spending goal
-        var spendingGoal = behavioralGoals.find(function(g) {
-            return g && g.unit === 'dollars' && !g.completed;
-        });
-        var spendingGoalAmount = spendingGoal ? spendingGoal.goalAmount : 0;
-        
-        if (json.option.reportItemsToDisplay.costGoalVsThisWeek && metric === 'cost' && spendingGoalAmount > 0) {
-            $("#goalSpentPerWeek").html(spendingGoalAmount + "$");
-            $("#actualSpentThisWeek").html(Math.round(totalThisPeriod) + "$");
-            if (totalThisPeriod <= spendingGoalAmount) {
-                $("#actualSpentThisWeek").addClass("down").removeClass("up");
-            } else {
-                $("#actualSpentThisWeek").addClass("up").removeClass("down");
-            }
-            $("#goalSpentPerWeek").parent().parent().show();
-        } else {
-            $("#goalSpentPerWeek").parent().parent().hide();
-        }
-
-        // Update goal report period label
-        var goalPeriodLabel = period === 'day' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
-        $('.goal-report-period-label').text(goalPeriodLabel);
-
-        // Remove table headers if nothing to display
-        if (!(json.option.reportItemsToDisplay.useGoalVsThisWeek && (metric === 'usage' || metric === 'amount')) &&
-            !(json.option.reportItemsToDisplay.costGoalVsThisWeek && metric === 'cost')) {
-            $(".goal-report thead").hide();
-        } else {
-            $(".goal-report thead").show();
-        }
+        renderReportSummary(reportValues);
     }
 
     /**
@@ -868,13 +1026,15 @@ var StatsDisplayModule = (function () {
         // Get period duration
         var periodDuration = getPeriodDuration(period);
 
-        // Calculate end stamp for current period (end of today - 23:59:59)
-        var reportEndStamp = StatsCalculationsModule.midnightOfTimestamp(timeNow);
+        // Reports are anchored at noon of their last day (see noonOfTimestamp)
+        var reportEndStamp = StatsCalculationsModule.noonOfTimestamp(timeNow);
 
-        // Define parameters for report ranges
-        var firstStamp = jsonObject.action[0] ? jsonObject.action[0].timestamp : timeNow;
-        json.report.minEndStamp = parseInt(firstStamp);
-        json.report.maxEndStamp = parseInt(reportEndStamp);
+        // Earliest logged action (the log isn't always in time order)
+        var firstStamp = jsonObject.action.reduce(function(min, a) {
+            return a ? Math.min(min, parseInt(a.timestamp)) : min;
+        }, timeNow);
+        json.report.minEndStamp = firstStamp;
+        json.report.maxEndStamp = reportEndStamp;
         json.report.periodDuration = periodDuration;
 
         // Show most recent report
@@ -905,8 +1065,8 @@ var StatsDisplayModule = (function () {
             var currentEnd = json.report.activeEndStamp;
             var newEnd = currentEnd - periodDuration;
             
-            // Check if we have data for this period
-            if (newEnd >= json.report.minEndStamp) {
+            // Check the earlier period has data (newEnd is noon of its last day)
+            if (newEnd + HALF_DAY >= json.report.minEndStamp) {
                 json.report.activeEndStamp = newEnd;
                 createReport(calculateReportValues(newEnd, json), json);
                 updateNavigationButtons(json);
@@ -940,7 +1100,7 @@ var StatsDisplayModule = (function () {
         var currentEnd = json.report.activeEndStamp;
         
         // Disable previous if we're at the earliest data
-        if (currentEnd - periodDuration < json.report.minEndStamp) {
+        if (currentEnd - periodDuration + HALF_DAY < json.report.minEndStamp) {
             $('.previous-report').prop('disabled', true);
         } else {
             $('.previous-report').prop('disabled', false);

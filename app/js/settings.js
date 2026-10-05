@@ -50,10 +50,14 @@ var SettingsModule = (function () {
                         $(".weekly-report .chart-title").hide();
                         $(".weekly-report .bar-chart").hide();
                         $(".weekly-report .week-range").hide();
+                        $(".weekly-report .report-summary").hide();
                     } else {
                         $(".weekly-report .chart-title").show();
                         $(".weekly-report .bar-chart").show();
                         $(".weekly-report .week-range").show();
+                        $(".weekly-report .report-summary").show();
+                        // Redraw so the summary reflects the new choice
+                        StatsDisplayModule.initiateReport(json);
                     }
                     return;
                 }

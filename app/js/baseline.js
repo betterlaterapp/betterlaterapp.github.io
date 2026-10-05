@@ -647,12 +647,34 @@ var BaselineModule = (function() {
      * Goals for 3-7 days are most likely to be successful
      */
     function getRecommendedCompletionDays(timeline) {
+        // Building up: two weeks gives one weekly step plus a week to settle in
+        if (isDoMoreBaseline() && timeline !== 'month') return 14;
         switch (timeline) {
             case 'day': return 2;   // 2 days for daily habits
             case 'week': return 7;  // 1 week for weekly habits
             case 'month': return 30; // 30 days for monthly habits
             default: return 7;
         }
+    }
+
+    /**
+     * Realistic first target. Doing less: hold steady at the current amount
+     * (tracking alone tends to bring it down). Doing more: one step up, at
+     * least 2 per week (or 1 per day), since "maintain zero" isn't a goal.
+     * @param {number} amount - Current amount per timeline period
+     * @param {string} timeline - 'day', 'week', or 'month'
+     * @param {number} step - Size of one step (1 time, or one session in minutes)
+     * @returns {number}
+     */
+    function getRealisticGoalAmount(amount, timeline, step) {
+        if (!isDoMoreBaseline()) return amount;
+        var minimumSteps = timeline === 'day' ? 1 : 2;
+        return Math.max(amount + step, minimumSteps * step);
+    }
+
+    function isDoMoreBaseline() {
+        var baseline = StorageModule.retrieveStorageObject().option.baseline || {};
+        return baseline.doMore === true;
     }
 
     /**
@@ -683,7 +705,8 @@ var BaselineModule = (function() {
                     options.chunkSize = chunkSize;
                 }
             }
-            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('times', amount, amount, measurementDays, completionDays, options);
+            var goalAmount = getRealisticGoalAmount(amount, timeline, options.chunkSize || 1);
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('times', amount, goalAmount, measurementDays, completionDays, options);
         } else if (selectedType === 'time') {
             var hours = parseInt($('.baseline-currentTimeHours').val()) || 0;
             var minutes = parseInt($('.baseline-currentTimeMinutes').val()) || 0;
@@ -699,7 +722,8 @@ var BaselineModule = (function() {
             if (chunkSize > 0) {
                 options.chunkSize = chunkSize;
             }
-            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('minutes', amount, amount, measurementDays, completionDays, options);
+            var goalAmount = getRealisticGoalAmount(amount, timeline, chunkSize);
+            behavioralGoal = QuantitativeGoalsModule.createQuantitativeGoal('minutes', amount, goalAmount, measurementDays, completionDays, options);
         } else if (selectedType === 'spending') {
             var amount = parseInt($('.baseline-amountSpentPerWeek').val()) || 0;
             var timeline = $('.baseline-spending-timeline-select').val();

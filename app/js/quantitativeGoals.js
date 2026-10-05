@@ -48,40 +48,20 @@ var QuantitativeGoalsModule = (function() {
             }, 0);
         } else if (goal.unit === 'times') {
             var usedActions = jsonObject.action.filter(function(a) {
-                return a && a.clickType === 'used' &&
+                return a && (a.clickType === 'used' || a.clickType === 'timed') &&
                        (parseInt(a.timestamp) * 1000) >= periodStart;
             });
             return usedActions.length;
         } else if (goal.unit === 'minutes') {
-            var usedActions = jsonObject.action.filter(function(a) {
-                return a && a.clickType === 'used' &&
+            var timedActions = jsonObject.action.filter(function(a) {
+                return a && a.clickType === 'timed' && a.duration &&
                        (parseInt(a.timestamp) * 1000) >= periodStart;
             });
-            return usedActions.length * 15;
+            return Math.round(timedActions.reduce(function(sum, a) {
+                return sum + parseInt(a.duration) / 60;
+            }, 0));
         }
         return 0;
-    }
-
-    /**
-     * Calculate progress percentage for quantifiable goal
-     */
-    function calculateProgress(goal) {
-        var daysElapsed = GoalsModule.calculateDaysElapsed(goal);
-        var totalDays = goal.completionTimeline;
-        var currentAmount = goal.currentAmount;
-        var goalAmount = goal.goalAmount;
-        var actualNow = getCurrentPeriodActual(goal);
-
-        var expectedNow = currentAmount - ((currentAmount - goalAmount) * (daysElapsed / totalDays));
-        expectedNow = Math.max(goalAmount, Math.min(currentAmount, expectedNow));
-
-        if (currentAmount === goalAmount) return 100;
-
-        var difference = currentAmount - goalAmount;
-        var progressMade = currentAmount - actualNow;
-        var progressPct = Math.min(100, Math.max(0, Math.round((progressMade / difference) * 100)));
-
-        return progressPct;
     }
 
     /**
@@ -94,10 +74,8 @@ var QuantitativeGoalsModule = (function() {
         var isDoLess = baseline.doLess === true;
 
         var daysRemaining = GoalsModule.calculateDaysRemaining(goal);
-        var daysElapsed = GoalsModule.calculateDaysElapsed(goal);
 
-        var scheduleResult = GoalMilestonesModule.generateScheduleMilestones(goal, jsonObject);
-        var milestones = scheduleResult.display;
+        var scheduleResult = GoalMilestonesModule.generateScheduleMilestones(goal, actions, isDoLess);
         var allMilestones = scheduleResult.all;
 
         // Store in cache for later access
@@ -106,48 +84,14 @@ var QuantitativeGoalsModule = (function() {
             isDoLess: isDoLess
         });
 
-        var progressPct = calculateProgress(goal);
-
-        var totalMilestones = StatsCalculationsModule.calculateTotalMilestones(goal);
-        var goalStartSec = Math.floor(goal.createdAt / 1000);
-        var actionCount = StatsCalculationsModule.getActualCountSinceGoalStart(goal, actions, goalStartSec);
-
-        var nextUpcomingMilestone = null;
-        for (var i = 0; i < allMilestones.length; i++) {
-            if (allMilestones[i].status === 'upcoming') {
-                nextUpcomingMilestone = allMilestones[i];
-                break;
-            }
-        }
-
-        var milestonesPassedCount = allMilestones.filter(function(m) {
-            return m.status === 'completed' || m.status === 'missed';
-        }).length;
-
-        var trackDiff;
-        var trackStatus;
-        if (isDoLess) {
-            trackDiff = actionCount - milestonesPassedCount;
-            if (trackDiff > 0) {
-                trackStatus = { status: 'behind', count: trackDiff };
-            } else if (trackDiff < 0) {
-                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
-            } else {
-                trackStatus = { status: 'on-track', count: 0 };
-            }
-        } else {
-            trackDiff = milestonesPassedCount - actionCount;
-            if (trackDiff > 0) {
-                trackStatus = { status: 'behind', count: trackDiff };
-            } else if (trackDiff < 0) {
-                trackStatus = { status: 'ahead', count: Math.abs(trackDiff) };
-            } else {
-                trackStatus = { status: 'on-track', count: 0 };
-            }
-        }
+        var totalMilestones = scheduleResult.originalTotal;
+        var actionCount = scheduleResult.actionUnits;
+        var milestonesPassedCount = scheduleResult.passedCount;
+        var nextMilestone = scheduleResult.next;
+        var trackStatus = scheduleResult.track;
 
         var isOnTrack = trackStatus.status === 'on-track' || trackStatus.status === 'ahead';
-        var isComplete = nextUpcomingMilestone === null;
+        var isComplete = nextMilestone === null;
         var colorClass = isOnTrack ? 'goal-on-track' : 'goal-behind';
 
         var badgeClass, badgeLabel, unitLabel, periodLabel;
@@ -180,13 +124,16 @@ var QuantitativeGoalsModule = (function() {
         var milestoneLabel = isDoLess ? 'Wait until' : 'Do it by';
         var milestoneTimeDisplay = 'Complete!';
         var milestoneCountdown = '';
-        if (nextUpcomingMilestone && !isComplete) {
-            milestoneTimeDisplay = GoalMilestonesModule.formatMilestoneClockTime(nextUpcomingMilestone.timestamp);
-            milestoneCountdown = StatsCalculationsModule.formatMilestoneTime(nextUpcomingMilestone.timestamp);
+        if (nextMilestone && nextMilestone.availableNow) {
+            milestoneLabel = 'Allowed';
+            milestoneTimeDisplay = 'Now';
+        } else if (nextMilestone) {
+            milestoneTimeDisplay = GoalMilestonesModule.formatMilestoneClockTime(nextMilestone.timestamp);
+            milestoneCountdown = StatsCalculationsModule.formatMilestoneTime(nextMilestone.timestamp);
         }
 
-        var milestonesCompleted = allMilestones.filter(function(m) { return m.status === 'completed'; }).length;
-        var milestonesMissed = allMilestones.filter(function(m) { return m.status === 'missed'; }).length;
+        var milestonesCompleted = scheduleResult.completedCount;
+        var milestonesMissed = scheduleResult.missedCount;
 
         var trackStatusDisplay;
         var trackStatusClass = '';
@@ -204,16 +151,19 @@ var QuantitativeGoalsModule = (function() {
         var goalStartMs = goal.createdAt;
         var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
 
-        // Progress is milestones done / milestones allotted (starts at 0% for both doMore and doLess)
-        var progressCompletedPct = Math.min(100, Math.round((actionCount / totalMilestones) * 100));
+        // doMore: share of milestones completed. doLess: share of the allowance used.
+        var progressCompletedPct = totalMilestones > 0
+            ? Math.min(100, Math.round(((isDoLess ? actionCount : milestonesCompleted) / totalMilestones) * 100))
+            : 0;
 
         var trackBadgeClass = trackStatus.status === 'on-track' ? 'badge-on-track' :
                               (trackStatus.status === 'ahead' ? 'badge-ahead' : 'badge-behind');
         var trackBadgeText = trackStatus.status === 'on-track' ? 'On track' :
-                             (trackStatus.status === 'ahead' ? trackStatus.count + ' uses ahead' : trackStatus.count + ' behind');
+                             (trackStatus.status === 'ahead' ? trackStatus.count + ' ahead' : trackStatus.count + ' behind');
 
         var milestonesDoneText = isDoLess ? "used" : "completed";
-        var milestonesAllottment = isDoLess ? "Available" : "Needeed";
+        var milestonesAllottment = isDoLess ? "available" : "due";
+        var milestonesDoneCount = isDoLess ? actionCount : milestonesCompleted;
 
         var html = '<div class="goal-accordion-item ' + colorClass + '" data-goal-id="' + goal.id + '" data-goal-type="quantitative">' +
             '<button class="goal-delete-btn" data-goal-id="' + goal.id + '" title="Delete goal"><i class="fas fa-times"></i></button>' +
@@ -225,8 +175,8 @@ var QuantitativeGoalsModule = (function() {
                 '<div class="goal-summary-stats">' +
                     '<div class="goal-stat-item goal-stat-left">' +
                         '<span class="goal-type-badge ' + trackBadgeClass + '">' + trackBadgeText + '</span>' +
-                        '<span class="goal-stat-value">' + Math.max(0, totalMilestones - actionCount) + ' milestones left</span>' +
-                        '<span class="goal-stat-label">' + actionCount + ' ' + milestonesDoneText + ' / ' + milestonesPassedCount + ' ' + milestonesAllottment + '</span>' +
+                        '<span class="goal-stat-value">' + scheduleResult.remainingNeeded + ' milestones left</span>' +
+                        '<span class="goal-stat-label">' + milestonesDoneCount + ' ' + milestonesDoneText + ' / ' + milestonesPassedCount + ' ' + milestonesAllottment + '</span>' +
                     '</div>' +
                     '<div class="goal-stat-item goal-stat-right">' +
                         '<div class="stat-milestone-datetime">' +
@@ -444,7 +394,12 @@ var QuantitativeGoalsModule = (function() {
                 return null;
             }
 
-            behavioralGoal = createQuantitativeGoal('dollars', currentAmount, goalAmount, measurementTimeline, completionTimeline);
+            var spendingOptions = {};
+            var baseline = StorageModule.retrieveStorageObject().option.baseline || {};
+            if (baseline.spendingChunkEnabled && baseline.spendingChunkSize > 0) {
+                spendingOptions.chunkSize = baseline.spendingChunkSize;
+            }
+            behavioralGoal = createQuantitativeGoal('dollars', currentAmount, goalAmount, measurementTimeline, completionTimeline, spendingOptions);
         }
 
         return behavioralGoal;
@@ -517,7 +472,6 @@ var QuantitativeGoalsModule = (function() {
     return {
         createQuantitativeGoal: createQuantitativeGoal,
         getCurrentPeriodActual: getCurrentPeriodActual,
-        calculateProgress: calculateProgress,
         renderQuantitativeGoalItem: renderQuantitativeGoalItem,
         seedCurrentAmountsFromBaseline: seedCurrentAmountsFromBaseline,
         saveDialogValuesToBaseline: saveDialogValuesToBaseline,

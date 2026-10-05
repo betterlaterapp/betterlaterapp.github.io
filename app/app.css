@@ -1886,6 +1886,12 @@ body.do-less .do-more-only:not(.d-none) {
             fill: rgba(40, 167, 69, 0.2) !important;
         }
 
+        /* Lines are open paths: filling them draws a closing diagonal. The area shows the fill. */
+        .ct-series-a .ct-line,
+        .ct-series-b .ct-line {
+            fill: none !important;
+        }
+
         /* Cumulative chart increase point markers */
         .ct-series-a .ct-point.ct-point-increase {
             stroke: #911521 !important;
@@ -1911,6 +1917,67 @@ body.do-less .do-more-only:not(.d-none) {
             overflow: visible;
         }
 
+
+        /* Do-more sessions chart */
+        .bar-chart .legend-sessions {
+            flex-direction: column;
+            align-items: center;
+        }
+        .bar-chart .legend-sessions.d-none {
+            display: none;
+        }
+        .legend-sessions-items {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .legend-sessions .color {
+            margin-right: 4px;
+            vertical-align: -2px;
+        }
+        .ct-time-label {
+            font-size: 10px;
+            fill: #2b5a3a;
+            font-weight: 600;
+        }
+        .ct-time-label.compact {
+            font-size: 9px;
+        }
+
+        /* Summary of the current view */
+        .report-summary {
+            margin: 4px 0 8px;
+            padding: 6px 10px;
+            line-height: 1.35;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .report-summary:empty {
+            display: none;
+        }
+        .report-summary-heading {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .report-summary-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .report-summary-list li {
+            padding: 1px 0;
+        }
+        .report-summary-change {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .report-summary-change .good {
+            color: #1e9039;
+        }
+        .report-summary-change .bad {
+            color: #911521;
+        }
 
     /* bottom statistics */
         .report-statistics {
