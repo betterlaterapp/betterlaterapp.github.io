@@ -5,203 +5,198 @@
  */
 var GoalMilestonesModule = (function() {
 
+    var EPSILON = 1e-9;
+
     /**
-     * Generate schedule milestones for quantifiable goal.
-     * This is ACTION-AWARE: it factors in user actions to determine which
-     * milestones are completed, missed, or upcoming.
+     * Generate the goal's milestones with a status for each one, plus the next
+     * milestone and on-track status. Every screen showing milestones uses this.
      *
      * @param {Object} goal - Behavioral goal object
-     * @param {Object} jsonObject - Storage object with actions and baseline
-     * @returns {Object} - { display: Array, all: Array, originalTotal, remainingNeeded }
+     * @param {Array} actions - Action log
+     * @param {boolean} isDoLess - Whether the user is trying to do less
+     * @returns {Object} - { all, display, originalTotal, remainingNeeded, completedCount,
+     *                       missedCount, actionUnits, next, track }
      */
-    function generateScheduleMilestones(goal, jsonObject) {
-        var baseline = (jsonObject.option && jsonObject.option.baseline) || {};
-        var isDoLess = baseline.doLess === true;
-        var actions = jsonObject.action || [];
-
+    function generateScheduleMilestones(goal, actions, isDoLess) {
+        var schedule = StatsCalculationsModule.calculateMilestoneSchedule(goal);
         var now = Date.now();
-        var goalStartMs = goal.createdAt;
-        var goalEndMs = goalStartMs + (goal.completionTimeline * 24 * 60 * 60 * 1000);
-        var goalStartSec = Math.floor(goalStartMs / 1000);
+        var events = getGoalEvents(goal, actions || [], isDoLess);
+        var actionUnits = Math.floor(events.reduce(function(sum, e) { return sum + e.units; }, 0) + EPSILON);
 
-        // Get relevant actions since goal started
-        var relevantActions = getRelevantActions(goal, actions, goalStartSec);
-        var actionCount = relevantActions.length;
-        // Convert to batch count if goal uses chunk size (high-frequency times goals)
-        if (goal.unit === 'times' && goal.chunkSize > 0) {
-            actionCount = Math.floor(actionCount / goal.chunkSize);
-        }
+        var scored = isDoLess
+            ? scoreDoLessMilestones(schedule, events, goal.createdAt, now)
+            : scoreDoMoreMilestones(schedule, events, now);
 
-        // Get the ORIGINAL schedule for historical reference
-        var curveType = isDoLess ? 'power' : 'sigmoid';
-        var originalSchedule = StatsCalculationsModule.calculateMilestoneSchedule(goal, {
-            curveType: curveType
-        });
-        if (!originalSchedule || originalSchedule.length === 0) {
-            return { display: [], all: [] };
-        }
-
-        var totalMilestones = originalSchedule.length;
-
-        // Sort actions by timestamp
-        relevantActions.sort(function(a, b) {
-            return parseInt(a.timestamp) - parseInt(b.timestamp);
-        });
-
-        // Find how many original milestones have passed
-        var passedMilestoneCount = 0;
-        for (var i = 0; i < originalSchedule.length; i++) {
-            if (originalSchedule[i].timestamp <= now) {
-                passedMilestoneCount++;
-            }
-        }
-
-        // Calculate remaining milestones needed
-        var remainingMilestonesNeeded = Math.max(0, totalMilestones - actionCount);
-
-        // Get recalculated UPCOMING milestones from current time
-        var upcomingSchedule = [];
-        if (remainingMilestonesNeeded > 0 && now < goalEndMs) {
-            upcomingSchedule = StatsCalculationsModule.calculateMilestoneSchedule(goal, {
-                curveType: curveType,
-                actionCount: actionCount,
-                recalculateFromNow: true
-            });
-        }
-
-        // Build combined schedule
-        var combinedMilestones = [];
-        var milestoneIndex = 1;
-
-        // Add past milestones from original schedule
-        for (var i = 0; i < originalSchedule.length; i++) {
-            var m = originalSchedule[i];
-            if (m.timestamp <= now) {
-                var actionsBeforeThis = relevantActions.filter(function(a) {
-                    return parseInt(a.timestamp) * 1000 <= m.timestamp;
-                }).length;
-                if (goal.unit === 'times' && goal.chunkSize > 0) {
-                    actionsBeforeThis = Math.floor(actionsBeforeThis / goal.chunkSize);
-                }
-
-                var status;
-                if (isDoLess) {
-                    status = actionsBeforeThis <= i ? 'completed' : 'missed';
-                } else {
-                    status = actionsBeforeThis > i ? 'completed' : 'missed';
-                }
-
-                combinedMilestones.push({
-                    timestamp: m.timestamp,
-                    index: milestoneIndex++,
-                    status: status,
-                    progress: m.progress,
-                    intervalMs: m.intervalMs
-                });
-            }
-        }
-
-        // Add upcoming milestones from recalculated schedule
-        for (var i = 0; i < upcomingSchedule.length; i++) {
-            var m = upcomingSchedule[i];
-            combinedMilestones.push({
-                timestamp: m.timestamp,
-                index: milestoneIndex++,
-                status: 'upcoming',
-                progress: m.progress,
-                intervalMs: m.intervalMs
-            });
-        }
-
-        // Format ALL milestones
-        var allFormatted = combinedMilestones.map(function(m) {
+        var all = schedule.map(function(m, i) {
+            var status = scored.statuses[i];
             return {
                 label: 'Milestone ' + m.index,
                 percentage: Math.round((m.progress || 0) * 100),
                 timestamp: m.timestamp,
                 date: new Date(m.timestamp),
-                isPast: m.status !== 'upcoming',
-                isCompleted: m.status === 'completed',
-                isMissed: m.status === 'missed',
-                status: m.status,
+                isPast: m.timestamp <= now,
+                isCompleted: status === 'completed',
+                isMissed: status === 'missed',
+                status: status,
                 index: m.index,
-                totalMilestones: totalMilestones,
+                totalMilestones: schedule.length,
                 intervalMs: m.intervalMs
             };
         });
 
+        var count = function(status) {
+            return all.filter(function(m) { return m.status === status; }).length;
+        };
+
         return {
-            display: allFormatted,
-            all: allFormatted,
-            originalTotal: totalMilestones,
-            remainingNeeded: remainingMilestonesNeeded
+            all: all,
+            display: all,
+            originalTotal: all.length,
+            remainingNeeded: count('upcoming'),
+            completedCount: count('completed'),
+            missedCount: count('missed'),
+            passedCount: all.filter(function(m) { return m.isPast; }).length,
+            actionUnits: actionUnits,
+            next: scored.next,
+            track: scored.track
         };
     }
 
     /**
-     * Get relevant actions for a goal since goal started.
+     * Actions that count toward a goal since it started, as
+     * {timestampMs, units} sorted oldest first. When doing more of a habit,
+     * "times" are sessions: 20 pushups then 15 situps count once.
      */
-    function getRelevantActions(goal, actions, goalStartSec) {
-        var unit = goal.unit;
-        return actions.filter(function(a) {
-            if (!a || parseInt(a.timestamp) < goalStartSec) return false;
+    function getGoalEvents(goal, actions, isDoLess) {
+        var Calc = StatsCalculationsModule;
+        var goalStartSec = Math.floor(goal.createdAt / 1000);
+        var sinceStart = actions.filter(function(a) {
+            return a && parseInt(a.timestamp) >= goalStartSec;
+        });
 
-            if (unit === 'times') {
-                return a.clickType === 'used' || a.clickType === 'timed';
-            } else if (unit === 'minutes') {
-                return a.clickType === 'timed' && a.duration;
-            } else if (unit === 'dollars') {
-                return a.clickType === 'bought' && a.spent;
-            }
-            return false;
+        if (!isDoLess && goal.unit === 'times') {
+            return Calc.groupIntoSessions(sinceStart).map(function(session) {
+                return {
+                    timestampMs: session.start * 1000,
+                    units: 1 / Calc.getMilestoneUnitSize(goal)
+                };
+            });
+        }
+
+        return sinceStart.map(function(a) {
+            return {
+                timestampMs: parseInt(a.timestamp) * 1000,
+                units: Calc.getActionMilestoneUnits(goal, a)
+            };
+        }).filter(function(e) {
+            return e.units > 0;
+        }).sort(function(a, b) {
+            return a.timestampMs - b.timestampMs;
         });
     }
 
+    function sumUnitsBetween(events, afterMs, untilMs) {
+        return events.reduce(function(sum, e) {
+            return (e.timestampMs > afterMs && e.timestampMs <= untilMs) ? sum + e.units : sum;
+        }, 0);
+    }
+
     /**
-     * Process milestone statuses based on actions
+     * Do more: each milestone is a "do it by" deadline. Work done before a
+     * deadline counts toward it and extra work banks forward, but a missed
+     * deadline expires rather than piling onto later ones, so falling behind
+     * never asks the user to cram sessions together to catch up.
      */
-    function processMilestoneStatuses(milestones, actions, goal, isDoLess) {
-        var now = Date.now();
-        var goalStartSec = Math.floor(goal.createdAt / 1000);
-
-        var relevantActions = actions.filter(function(a) {
-            if (!a || parseInt(a.timestamp) < goalStartSec) return false;
-            if (goal.unit === 'times') {
-                return a.clickType === 'used' || a.clickType === 'timed';
+    function scoreDoMoreMilestones(schedule, events, now) {
+        var credit = 0;
+        var eventIndex = 0;
+        var statuses = schedule.map(function(m) {
+            var isPast = m.timestamp <= now;
+            var cutoff = isPast ? m.timestamp : now;
+            while (eventIndex < events.length && events[eventIndex].timestampMs <= cutoff) {
+                credit += events[eventIndex].units;
+                eventIndex++;
             }
-            return false;
-        }).sort(function(a, b) {
-            return parseInt(a.timestamp) - parseInt(b.timestamp);
+            if (credit >= 1 - EPSILON) {
+                credit -= 1;
+                return 'completed';
+            }
+            return isPast ? 'missed' : 'upcoming';
         });
 
-        var actionIndex = 0;
-        return milestones.map(function(m) {
-            var isPast = m.timestamp < now;
-            var status = 'upcoming';
-
-            if (isPast) {
-                var chunkSize = (goal.unit === 'times' && goal.chunkSize > 0) ? goal.chunkSize : 0;
-                if (isDoLess) {
-                    var rawActionsBeforeMilestone = relevantActions.filter(function(a) {
-                        return parseInt(a.timestamp) * 1000 < m.timestamp;
-                    }).length;
-                    var actionsBeforeMilestone = chunkSize > 0
-                        ? Math.floor(rawActionsBeforeMilestone / chunkSize)
-                        : rawActionsBeforeMilestone;
-                    status = actionsBeforeMilestone > actionIndex ? 'missed' : 'completed';
-                    if (actionsBeforeMilestone > actionIndex) actionIndex = actionsBeforeMilestone;
-                } else {
-                    while (actionIndex < relevantActions.length &&
-                           parseInt(relevantActions[actionIndex].timestamp) * 1000 <= m.timestamp) {
-                        actionIndex++;
-                    }
-                    var effectiveActionIndex = chunkSize > 0 ? Math.floor(actionIndex / chunkSize) : actionIndex;
-                    status = effectiveActionIndex >= m.index ? 'completed' : 'missed';
-                }
+        var next = null;
+        for (var i = 0; i < schedule.length; i++) {
+            if (statuses[i] === 'upcoming') {
+                next = { timestamp: schedule[i].timestamp, index: schedule[i].index, availableNow: false };
+                break;
             }
+        }
 
-            return Object.assign({}, m, { status: status, isPast: isPast });
+        var banked = 0;
+        var recentMisses = 0;
+        schedule.forEach(function(m, i) {
+            if (m.timestamp > now && statuses[i] === 'completed') banked++;
+            if (m.timestamp <= now) recentMisses = statuses[i] === 'missed' ? recentMisses + 1 : 0;
         });
+
+        var track = { status: 'on-track', count: 0 };
+        if (recentMisses > 0) {
+            track = { status: 'behind', count: recentMisses };
+        } else if (banked > 0) {
+            track = { status: 'ahead', count: banked };
+        }
+
+        return { statuses: statuses, next: next, track: track };
+    }
+
+    /**
+     * Do less: each milestone unlocks one more use ("wait until"). A milestone
+     * is kept if no more than the unlocked amount was used in the window
+     * leading up to it (nothing before the first one). Each window is judged
+     * on its own: a slip costs that one milestone and the plan carries on,
+     * with no debt to pay down. Unused allowance doesn't bank either, so
+     * saving up for a binge isn't rewarded.
+     */
+    function scoreDoLessMilestones(schedule, events, goalStartMs, now) {
+        var windowStart = goalStartMs;
+        var statuses = schedule.map(function(m, i) {
+            if (m.timestamp > now) return 'upcoming';
+            var allowance = i === 0 ? 0 : 1;
+            var used = sumUnitsBetween(events, windowStart, m.timestamp);
+            windowStart = m.timestamp;
+            return used <= allowance + EPSILON ? 'completed' : 'missed';
+        });
+
+        // Current window: from the last passed milestone (or goal start) until the next one
+        var lastPassed = -1;
+        for (var i = 0; i < schedule.length; i++) {
+            if (schedule[i].timestamp <= now) lastPassed = i;
+        }
+        var currentWindowStart = lastPassed >= 0 ? schedule[lastPassed].timestamp : goalStartMs;
+        var currentAllowance = lastPassed >= 0 ? 1 : 0;
+        var usedThisWindow = sumUnitsBetween(events, currentWindowStart, now);
+        var nextMilestone = schedule[lastPassed + 1];
+
+        var next = null;
+        if (nextMilestone) {
+            next = {
+                timestamp: nextMilestone.timestamp,
+                index: nextMilestone.index,
+                availableNow: usedThisWindow < currentAllowance - EPSILON
+            };
+        }
+
+        var recentMisses = 0;
+        for (var j = 0; j <= lastPassed; j++) {
+            recentMisses = statuses[j] === 'missed' ? recentMisses + 1 : 0;
+        }
+        if (usedThisWindow > currentAllowance + EPSILON) recentMisses++;
+
+        var track = recentMisses > 0
+            ? { status: 'behind', count: recentMisses }
+            : { status: 'on-track', count: 0 };
+
+        return { statuses: statuses, next: next, track: track };
     }
 
     /**
@@ -412,8 +407,6 @@ var GoalMilestonesModule = (function() {
     // Public API
     return {
         generateScheduleMilestones: generateScheduleMilestones,
-        getRelevantActions: getRelevantActions,
-        processMilestoneStatuses: processMilestoneStatuses,
         formatDateForCalendar: formatDateForCalendar,
         getMilestoneDatesJson: getMilestoneDatesJson,
         renderMilestoneDaySummaries: renderMilestoneDaySummaries,

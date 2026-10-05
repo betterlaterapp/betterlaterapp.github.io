@@ -15,6 +15,8 @@ if('serviceWorker' in navigator){
                 }
             });
         } else {
+            cacheLoadedFilesForOffline();
+
             // Production mode: Register service worker ONLY if not already registered
             // This prevents automatic update checks on every page load
             navigator.serviceWorker.getRegistration().then(function(existingReg) {
@@ -35,6 +37,24 @@ if('serviceWorker' in navigator){
             });
         }
     })
+}
+
+/**
+ * Once the service worker is running, send it every same-origin file this
+ * page has loaded so they're cached for offline use, including on the very
+ * first visit (which loads before the service worker exists).
+ */
+function cacheLoadedFilesForOffline() {
+    navigator.serviceWorker.ready.then(function(registration) {
+        var urls = [window.location.href].concat(
+            performance.getEntriesByType('resource').map(function(entry) { return entry.name; })
+        ).filter(function(url) {
+            return url.indexOf(window.location.origin + '/') === 0;
+        });
+        if (registration.active) {
+            registration.active.postMessage({ type: 'cache-urls', urls: urls });
+        }
+    });
 }
 
 // Global function to manually refresh the service worker

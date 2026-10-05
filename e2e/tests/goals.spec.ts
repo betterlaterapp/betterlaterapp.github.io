@@ -10,8 +10,8 @@ import {
  * Validates:
  * - Creating a goal with countdown timer
  * - Goal completion notification
- * - Extending an existing goal
- * - Ending a goal early
+ * - Extending an active wait
+ * - Ending a wait early
  * - Goal timer visibility and updates
  */
 
@@ -128,61 +128,72 @@ test.describe('Better Later - Goal System', () => {
     console.log('✅ Goal timer visibility test passed!');
   });
 
-  test.skip('extend existing goal adds time', async ({ page }) => {
-    // First create a goal
+  test('extend an active wait to a later time', async ({ page }) => {
+    // Start a 30 minute wait
     await page.click('#wait-button');
     const dialog = page.locator('.wait.log-more-info');
     await expect(dialog).toBeVisible();
-    
-    // Set goal for 30 minutes from now
-    const futureDate = new Date();
-    futureDate.setMinutes(futureDate.getMinutes() + 30);
-    
-    // Quick submit with current settings
-    await dialog.locator('#usedWaitInput').check();
-    await dialog.locator('button.submit').click();
-    await page.waitForTimeout(500);
-    
-    // Now try to extend
-    // Click wait button again
+    await dialog.locator('.wait-quick-btn[data-minutes="30"]').click();
+
+    const panel = page.locator('#wait-timers-container .wait-timer-panel');
+    await expect(panel).toHaveCount(1);
+    const originalEnd = Number(await panel.getAttribute('data-goal-end'));
+
+    // Choose a later time while it's running: 9am tomorrow
     await page.click('#wait-button');
     await expect(dialog).toBeVisible();
-    
-    // Look for extend option
-    const extendButton = dialog.locator('button:has-text("Extend")');
-    if (await extendButton.isVisible()) {
-      await extendButton.click();
-      console.log('✅ Extend goal test - extend button clicked');
-    } else {
-      console.log('⚠️  Extend button not visible - may need active goal first');
-    }
+    await page.click('#waitCustomRadio');
+    await page.evaluate(() => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      $('#waitEndPicker').datepicker('setDate', tomorrow);
+    });
+    await dialog.locator('.time-picker-hour').selectOption('9');
+    await dialog.locator('.time-picker-minute').selectOption('0');
+    await dialog.locator('.time-picker-am-pm').selectOption('AM');
+    await dialog.locator('button.submit').click();
+
+    // Still one wait, now ending later, and saved
+    await expect(panel).toHaveCount(1);
+    const tomorrowNine = new Date();
+    tomorrowNine.setDate(tomorrowNine.getDate() + 1);
+    tomorrowNine.setHours(9, 0, 0, 0);
+    const expectedEnd = Math.round(tomorrowNine.getTime() / 1000);
+    await expect(panel).toHaveAttribute('data-goal-end', String(expectedEnd));
+    expect(expectedEnd).toBeGreaterThan(originalEnd);
+
+    const waits = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('esCrave') || '{}').action.filter((a: any) => a && a.clickType === 'wait')
+    );
+    expect(waits).toHaveLength(1);
+    expect(Number(waits[0].waitStamp)).toBe(expectedEnd);
+    expect(waits[0].status).toBe(1);
   });
 
-  test.skip('end goal early creates habit log entry', async ({ page }) => {
-    // First create a goal
+  test('end a wait early creates a habit log entry', async ({ page }) => {
     await page.click('#wait-button');
-    const dialog = page.locator('.wait.log-more-info');
-    await expect(dialog).toBeVisible();
-    
-    await dialog.locator('#usedWaitInput').check();
-    await dialog.locator('button.submit').click();
-    await page.waitForTimeout(500);
-    
-    // Find and click the goal panel's close/end button
-    const goalPanel = page.locator('.wait-timer-panel');
-    if (await goalPanel.isVisible()) {
-      const endButton = goalPanel.locator('.wait-timer-discard-btn');
-      await endButton.click();
-      
-      // Should create a log entry
-      await navigateToJournal(page);
-      const goalEntries = page.locator('#habit-log .item');
-      const count = await goalEntries.count();
-      expect(count).toBeGreaterThan(0);
-      
-      console.log('✅ End goal early test passed!');
-    } else {
-      console.log('⚠️  Goal panel not visible to end early');
-    }
+    await page.locator('.wait.log-more-info .wait-quick-btn[data-minutes="30"]').click();
+
+    const panel = page.locator('#wait-timers-container .wait-timer-panel');
+    await expect(panel).toHaveCount(1);
+
+    // The ✕ opens the panel's options; end the wait now
+    await panel.locator('.wait-timer-discard-btn').click();
+    await panel.locator('.wait-timer-end-now-btn').click();
+    await expect(panel).toHaveCount(0);
+
+    // Saved as ended early (status 2), and shown in the habit log
+    const waits = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('esCrave') || '{}').action.filter((a: any) => a && a.clickType === 'wait')
+    );
+    expect(waits).toHaveLength(1);
+    expect(waits[0].status).toBe(2);
+
+    await navigateToJournal(page);
+    await expect(page.locator('#habit-log .item.wait-record')).toHaveCount(1);
+
+    // The ended wait stays ended after a reload
+    await page.reload();
+    await expect(page.locator('#wait-timers-container .wait-timer-panel')).toHaveCount(0);
   });
 });

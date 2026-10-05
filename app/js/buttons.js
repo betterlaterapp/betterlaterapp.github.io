@@ -159,7 +159,7 @@ var ButtonsModule = (function() {
      * Check if a unit is one of the default units
      */
     function isDefaultUnit(unit) {
-        var defaults = ['', 'times', 'reps', 'laps', 'sets', 'grams', 'oz', 'ml', 'cups', 'pages', 'minutes'];
+        var defaults = ['', 'times', 'reps', 'laps', 'sets', 'mg', 'grams', 'oz', 'ml', 'cups', 'pages', 'minutes'];
         return defaults.includes(unit);
     }
 
@@ -424,8 +424,8 @@ var ButtonsModule = (function() {
         // Return to statistics screen
         $(".statistics-tab-toggler").click();
 
-        // Update click counter - increment by chunk amount if available
-        var clickIncrement = (howMuchData && howMuchData.amount) ? howMuchData.amount : 1;
+        // Each "did it" is one time; amounts (5 sips, 0.5g) are tracked on the entry itself
+        var clickIncrement = 1;
         if (json.statistics.use.clickCounter === 0) {
             json.statistics.use.firstClickStamp += timestampSeconds;
         }

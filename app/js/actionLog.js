@@ -43,9 +43,10 @@ var ActionLogModule = (function () {
             titleHTML = '<i class="fas fa-dollar-sign"></i>&nbsp;&nbsp;' + "You spent <b>$" + parseInt(amountSpent) + "</b> on it.";
             //target = "#cost-log";
         } else if (clickType == "used") {
-            if (howMuchAmount && howMuchAmount > 1) {
-                var unitLabel = howMuchUnit || '';
-                titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did <b>" + howMuchAmount + " " + unitLabel + "</b> at <b>" + shortHandTime + "</b>.";
+            // Show the amount whenever one was given with a unit, or isn't the default of 1
+            if (howMuchAmount && (howMuchUnit || parseFloat(howMuchAmount) !== 1)) {
+                var unitLabel = $('<div>').text(howMuchUnit || '').html();
+                titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did <b>" + parseFloat(howMuchAmount) + " " + unitLabel + "</b> at <b>" + shortHandTime + "</b>.";
             } else {
                 titleHTML = '<i class="fas fa-cookie-bite"></i>&nbsp;' + "You did it at <b>" + shortHandTime + "</b>.";
             }

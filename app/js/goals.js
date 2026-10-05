@@ -510,6 +510,63 @@ var GoalsModule = (function() {
     }
 
     /**
+     * Read the create-goal dialog into a draft goal (not saved) so the assistant
+     * can preview the exact schedule the goal would get.
+     */
+    function getDraftGoalFromDialog(selectedType, completionDays) {
+        var draft = { createdAt: Date.now(), completionTimeline: completionDays };
+
+        if (selectedType === 'usage') {
+            draft.unit = 'times';
+            draft.measurementTimeline = timelineToDays($('.create-usage-timeline-select').val());
+            draft.currentAmount = parseInt($('.create-amountDonePerWeek').val()) || 0;
+            draft.goalAmount = parseInt($('.create-goalDonePerWeek').val()) || 0;
+            if ($('.create-usage-chunk-row').is(':visible')) {
+                draft.chunkSize = parseInt($('.create-usageChunkSize').val()) || 1;
+            }
+        } else if (selectedType === 'time') {
+            draft.unit = 'minutes';
+            draft.measurementTimeline = timelineToDays($('.create-time-timeline-select').val());
+            draft.currentAmount = (parseInt($('.create-currentTimeHours').val()) || 0) * 60 + (parseInt($('.create-currentTimeMinutes').val()) || 0);
+            draft.goalAmount = (parseInt($('.create-goalTimeHours').val()) || 0) * 60 + (parseInt($('.create-goalTimeMinutes').val()) || 0);
+            draft.chunkSize = ((parseInt($('.create-sessionTimeHours').val()) || 1) * 60) + (parseInt($('.create-sessionTimeMinutes').val()) || 0);
+        } else if (selectedType === 'spending') {
+            draft.unit = 'dollars';
+            draft.measurementTimeline = timelineToDays($('.create-spending-timeline-select').val());
+            draft.currentAmount = parseInt($('.create-amountSpentPerWeek').val()) || 0;
+            draft.goalAmount = parseInt($('.create-goalSpentPerWeek').val()) || 0;
+        } else {
+            return null;
+        }
+        return draft;
+    }
+
+    /**
+     * Format an amount in the goal's unit, e.g. "3×", "90 min", "$20"
+     */
+    function formatGoalAmount(amount, unit) {
+        var rounded = Math.round(amount);
+        if (unit === 'minutes') return rounded + ' min';
+        if (unit === 'dollars') return '$' + rounded;
+        return rounded + '×';
+    }
+
+    /**
+     * Summarize a weekly-step plan as "Wk 1: 2× · Wk 2: 3× · ..." using the
+     * exact milestones the goal would get. Short (daily-step) goals return ''.
+     */
+    function describeWeeklyPlan(draft, schedule) {
+        var steps = StatsCalculationsModule.getGoalStepPlan(draft);
+        if (steps.length < 2 || steps[0].endDay - steps[0].startDay !== 7) return '';
+
+        var unitSize = StatsCalculationsModule.getMilestoneUnitSize(draft);
+        return steps.map(function(step, i) {
+            var count = schedule.filter(function(m) { return m.stepIndex === i; }).length;
+            return 'Wk ' + (i + 1) + ': ' + formatGoalAmount(count * unitSize, draft.unit);
+        }).join(' · ');
+    }
+
+    /**
      * Calculate estimated milestone count and show goal building assistant
      */
     function updateMilestoneWarning() {
@@ -518,55 +575,60 @@ var GoalsModule = (function() {
         var selectedType = $('#create-goal-type-select').val();
         var completionDays = parseInt($('.create-completion-timeline-input').val()) || 7;
 
-        var jsonObject = StorageModule.retrieveStorageObject();
-        var baseline = (jsonObject && jsonObject.option && jsonObject.option.baseline) || {};
-        var isDoLess = baseline.doLess === true;
-
-        var currentAmount = 0;
-        var goalAmount = 0;
-        var measurementDays = 7;
-
-        if (selectedType === 'usage') {
-            measurementDays = timelineToDays($('.create-usage-timeline-select').val());
-            currentAmount = parseInt($('.create-amountDonePerWeek').val()) || 0;
-            goalAmount = parseInt($('.create-goalDonePerWeek').val()) || 0;
-        } else if (selectedType === 'time') {
-            measurementDays = timelineToDays($('.create-time-timeline-select').val());
-            var currentHours = parseInt($('.create-currentTimeHours').val()) || 0;
-            var currentMinutes = parseInt($('.create-currentTimeMinutes').val()) || 0;
-            currentAmount = currentHours * 60 + currentMinutes;
-            var goalHours = parseInt($('.create-goalTimeHours').val()) || 0;
-            var goalMinutes = parseInt($('.create-goalTimeMinutes').val()) || 0;
-            goalAmount = goalHours * 60 + goalMinutes;
-        } else if (selectedType === 'spending') {
-            measurementDays = timelineToDays($('.create-spending-timeline-select').val());
-            currentAmount = parseInt($('.create-amountSpentPerWeek').val()) || 0;
-            goalAmount = parseInt($('.create-goalSpentPerWeek').val()) || 0;
-        } else {
+        var draft = getDraftGoalFromDialog(selectedType, completionDays);
+        if (!draft) {
             $warning.hide();
             return;
         }
 
-        var difference = Math.abs(currentAmount - goalAmount);
-        var milestoneCount = Math.max(1, difference);
-        var reductionPct = currentAmount > 0 ? ((currentAmount - goalAmount) / currentAmount) * 100 : 0;
+        var jsonObject = StorageModule.retrieveStorageObject();
+        var schedule = StatsCalculationsModule.calculateMilestoneSchedule(draft);
+        var milestoneCount = schedule.length;
+        var isIncrease = draft.goalAmount > draft.currentAmount;
+        var isDecrease = draft.goalAmount < draft.currentAmount;
 
-        var completedGoals = (jsonObject.behavioralGoals || []).filter(function(g) {
-            return g.status === 'completed' && g.completionTimeline < 7;
+        // Goals aren't marked complete when they end, so look for any that ran their course
+        var hasFinishedGoal = (jsonObject.behavioralGoals || []).some(function(g) {
+            return g.type === 'quantitative' && g.createdAt + g.completionTimeline * 24 * 60 * 60 * 1000 <= Date.now();
         });
-        var hasCompletedShortGoal = completedGoals.length > 0;
+
+        var tips;
+        if (isIncrease) {
+            tips = [
+                'Build up by about 1–2 sessions (or 10–20%) per week',
+                'Missed a session? It just expires. No need to double up',
+                'Consistency beats intensity: new habits usually take 2–3 months to feel automatic'
+            ];
+        } else if (isDecrease) {
+            tips = [
+                'Start with a week or less. Finish it, then set your next goal from where you land',
+                'Cut about 10–25% per week. Smaller cuts are easier to keep',
+                "Each milestone unlocks one more time. Unused ones don't carry over, so there's no saving up",
+                'A slip only costs that milestone. The plan picks back up at the next one'
+            ];
+        } else {
+            tips = [
+                'Just tracking a habit tends to change it. Holding steady first is a solid start'
+            ];
+        }
+
+        var weeklyPlan = describeWeeklyPlan(draft, schedule);
 
         var html = '<div class="goal-assistant">';
         html += '<div class="assistant-info">';
         html += '<div class="assistant-milestone-count">';
-        html += '<i class="fas fa-flag-checkered"></i> This goal would result in <strong>' + milestoneCount + ' milestones</strong>, planned out over your chosen timeline!';
+        html += '<i class="fas fa-flag-checkered"></i> This goal would result in <strong>' + milestoneCount + ' milestone' + (milestoneCount !== 1 ? 's' : '') + '</strong>, planned out over your chosen timeline!';
+        if (weeklyPlan) {
+            html += '<div class="assistant-weekly-plan"><small>' + weeklyPlan + '</small></div>';
+        }
         html += '</div>';
 
         html += '<div class="assistant-tips">';
         html += '<div class="tips-header"><i class="fas fa-lightbulb"></i> More successful goal parameters</div>';
         html += '<ul class="tips-list">';
-        html += '<li>Goals between 2 and 6 days tend to be the most successful</li>';
-        html += '<li>Goals reducing less than 50% current usage tend to be more successful</li>';
+        tips.forEach(function(tip) {
+            html += '<li>' + tip + '</li>';
+        });
         html += '</ul>';
         html += '</div>';
         html += '</div>';
@@ -574,25 +636,46 @@ var GoalsModule = (function() {
 
         var warnings = [];
 
-        if (isDoLess) {
-            if (reductionPct > 50 && reductionPct <= 75 && completionDays < 2) {
-                warnings.push({
-                    type: 'danger',
-                    message: 'Improbable success: Too much too soon! Try this same goal over a longer period of time (or try a less ambitious goal amount)'
-                });
-            }
-
-            if (reductionPct > 75 && completionDays < 7) {
-                warnings.push({
-                    type: 'danger',
-                    message: 'Improbable success: Too much too soon! Try this same goal over a longer period of time (or try a less ambitious goal amount)'
-                });
-            }
-
-            if (completionDays > 7 && !hasCompletedShortGoal) {
+        if (isDecrease) {
+            if (completionDays > 7 && !hasFinishedGoal) {
                 warnings.push({
                     type: 'warning',
-                    message: 'Unproven success: Too much too soon! Try a goal shorter than 8 days for your first goal'
+                    message: 'First goal? Keep it to a week or less. Finish it, then set your next goal from where you land.'
+                });
+            }
+
+            // Constant-percentage taper (see getStepRate). A taper to zero runs
+            // down to 1 per period first, with the last step at zero.
+            var stepDays = completionDays >= 14 ? 7 : 1;
+            var taperEnd = draft.goalAmount > 0 ? draft.goalAmount : Math.min(1, draft.currentAmount);
+            var taperDays = draft.goalAmount > 0 ? completionDays : completionDays - stepDays;
+            var weeklyCutPct = taperDays > 0
+                ? (1 - Math.pow(taperEnd / draft.currentAmount, 7 / taperDays)) * 100
+                : 100;
+            if (weeklyCutPct > 25) {
+                // Suggest a target for the chosen length rather than a longer goal,
+                // so this never contradicts the "keep first goals short" advice
+                var suggestedTarget = Math.round(draft.currentAmount * Math.pow(0.75, completionDays / 7));
+                warnings.push({
+                    type: weeklyCutPct > 50 ? 'danger' : 'warning',
+                    message: 'Steep cut: about ' + Math.round(weeklyCutPct) + '% per week. Cuts of 10–25% per week tend to stick better. For a ' + completionDays + '-day goal, try a target of about ' + (draft.unit === 'times' ? suggestedTarget : formatGoalAmount(suggestedTarget, draft.unit)) + ', then set the next goal from there.'
+                });
+            }
+        }
+
+        if (isIncrease) {
+            // Progressive overload: add about 2 sessions or 20% per week, whichever is larger
+            var unitSize = StatsCalculationsModule.getMilestoneUnitSize(draft);
+            var perWeek = 7 / draft.measurementTimeline / unitSize;
+            var startPerWeek = draft.currentAmount * perWeek;
+            var goalPerWeek = draft.goalAmount * perWeek;
+            var safeWeeklyIncrease = Math.max(2, startPerWeek * 0.2);
+            var recommendedWeeks = Math.max(1, Math.ceil((goalPerWeek - startPerWeek) / safeWeeklyIncrease));
+
+            if (completionDays < recommendedWeeks * 7) {
+                warnings.push({
+                    type: completionDays < recommendedWeeks * 7 / 2 ? 'danger' : 'warning',
+                    message: 'Steep ramp: building up faster than about 2 sessions (or 20%) per week makes burning out more likely. Try at least ' + recommendedWeeks + ' week' + (recommendedWeeks !== 1 ? 's' : '') + ' (' + (recommendedWeeks * 7) + ' days) for this goal.'
                 });
             }
         }
@@ -604,17 +687,10 @@ var GoalsModule = (function() {
             });
         }
 
-        if (milestoneCount < 10 && completionDays > 1) {
-            warnings.push({
-                type: 'warning',
-                message: 'Inclination to quit: this goal is too spaced out and may be hard to follow.'
-            });
-        }
-
         var warningHTML = "";
 
         if (warnings.length > 0) {
-            html += '<div class="assistant-warnings">';
+            warningHTML += '<div class="assistant-warnings">';
             warnings.forEach(function(w) {
                 var iconClass = w.type === 'danger' ? 'fa-exclamation-circle' : 'fa-exclamation-triangle';
                 warningHTML += '<div class="assistant-warning ' + w.type + '">';
@@ -623,7 +699,6 @@ var GoalsModule = (function() {
             });
             warningHTML += '</div>';
         }
-        warningHTML += '</div>';
 
         $warning.html(warningHTML).show();
         $helper.html(html).show();
@@ -725,6 +800,7 @@ var GoalsModule = (function() {
             '.create-completion-timeline-input, ' +
             '.create-usage-timeline-select, .create-amountDonePerWeek, .create-goalDonePerWeek, ' +
             '.create-time-timeline-select, .create-currentTimeHours, .create-currentTimeMinutes, .create-goalTimeHours, .create-goalTimeMinutes, ' +
+            '.create-sessionTimeHours, .create-sessionTimeMinutes, .create-usageChunkSize, ' +
             '.create-spending-timeline-select, .create-amountSpentPerWeek, .create-goalSpentPerWeek, ' +
             '#create-goal-type-select',
             function() {

@@ -524,10 +524,7 @@ var GoalVisualizationModule = (function() {
 
         var actions = jsonObject.action || [];
         var isDoLess = GoalsModule.isDoLessGoal(goal);
-        var curveType = isDoLess ? 'power' : 'sigmoid';
-        var allMilestones = StatsCalculationsModule.calculateMilestoneSchedule(goal, { curveType: curveType });
-
-        allMilestones = GoalMilestonesModule.processMilestoneStatuses(allMilestones, actions, goal, isDoLess);
+        var allMilestones = GoalMilestonesModule.generateScheduleMilestones(goal, actions, isDoLess).all;
 
         var timeProgress = getWeekTimeProgress(goalStartMs, goalEndMs, newOffset, totalDays);
         var goalProgress = getWeekGoalProgress(allMilestones, goalStartMs, goalEndMs, newOffset, totalDays);
@@ -571,10 +568,7 @@ var GoalVisualizationModule = (function() {
 
         var actions = jsonObject.action || [];
         var isDoLess = GoalsModule.isDoLessGoal(goal);
-        var curveType = isDoLess ? 'power' : 'sigmoid';
-        var allMilestones = StatsCalculationsModule.calculateMilestoneSchedule(goal, { curveType: curveType });
-
-        allMilestones = GoalMilestonesModule.processMilestoneStatuses(allMilestones, actions, goal, isDoLess);
+        var allMilestones = GoalMilestonesModule.generateScheduleMilestones(goal, actions, isDoLess).all;
 
         var timeProgress = getDayTimeProgress(goalStartMs, goalEndMs, newOffset, totalDays);
         var goalProgress = getDayGoalProgress(allMilestones, goalStartMs, goalEndMs, newOffset, totalDays);

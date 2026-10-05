@@ -1,4 +1,4 @@
-var version = "v3.14.15::pages";
+var version = "v3.14.16::pages";
 
 // Paths that should NOT be cached (always fetch from network)
 var noCachePaths = [
@@ -18,7 +18,13 @@ function shouldSkipCache(url) {
 }
 
 self.addEventListener('install', function(event) {
-  // No need for empty function, but we can use it for precaching if needed
+  // Browsers check for a new version of this file on their own. If a version
+  // is already running, refuse to install so the app only updates when the
+  // user presses the update button (which unregisters the old version first).
+  if (self.registration.active) {
+    event.waitUntil(Promise.reject(new Error('Update not requested by the user')));
+    return;
+  }
   console.log('Service Worker: Installed');
 });
 
@@ -36,6 +42,29 @@ self.addEventListener('activate', event => {
           }
         })
       );
+    }).then(function() {
+      // Serve the page that installed us right away, so it works offline after one visit
+      return self.clients.claim();
+    })
+  );
+});
+
+// The first page loads before this worker exists, so it sends the files it
+// already loaded to be cached (same-origin only, skipping ones already cached)
+self.addEventListener('message', function(event) {
+  if (!event.data || event.data.type !== 'cache-urls' || !Array.isArray(event.data.urls)) {
+    return;
+  }
+  var urls = event.data.urls.filter(function(url) {
+    return new URL(url).origin === self.location.origin && !shouldSkipCache(url);
+  });
+  event.waitUntil(
+    caches.open(version).then(function(cache) {
+      return Promise.all(urls.map(function(url) {
+        return cache.match(url).then(function(hit) {
+          return hit || cache.add(url).catch(function() {});
+        });
+      }));
     })
   );
 });

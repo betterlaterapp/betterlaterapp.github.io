@@ -28,7 +28,7 @@ export default defineConfig({
   // Shared settings for all tests
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: 'http://127.0.0.1:8080',
+    baseURL: 'http://127.0.0.1:8137',
     
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -73,8 +73,10 @@ export default defineConfig({
 
   // Run local dev server before starting the tests
   webServer: {
-    command: 'python3 -m http.server 8080',
-    url: 'http://127.0.0.1:8080',
+    command: 'python3 -m http.server 8137',
+    // Serve from the repo root (commands otherwise run from this config's folder)
+    cwd: '..',
+    url: 'http://127.0.0.1:8137',
     reuseExistingServer: !process.env.CI,
   },
 });
