@@ -1,0 +1,18 @@
+/*
+ * Neucha and Varela, self-hosted so the about page makes no requests to
+ * third parties. Both fonts are licensed under the SIL Open Font License 1.1.
+ */
+@font-face {
+  font-family: 'Neucha';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(neucha-latin.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Varela';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(varela-latin.woff2) format('woff2');
+}
