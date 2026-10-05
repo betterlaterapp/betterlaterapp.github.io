@@ -39,19 +39,15 @@ var ButtonsModule = (function() {
             var customUnit = input.val().trim();
 
             if (customUnit) {
-                // Add to storage
+                // Units are stored lowercase; select the stored spelling so
+                // "Sit ups" and "sit ups" never become two different units
                 StorageModule.addCustomUnit(customUnit);
+                customUnit = customUnit.toLowerCase();
 
                 // Find the associated select (in either container type)
                 var container = $(this).closest('.how-much-unit-container, .baseline-unit-container');
                 var select = container.find('.how-much-unit-select, .unit-select-with-custom');
-                var optionExists = select.find('option[value="' + customUnit + '"]').length > 0;
-
-                if (!optionExists) {
-                    select.find('option[value="__custom__"]').before(
-                        '<option value="' + customUnit + '">' + customUnit + '</option>'
-                    );
-                }
+                populateUnitOptions();
                 select.val(customUnit).show();
 
                 // Hide custom input
@@ -111,6 +107,7 @@ var ButtonsModule = (function() {
         var baseline = (jsonObject && jsonObject.option && jsonObject.option.baseline) || {};
         var defaultAmount = baseline.defaultHowMuchAmount || '';
         var defaultUnit = baseline.defaultHowMuchUnit || '';
+        populateUnitOptions();
         $('.how-much-amount').val(defaultAmount);
         $('.how-much-unit-select').val(defaultUnit).show();
         $('.custom-unit-input').hide();
@@ -122,45 +119,57 @@ var ButtonsModule = (function() {
         $('.duration-picker-minutes').val('0');
         $('.how-long-manual-inputs').show();
 
-        // Populate custom units from storage
-        populateCustomUnits();
+    }
+
+    // Built-in units by habit direction: activity units when doing more,
+    // measurement units when doing less; "times" and "minutes" suit both
+    var SHARED_UNITS = ['times', 'minutes'];
+    var DO_MORE_UNITS = ['reps', 'sets', 'laps'];
+    var DO_LESS_UNITS = ['mg', 'grams', 'oz', 'ml', 'cups'];
+
+    /**
+     * Built-in units for the current habit direction (all of them when just observing)
+     */
+    function getDefaultUnits() {
+        var baseline = (StorageModule.retrieveStorageObject().option || {}).baseline || {};
+        if (baseline.doMore) return SHARED_UNITS.concat(DO_MORE_UNITS);
+        if (baseline.doLess) return SHARED_UNITS.concat(DO_LESS_UNITS);
+        return SHARED_UNITS.concat(DO_MORE_UNITS, DO_LESS_UNITS);
     }
 
     /**
-     * Populate custom units dropdown from storage
+     * Fill the unit dropdowns (the "How much" tab and the baseline question):
+     * the user's own units first, newest first, then built-in units for this
+     * habit direction, then "+ Add custom...". Keeps the current selection.
      */
-    function populateCustomUnits() {
-        var customUnits = StorageModule.getCustomUnits();
-        // Populate both the how-much dialog selector and the baseline unit selector
-        var selectors = $('.how-much-unit-select, .unit-select-with-custom');
-
-        selectors.each(function() {
-            var select = $(this);
-            // Remove existing custom units (keep default ones)
-            select.find('option').each(function() {
-                var val = $(this).val();
-                if (val && val !== '__custom__' && !isDefaultUnit(val)) {
-                    $(this).remove();
-                }
-            });
-
-            // Add custom units before the "Add custom" option
-            customUnits.forEach(function(unit) {
-                if (!select.find('option[value="' + unit + '"]').length) {
-                    select.find('option[value="__custom__"]').before(
-                        '<option value="' + unit + '">' + unit + '</option>'
-                    );
-                }
-            });
+    function populateUnitOptions() {
+        var customUnits = StorageModule.getCustomUnits().slice().reverse();
+        var defaults = getDefaultUnits().filter(function(unit) {
+            return customUnits.indexOf(unit) === -1;
         });
-    }
+        var option = function(unit) {
+            return $('<option>').val(unit).text(unit);
+        };
 
-    /**
-     * Check if a unit is one of the default units
-     */
-    function isDefaultUnit(unit) {
-        var defaults = ['', 'times', 'reps', 'laps', 'sets', 'mg', 'grams', 'oz', 'ml', 'cups', 'pages', 'minutes'];
-        return defaults.includes(unit);
+        $('.how-much-unit-select, .unit-select-with-custom').each(function() {
+            var select = $(this);
+            var current = select.val();
+            var hasPlaceholder = select.hasClass('how-much-unit-select');
+
+            select.empty();
+            if (hasPlaceholder) select.append(option('').text('— select unit —'));
+            customUnits.concat(defaults).forEach(function(unit) {
+                select.append(option(unit));
+            });
+            // Keep a previously chosen unit that isn't in the list anymore
+            if (current && current !== '__custom__' && !select.find('option').filter(function() {
+                return $(this).val() === current;
+            }).length) {
+                select.find('option').first().after(option(current));
+            }
+            select.append(option('__custom__').text('+ Add custom...'));
+            select.val(current && current !== '__custom__' ? current : (hasPlaceholder ? '' : 'times'));
+        });
     }
 
     /**
@@ -731,6 +740,7 @@ var ButtonsModule = (function() {
         setupButtonHandlers: setupButtonHandlers,
         setupDialogTabs: setupDialogTabs,
         updateDialogTabsVisibility: updateDialogTabsVisibility,
+        populateUnitOptions: populateUnitOptions,
         init: init
     };
 })();

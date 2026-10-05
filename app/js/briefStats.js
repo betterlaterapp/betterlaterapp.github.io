@@ -668,7 +668,7 @@ var BriefStatsModule = (function () {
                 return {
                     type: 'statVsBest',
                     statLabel: 'Done vs start',
-                    currLabel: { day: 'Today', week: 'This week', month: 'This month' }[timeline] || 'This week',
+                    currLabel: { day: 'Today', week: 'Week', month: 'Month' }[timeline] || 'Week',
                     vsLabel: 'Base',
                     current: current,
                     comparison: parseFloat(baseline.timesDone) || 0,
@@ -685,7 +685,7 @@ var BriefStatsModule = (function () {
                     type: 'statVsAvg',
                     statLabel: 'Done per day',
                     currLabel: 'Today',
-                    vsLabel: 'Average',
+                    vsLabel: 'Avg',
                     current: current,
                     comparison: avgPerDay,
                     format: 'number',
@@ -950,8 +950,13 @@ var BriefStatsModule = (function () {
         
         // Update the DOM with new structure
         var $stat = $('.stat-brief.stat-comparison');
-        $stat.find('.stat-current').text(currentDisplay);
-        $stat.find('.stat-vs').text(comparisonDisplay);
+        // Values longer than 3 characters use a smaller font to fit the 75px box
+        var sizeValue = function($el, text) {
+            var length = String(text).length;
+            $el.text(text).toggleClass('long-value', length > 3 && length <= 5).toggleClass('very-long-value', length > 5);
+        };
+        sizeValue($stat.find('.stat-current'), currentDisplay);
+        sizeValue($stat.find('.stat-vs'), comparisonDisplay);
         $stat.find('.stat-label').text(statConfig.statLabel);
         $stat.find('.stat-current-label').text(statConfig.currLabel);
         $stat.find('.stat-vs-label').text(statConfig.vsLabel);

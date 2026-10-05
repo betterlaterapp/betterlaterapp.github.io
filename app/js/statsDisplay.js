@@ -168,7 +168,7 @@ var StatsDisplayModule = (function () {
     }
 
     // Colors for each kind of entry in the do-more sessions chart (green first)
-    var ENTRY_TYPE_COLORS = ['#1e9039', '#2b7bb9', '#d18b00', '#7b4fa8', '#00897b', '#c2185b', '#5d6d7e', '#8d6e63'];
+    var ENTRY_TYPE_COLORS = ['#3a8a57', '#2b7bb9', '#d18b00', '#7b4fa8', '#00897b', '#c2185b', '#5d6d7e', '#8d6e63'];
 
     /**
      * Whether the report shows sessions split by kind of entry: doing more,
