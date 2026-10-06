@@ -167,8 +167,9 @@ var StatsDisplayModule = (function () {
         }
     }
 
-    // Colors for each kind of entry in the do-more sessions chart (green first)
-    var ENTRY_TYPE_COLORS = ['#1e9039', '#2b7bb9', '#d18b00', '#7b4fa8', '#00897b', '#c2185b', '#5d6d7e', '#8d6e63'];
+    // Colors for each kind of entry in the do-more chart: shades of green,
+    // alternating dark and light so neighbouring segments stand apart
+    var ENTRY_TYPE_COLORS = ['#3a8a57', '#9fd3ae', '#24603b', '#6fb886', '#c7e6cf', '#4f9d6a', '#1b4a2d', '#86c79a'];
 
     /**
      * Whether the report shows sessions split by kind of entry: doing more,
@@ -212,21 +213,19 @@ var StatsDisplayModule = (function () {
     /**
      * Sum every series the report can show into calendar buckets.
      *
-     * Doing more, "did it" is counted per session: a session is 1 and is split
-     * between the kinds of entries in it. For amounts, each entry counts as a
-     * share of that kind's usual session (e.g. 40 pushups when 20 is usual = 2),
-     * so exercises on very different scales can share one axis.
+     * Times done counts each "did it". Amounts add up what was logged, in its
+     * own unit: doing more, split by unit (e.g. 40 pushups and 30 situps);
+     * otherwise in the one unit given by amountUnit.
      *
      * @param {Array} actions - All actions
      * @param {Array} edges - Bucket boundaries in seconds
      * @param {string} metric - 'usage', 'amount', 'time', or 'cost'
      * @param {boolean} isDoMore - Whether the user is doing more of the habit
      * @param {Array} entryTypes - From getEntryTypes
-     * @param {Object} typicalPerSession - From getTypicalAmountPerSession
      * @param {string|null} amountUnit - Not doing more: the one unit amounts are summed in
      * @returns {Object}
      */
-    function bucketReportValues(actions, edges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit) {
+    function bucketReportValues(actions, edges, metric, isDoMore, entryTypes, amountUnit) {
         var Calc = StatsCalculationsModule;
         var n = edges.length - 1;
         var series = function() { return { values: new Array(n).fill(0), total: 0, lastPeriod: 0 }; };
@@ -261,6 +260,14 @@ var StatsDisplayModule = (function () {
             if (a.clickType === 'timed') {
                 add(result.timed, bucket, parseInt(a.duration) || 0);
             }
+            if (isDoMore && isCountedEntry(a)) {
+                var value = metric === 'amount' ? (a.amount ? Calc.getEntryAmount(a) : 0) : 1;
+                var type = Calc.getEntryType(a);
+                if (value && result.stacks[type]) {
+                    result.stacks[type][bucket] += value;
+                    add(result.used, bucket, value);
+                }
+            }
             if (!isDoMore && Calc.isDidItAction(a)) {
                 if (metric !== 'amount') {
                     add(result.used, bucket, 1);
@@ -270,22 +277,6 @@ var StatsDisplayModule = (function () {
                 }
             }
         });
-
-        if (isDoMore) {
-            Calc.groupIntoSessions(actions).forEach(function(session) {
-                var bucket = bucketOf(session.start);
-                var counted = session.entries.filter(isCountedEntry);
-                if (bucket < 0 || counted.length === 0) return;
-                counted.forEach(function(entry) {
-                    var type = Calc.getEntryType(entry);
-                    var share = metric === 'amount'
-                        ? Calc.getEntryAmount(entry) / (typicalPerSession[type] || 1)
-                        : 1 / counted.length;
-                    if (result.stacks[type]) result.stacks[type][bucket] += share;
-                    add(result.used, bucket, share);
-                });
-            });
-        }
 
         return result;
     }
@@ -307,7 +298,6 @@ var StatsDisplayModule = (function () {
         var edges = Calc.getReportBucketEdges(period, reportEndStamp);
         var previousEdges = Calc.getReportBucketEdges(period, edges[0] - 12 * 60 * 60);
         var entryTypes = getEntryTypes(actions);
-        var typicalPerSession = Calc.getTypicalAmountPerSession(Calc.groupIntoSessions(actions));
 
         // While a view is still in progress, compare it with the same stretch of
         // the previous period (e.g. today so far vs yesterday up to this time)
@@ -318,8 +308,8 @@ var StatsDisplayModule = (function () {
         var previousActions = actions.filter(function(a) { return parseInt(a.timestamp) < previousCutoff; });
 
         var amountUnit = isDoMore ? null : getMainUnit(actions, edges);
-        var values = bucketReportValues(actions, edges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit);
-        var previous = bucketReportValues(previousActions, previousEdges, metric, isDoMore, entryTypes, typicalPerSession, amountUnit);
+        var values = bucketReportValues(actions, edges, metric, isDoMore, entryTypes, amountUnit);
+        var previous = bucketReportValues(previousActions, previousEdges, metric, isDoMore, entryTypes, amountUnit);
         ['used', 'craved', 'bought', 'timed', 'waited'].forEach(function(key) {
             values[key].lastPeriod = previous[key].total;
         });
@@ -373,7 +363,7 @@ var StatsDisplayModule = (function () {
         actions.forEach(function(a) {
             if (!a || !inRange(a.timestamp)) return;
             if (Calc.isDidItAction(a)) {
-                if (!isDoMore) totals.didIt++;
+                totals.didIt++;
                 if (a.unit) totals.units[a.unit] = (totals.units[a.unit] || 0) + Calc.getEntryAmount(a);
                 if (a.clickType === 'timed') totals.timeSeconds += parseInt(a.duration) || 0;
             } else if (a.clickType === 'craved') {
@@ -385,9 +375,6 @@ var StatsDisplayModule = (function () {
             }
         });
 
-        if (isDoMore) {
-            totals.didIt = Calc.groupIntoSessions(actions).filter(function(s) { return inRange(s.start); }).length;
-        }
         return totals;
     }
 
@@ -432,7 +419,7 @@ var StatsDisplayModule = (function () {
 
         var didItChange = show.useChangeVsLastWeek !== false;
         if (metric === 'usage' || metric === 'amount') {
-            push(current.didIt, previous.didIt, isDoMore ? 'sessions' : 'times', 'number', isDoMore, {
+            push(current.didIt, previous.didIt, 'times', 'number', isDoMore, {
                 always: true,
                 showChange: didItChange,
                 extras: comparisons(current.didIt, baseline.timesDone, baseline.usageTimeline, show.useChangeVsBaseline,
@@ -519,7 +506,7 @@ var StatsDisplayModule = (function () {
             }
             notes = notes.concat(line.extras);
 
-            var label = line.value === 1 ? ({ sessions: 'session', times: 'time' }[line.label] || line.label) : line.label;
+            var label = line.value === 1 && line.label === 'times' ? 'time' : line.label;
             var detail = notes.length
                 ? ' <span class="report-summary-change">(' + notes.map(function(note) {
                     return '<span class="' + note.tone + '">' + escapeHtml(note.text) + '</span>';
@@ -614,7 +601,7 @@ var StatsDisplayModule = (function () {
             html += '<div class="color-descriptor"><div class="color" style="background-color:' + t.color + '"></div>' +
                 '<label>' + escapeHtml(t.label) + '</label></div>';
         });
-        if (reportValues.craved.total > 0) {
+        if (reportValues.metric === 'usage' && reportValues.craved.total > 0) {
             html += '<div class="color-descriptor"><div class="color primary"></div><label>Didn\'t</label></div>';
         }
         html += '</div>';
@@ -624,9 +611,10 @@ var StatsDisplayModule = (function () {
     }
 
     /**
-     * Doing more: for each day, a "Didn't" bar beside a sessions bar
-     * that's split by what was done. Time spent is written as a header row
-     * across the top of the chart, one entry per column that had any.
+     * Doing more: for each day, a "Did it" bar split by what was done, with a
+     * "Didn't" bar beside it when counting times (amounts don't share a scale
+     * with it). Time spent is written as a header row across the top of the
+     * chart, one entry per column that had any.
      */
     function renderSessionsChart(reportValues, labels, responsiveOptions) {
         var types = reportValues.entryTypes;
@@ -638,7 +626,8 @@ var StatsDisplayModule = (function () {
         var totals = labels.map(function(_, i) {
             return types.reduce(function(sum, t) { return sum + reportValues.stacks[t.key][i]; }, 0);
         });
-        var maxValue = Math.max.apply(null, totals.concat(reportValues.craved.values, [0]));
+        var cravedValues = reportValues.metric === 'usage' ? reportValues.craved.values : labels.map(function() { return 0; });
+        var maxValue = Math.max.apply(null, totals.concat(cravedValues, [0]));
 
         // Two bars per column: size them to the column so they never overlap
         var plotWidth = Math.max(100, $('.ct-chart').width() - 50);
@@ -646,7 +635,7 @@ var StatsDisplayModule = (function () {
 
         var chart = new Chartist.Bar('.ct-chart', {
             labels: labels,
-            series: [reportValues.craved.values, totals]
+            series: [cravedValues, totals]
         }, {
             low: 0,
             high: maxValue > 3 ? Math.ceil(maxValue * 1.15) : 4,
@@ -664,7 +653,7 @@ var StatsDisplayModule = (function () {
             data.element.attr({ style: 'stroke-width: ' + barWidth + 'px' });
             if (data.seriesIndex === 0) return;
 
-            // Replace the sessions total with segments, one per kind of entry
+            // Replace the total with segments, one per kind of entry
             columnCenters[data.index] = data.x1 - (barWidth + 1) / 2;
             var total = totals[data.index];
             if (!total) return;
@@ -792,10 +781,7 @@ var StatsDisplayModule = (function () {
             $('.legend-sessions').addClass('d-none');
             $('.bar-chart .legend:not(.legend-sessions)').removeClass('d-none');
         }
-        if (reportValues.isDoMore && (metric === 'usage' || metric === 'amount')) {
-            // Doing more, "did it" is counted in sessions
-            legendLabels.secondary = metric === 'amount' ? "Sessions' worth" : 'Sessions';
-        } else if (metric === 'amount') {
+        if (metric === 'amount') {
             var amountLabel = 'Amount' + (reportValues.amountUnit ? ' (' + reportValues.amountUnit + ')' : '');
             if (isdoLess) {
                 legendLabels = { primary: amountLabel, secondary: null };
@@ -840,7 +826,7 @@ var StatsDisplayModule = (function () {
         // Prepare chart data based on metric
         var data, options;
 
-        if (metric === 'amount' && !reportValues.isDoMore) {
+        if (metric === 'amount') {
             // Measurements share no scale with resist counts, so chart amounts alone
             var noSeries = new Array(dataPoints).fill(0);
             data = {
@@ -1186,9 +1172,11 @@ var StatsDisplayModule = (function () {
             var newMetric = $('#reportMetricFilter').val();
             var newPeriod = $('#reportPeriodFilter').val();
             
-            // Update stored options
-            reportOptions.reportMetric = newMetric;
-            reportOptions.reportPeriod = newPeriod;
+            // Update the current options object: json.option is replaced with a
+            // fresh copy whenever settings sync, so a reference kept from setup
+            // would leave the report drawing the previous selection
+            json.option.reportItemsToDisplay.reportMetric = newMetric;
+            json.option.reportItemsToDisplay.reportPeriod = newPeriod;
             
             // Save to storage
             var jsonObject = StorageModule.retrieveStorageObject();

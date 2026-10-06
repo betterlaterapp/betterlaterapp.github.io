@@ -52,16 +52,6 @@ test('Do Before follows the active goal step', () => {
     assert.strictEqual(doBefore, now - HOUR + 3.5 * DAY);
 });
 
-test('typical amount per session is the median per type', () => {
-    const sessions = Calc.groupIntoSessions([
-        used(now - 3 * DAY, { amount: 10, unit: 'pushups' }),
-        used(now - 2 * DAY, { amount: 20, unit: 'pushups' }),
-        used(now - 2 * DAY + 10, { amount: 10, unit: 'pushups' }),
-        used(now - DAY, { amount: 40, unit: 'pushups' })
-    ]);
-    assert.deepStrictEqual(Calc.getTypicalAmountPerSession(sessions), { pushups: 30 });
-});
-
 test('week buckets are 7 calendar days starting at midnight', () => {
     const edges = Calc.getReportBucketEdges('week', now);
     assert.strictEqual(edges.length, 8);

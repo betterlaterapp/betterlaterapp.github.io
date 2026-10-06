@@ -328,9 +328,33 @@ var StorageModule = (function () {
             jsonObject.version = 8;
         }
 
+        // Migration v8 -> v9: Units are lowercase. Custom units were saved
+        // lowercase but entries kept the typed spelling, so "Sit ups" and
+        // "sit ups" showed up as two different units.
+        if (version < 9) {
+            var lower = function(unit) {
+                return typeof unit === 'string' ? unit.trim().toLowerCase() : unit;
+            };
+            (jsonObject.action || []).forEach(function(action) {
+                if (action && action.unit) action.unit = lower(action.unit);
+            });
+            var options = jsonObject.option || {};
+            if (Array.isArray(options.customUnits)) {
+                options.customUnits = options.customUnits.map(lower).filter(function(unit, i, all) {
+                    return unit && all.indexOf(unit) === i;
+                });
+            }
+            if (options.baseline) {
+                if (options.baseline.defaultHowMuchUnit) options.baseline.defaultHowMuchUnit = lower(options.baseline.defaultHowMuchUnit);
+                if (options.baseline.usageUnit) options.baseline.usageUnit = lower(options.baseline.usageUnit);
+            }
+
+            jsonObject.version = 9;
+        }
+
         setStorageObject(jsonObject);
-        if (version < 8) {
-            console.log("Storage migration to v8 complete.");
+        if (version < 9) {
+            console.log("Storage migration to v9 complete.");
         }
     }
 
@@ -342,8 +366,8 @@ var StorageModule = (function () {
         if (!hasStorageData()) return true;
         try {
             var jsonObject = JSON.parse(localStorage.esCrave);
-            // Check if at latest version (v8)
-            return jsonObject && jsonObject.version >= 8;
+            // Check if at latest version (v9)
+            return jsonObject && jsonObject.version >= 9;
         } catch (e) {
             return false;
         }

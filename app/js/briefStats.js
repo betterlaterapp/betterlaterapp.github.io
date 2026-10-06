@@ -624,18 +624,6 @@ var BriefStatsModule = (function () {
     }
     
     /**
-     * One synthetic "used" action per session, so period counts and averages
-     * count sessions rather than every entry logged during a workout.
-     * @param {Array} actions - Array of actions
-     * @returns {Array}
-     */
-    function toSessionActions(actions) {
-        return StatsCalculationsModule.groupIntoSessions(actions).map(function(session) {
-            return { clickType: 'used', timestamp: String(session.start) };
-        });
-    }
-
-    /**
      * Get comparison stat for timesDone focus
      */
     function getTimesDoneComparisonStat(baseline, actions, doLess, doMore, timeline) {
@@ -662,13 +650,13 @@ var BriefStatsModule = (function () {
             
         } else if (doMore) {
             if (hasBaseline) {
-                // sessions this day/week/month vs baseline for the same period
+                // done this day/week/month vs baseline for the same period
                 // (comparing per day would round a 3/week baseline down to 0)
-                var current = Calc.getCountForPeriod(toSessionActions(actions), timeline);
+                var current = Calc.getCountForPeriod(actions, timeline);
                 return {
                     type: 'statVsBest',
                     statLabel: 'Done vs start',
-                    currLabel: { day: 'Today', week: 'This week', month: 'This month' }[timeline] || 'This week',
+                    currLabel: { day: 'Today', week: 'Week', month: 'Month' }[timeline] || 'Week',
                     vsLabel: 'Base',
                     current: current,
                     comparison: parseFloat(baseline.timesDone) || 0,
@@ -677,15 +665,14 @@ var BriefStatsModule = (function () {
                 };
             } else {
                 // times done today vs average done / day
-                var sessionActions = toSessionActions(actions);
-                var current = Calc.getCountForPeriod(sessionActions, 'day');
-                var avgPerDay = Calc.getAverageCountPerDay(sessionActions);
+                var current = Calc.getCountForPeriod(actions, 'day');
+                var avgPerDay = Calc.getAverageCountPerDay(actions);
                 console.log('[BriefStats] → doMore + noBaseline: Today vs avg', { current, avgPerDay });
                 return {
                     type: 'statVsAvg',
                     statLabel: 'Done per day',
                     currLabel: 'Today',
-                    vsLabel: 'Average',
+                    vsLabel: 'Avg',
                     current: current,
                     comparison: avgPerDay,
                     format: 'number',
@@ -950,8 +937,13 @@ var BriefStatsModule = (function () {
         
         // Update the DOM with new structure
         var $stat = $('.stat-brief.stat-comparison');
-        $stat.find('.stat-current').text(currentDisplay);
-        $stat.find('.stat-vs').text(comparisonDisplay);
+        // Values longer than 3 characters use a smaller font to fit the 75px box
+        var sizeValue = function($el, text) {
+            var length = String(text).length;
+            $el.text(text).toggleClass('long-value', length > 3 && length <= 5).toggleClass('very-long-value', length > 5);
+        };
+        sizeValue($stat.find('.stat-current'), currentDisplay);
+        sizeValue($stat.find('.stat-vs'), comparisonDisplay);
         $stat.find('.stat-label').text(statConfig.statLabel);
         $stat.find('.stat-current-label').text(statConfig.currLabel);
         $stat.find('.stat-vs-label').text(statConfig.vsLabel);

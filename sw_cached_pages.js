@@ -1,4 +1,4 @@
-var version = "v3.14.16::pages";
+var version = "v3.14.17::pages";
 
 // Paths that should NOT be cached (always fetch from network)
 var noCachePaths = [

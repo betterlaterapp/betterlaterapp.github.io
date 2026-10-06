@@ -291,6 +291,11 @@ var BaselineModule = (function() {
         } else {
             $('body').addClass("do-equal");
         }
+
+        // The built-in units offered depend on the habit direction
+        if (typeof ButtonsModule !== 'undefined' && ButtonsModule.populateUnitOptions) {
+            ButtonsModule.populateUnitOptions();
+        }
     }
 
     function syncSettingsPage(jsonObject) {

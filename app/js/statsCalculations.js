@@ -969,34 +969,6 @@ var StatsCalculationsModule = (function () {
     }
 
     /**
-     * Typical amount per session for each entry type (median across sessions
-     * that included it), so different exercises can share one chart scale.
-     * @param {Array} sessions - From groupIntoSessions
-     * @returns {Object} - {type: typicalAmount}
-     */
-    function getTypicalAmountPerSession(sessions) {
-        var perType = {};
-        sessions.forEach(function(session) {
-            var sums = {};
-            session.entries.forEach(function(entry) {
-                var type = getEntryType(entry);
-                sums[type] = (sums[type] || 0) + getEntryAmount(entry);
-            });
-            Object.keys(sums).forEach(function(type) {
-                (perType[type] = perType[type] || []).push(sums[type]);
-            });
-        });
-
-        var typical = {};
-        Object.keys(perType).forEach(function(type) {
-            var sorted = perType[type].sort(function(a, b) { return a - b; });
-            var mid = Math.floor(sorted.length / 2);
-            typical[type] = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-        });
-        return typical;
-    }
-
-    /**
      * Seconds between sessions that keeps a steady habit going ("do more").
      * Prefers the active goal's current weekly step, then the user's own
      * recent rhythm (median gap of their last 6 sessions), then their baseline.
@@ -1145,7 +1117,6 @@ var StatsCalculationsModule = (function () {
         getEntryType: getEntryType,
         getEntryAmount: getEntryAmount,
         groupIntoSessions: groupIntoSessions,
-        getTypicalAmountPerSession: getTypicalAmountPerSession,
         getDoBeforeTimestamp: getDoBeforeTimestamp,
 
         // Report buckets
