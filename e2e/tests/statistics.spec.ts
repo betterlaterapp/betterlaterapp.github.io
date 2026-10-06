@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { 
   navigateToJournal, 
+  navigateToSettings,
   navigateToStatistics,
   setupUserWithActions,
   setupUserWithBaseline 
@@ -99,6 +100,24 @@ test.describe('Better Later - Statistics & Reports', () => {
     await page.click('.next-report');
     await expect(startDate).toHaveText(thisWeekStart || '');
     await expect(summary).toContainText('This week');
+  });
+
+  test('report filters update the graph on the first change, even after visiting settings', async ({ page }) => {
+    await page.click('#use-button');
+    await page.click('.use.log-more-info button.submit');
+
+    // Visiting settings refreshes the app's copy of the options
+    await navigateToSettings(page);
+    await navigateToStatistics(page);
+    await page.selectOption('#reportPeriodFilter', 'week');
+    await page.selectOption('#reportMetricFilter', 'usage');
+    await expect(page.locator('.legend-primary-label')).toHaveText('Did It');
+
+    // One change is enough to redraw
+    await page.selectOption('#reportMetricFilter', 'amount');
+    await expect(page.locator('.legend-primary-label')).toHaveText(/^Amount/);
+    await page.selectOption('#reportPeriodFilter', 'day');
+    await expect(page.locator('.ct-chart .ct-line').first()).toBeAttached();
   });
 
   test('habit log shows recent actions', async ({ page }) => {
